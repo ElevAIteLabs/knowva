@@ -1,8 +1,17 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { Star, ArrowLeft, ArrowRight } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { toast } from "sonner";
+import chatgptLogo from "@/assets/chatgptlogo.png";
+import midjourneyLogo from "@/assets/midjourney logo.png";
+import claudeLogo from "@/assets/claude ai logo.png";
+import runwayLogo from "@/assets/runway logo.png";
+import jasperLogo from "@/assets/jasper logo.png";
+import cursorLogo from "@/assets/cursor logo.png";
+import elevenlabsLogo from "@/assets/elevenlabs logo.png";
+import perplexityLogo from "@/assets/preplexity logo.png";
 
 interface CarouselCard {
   name: string;
@@ -25,6 +34,20 @@ const Carousel3D = ({ items, autoRotateInterval = 3000 }: Carousel3DProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const isMobile = useIsMobile();
   const total = items.length;
+  const navigate = useNavigate();
+
+  const handleCardClick = (e: React.MouseEvent, toolName: string) => {
+    e.preventDefault();
+    const user = localStorage.getItem("user");
+    if (!user) {
+      toast("Authentication required", {
+        description: "Please log in to view tool details.",
+      });
+      navigate("/login");
+    } else {
+      navigate(`/tool/${toolName.toLowerCase().replace(/\s+/g, '-')}`);
+    }
+  };
 
   // Auto-rotate
   useEffect(() => {
@@ -101,11 +124,10 @@ const Carousel3D = ({ items, autoRotateInterval = 3000 }: Carousel3DProps) => {
         <button
           key={i}
           onClick={() => setActiveIndex(i)}
-          className={`w-2 h-2 rounded-full transition-all duration-300 ${
-            i === activeIndex
-              ? "bg-primary w-6"
-              : "bg-muted-foreground/30 hover:bg-muted-foreground/50"
-          }`}
+          className={`w-2 h-2 rounded-full transition-all duration-300 ${i === activeIndex
+            ? "bg-primary w-6"
+            : "bg-muted-foreground/30 hover:bg-muted-foreground/50"
+            }`}
           aria-label={`Go to slide ${i + 1}`}
         />
       ))}
@@ -135,7 +157,7 @@ const Carousel3D = ({ items, autoRotateInterval = 3000 }: Carousel3DProps) => {
             const style = getCardStyle(index);
             return (
               <motion.div
-                key={tool.name}
+                key={`${tool.name}-${index}`}
                 className="absolute w-[320px] sm:w-[360px]"
                 animate={{
                   x: 0,
@@ -150,11 +172,47 @@ const Carousel3D = ({ items, autoRotateInterval = 3000 }: Carousel3DProps) => {
                   zIndex: style.zIndex,
                 }}
               >
-                <Link to={`/tool/${tool.name.toLowerCase().replace(/\s+/g, '-')}`} className="block group select-none">
+                <button onClick={(e) => handleCardClick(e, tool.name)} className="block w-full text-left group select-none">
                   <div className="bg-white text-gray-900 border border-[#f0f0f0] rounded-2xl p-8 hover:bg-[#F9FAFB] hover:scale-[1.05] hover:border-[#FFB347] transition-all duration-500 ease-in-out shadow-[0_4px_12px_rgba(0,0,0,0.05)]">
                     {/* Icon Section */}
-                    <div className="w-16 h-16 rounded-2xl bg-white/50 border border-slate-300 flex items-center justify-center text-4xl mb-6 group-hover:scale-110 transition-transform duration-300">
-                      {tool.icon}
+                    <div className="w-16 h-16 rounded-2xl bg-white/50 border border-slate-300 flex items-center justify-center text-4xl mb-6 group-hover:scale-110 transition-transform duration-300 overflow-hidden p-2">
+                      {tool.name.toLowerCase() === "chatgpt" ? (
+                        <div className="w-full h-full flex items-center justify-center bg-gray-900 rounded-lg">
+                          <img src={chatgptLogo} alt="ChatGPT" className="w-8 h-8 object-contain" />
+                        </div>
+                      ) : tool.name.toLowerCase() === "midjourney" ? (
+                        <div className="w-full h-full flex items-center justify-center bg-blue-900 rounded-lg">
+                          <img src={midjourneyLogo} alt="Midjourney" className="w-8 h-8 object-contain" />
+                        </div>
+                      ) : tool.name.toLowerCase() === "claude" ? (
+                        <div className="w-full h-full flex items-center justify-center bg-orange-600 rounded-lg">
+                          <img src={claudeLogo} alt="Claude" className="w-8 h-8 object-contain" />
+                        </div>
+                      ) : tool.name.toLowerCase() === "runway" ? (
+                        <div className="w-full h-full flex items-center justify-center bg-purple-700 rounded-lg">
+                          <img src={runwayLogo} alt="Runway" className="w-8 h-8 object-contain" />
+                        </div>
+                      ) : tool.name.toLowerCase() === "jasper ai" || tool.name.toLowerCase() === "jasper" ? (
+                        <div className="w-full h-full flex items-center justify-center bg-yellow-600 rounded-lg">
+                          <img src={jasperLogo} alt="Jasper" className="w-8 h-8 object-contain" />
+                        </div>
+                      ) : tool.name.toLowerCase() === "cursor" ? (
+                        <div className="w-full h-full flex items-center justify-center bg-green-700 rounded-lg">
+                          <img src={cursorLogo} alt="Cursor" className="w-8 h-8 object-contain" />
+                        </div>
+                      ) : tool.name.toLowerCase() === "elevenlabs" ? (
+                        <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-neutral-900 to-zinc-800 rounded-lg">
+                          <img src={elevenlabsLogo} alt="ElevenLabs" className="w-8 h-8 object-contain" />
+                        </div>
+                      ) : tool.name.toLowerCase() === "perplexity" ? (
+                        <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-emerald-700 to-teal-800 rounded-lg">
+                          <img src={perplexityLogo} alt="Perplexity" className="w-8 h-8 object-contain" />
+                        </div>
+                      ) : tool.icon && (tool.icon.startsWith('http') || tool.icon.startsWith('/')) ? (
+                        <img src={tool.icon} alt={tool.name} className="w-full h-full object-contain" />
+                      ) : (
+                        <span>{tool.icon}</span>
+                      )}
                     </div>
 
                     {/* Content */}
@@ -177,15 +235,14 @@ const Carousel3D = ({ items, autoRotateInterval = 3000 }: Carousel3DProps) => {
                     </div>
                   </div>
                   <div className="absolute top-6 right-6">
-                    <span className={`px-3 py-1 text-xs font-semibold rounded-full ${
-                      tool.pricing === "Paid"
-                        ? "bg-[#FFB347]/20 text-[#FFB347] border border-[#FFB347]/30"
-                        : "bg-emerald-500/20 text-emerald-600 border border-emerald-500/30"
-                    }`}>
+                    <span className={`px-3 py-1 text-xs font-semibold rounded-full ${tool.pricing === "Paid"
+                      ? "bg-[#FFB347]/20 text-[#FFB347] border border-[#FFB347]/30"
+                      : "bg-emerald-500/20 text-emerald-600 border border-emerald-500/30"
+                      }`}>
                       {tool.pricing}
                     </span>
                   </div>
-                </Link>
+                </button>
               </motion.div>
             );
           })}

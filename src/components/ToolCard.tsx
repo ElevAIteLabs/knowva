@@ -10,6 +10,9 @@ import cursorLogo from "@/assets/cursor logo.png";
 import elevenlabsLogo from "@/assets/elevenlabs logo.png";
 import perplexityLogo from "@/assets/preplexity logo.png";
 
+import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
+
 interface ToolCardProps {
   name: string;
   description: string;
@@ -21,6 +24,21 @@ interface ToolCardProps {
 }
 
 const ToolCard = ({ name, description, category, rating, pricing, icon, delay = 0 }: ToolCardProps) => {
+  const navigate = useNavigate();
+
+  const handleClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    const user = localStorage.getItem("user");
+    if (!user) {
+      toast("Authentication required", {
+        description: "Please log in to view tool details.",
+      });
+      navigate("/login");
+    } else {
+      navigate(`/tool/${name.toLowerCase().replace(/\s+/g, '-')}`);
+    }
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -28,7 +46,7 @@ const ToolCard = ({ name, description, category, rating, pricing, icon, delay = 
       viewport={{ once: true }}
       transition={{ duration: 0.4, delay }}
     >
-      <Link to={`/tool/${name.toLowerCase().replace(/\s+/g, '-')}`} className="block group">
+      <button onClick={handleClick} className="block w-full text-left group">
         <div className="bg-white text-slate-900 border border-[#f0f0f0] rounded-2xl p-5 shadow-[0_2px_8px_rgba(0,0,0,0.05)] transition-all duration-300 hover:-translate-y-1 hover:border-[#FFB347] hover:shadow-[0_8px_25px_rgba(255,179,71,0.15)] relative overflow-hidden group">
           {/* White stroke/glow effect */}
           <div className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none">
@@ -38,41 +56,45 @@ const ToolCard = ({ name, description, category, rating, pricing, icon, delay = 
           </div>
           <div className="flex items-start justify-between mb-4">
             <div className="w-fit">
-              {name === "ChatGPT" ? (
+              {name.toLowerCase() === "chatgpt" ? (
                 <div className="p-3 rounded-lg bg-gray-900">
                   <img src={chatgptLogo} alt="ChatGPT" className="w-5 h-5 object-contain" />
                 </div>
-              ) : name === "Midjourney" ? (
+              ) : name.toLowerCase() === "midjourney" ? (
                 <div className="p-3 rounded-lg bg-blue-900">
                   <img src={midjourneyLogo} alt="Midjourney" className="w-5 h-5 object-contain" />
                 </div>
-              ) : name === "Claude" ? (
+              ) : name.toLowerCase() === "claude" ? (
                 <div className="p-3 rounded-lg bg-orange-600">
                   <img src={claudeLogo} alt="Claude" className="w-5 h-5 object-contain" />
                 </div>
-              ) : name === "Runway" ? (
+              ) : name.toLowerCase() === "runway" ? (
                 <div className="p-3 rounded-lg bg-purple-700">
                   <img src={runwayLogo} alt="Runway" className="w-5 h-5 object-contain" />
                 </div>
-              ) : name === "Jasper AI" ? (
+              ) : name.toLowerCase() === "jasper ai" || name.toLowerCase() === "jasper" ? (
                 <div className="p-3 rounded-lg bg-yellow-600">
                   <img src={jasperLogo} alt="Jasper" className="w-5 h-5 object-contain" />
                 </div>
-              ) : name === "Cursor" ? (
+              ) : name.toLowerCase() === "cursor" ? (
                 <div className="p-3 rounded-lg bg-green-700">
                   <img src={cursorLogo} alt="Cursor" className="w-5 h-5 object-contain" />
                 </div>
-              ) : name === "ElevenLabs" ? (
+              ) : name.toLowerCase() === "elevenlabs" ? (
                 <div className="p-3 rounded-lg bg-gradient-to-br from-neutral-900 to-zinc-800">
                   <img src={elevenlabsLogo} alt="ElevenLabs" className="w-5 h-5 object-contain" />
                 </div>
-              ) : name === "Perplexity" ? (
+              ) : name.toLowerCase() === "perplexity" ? (
                 <div className="p-3 rounded-lg bg-gradient-to-br from-emerald-700 to-teal-800">
                   <img src={perplexityLogo} alt="Perplexity" className="w-5 h-5 object-contain" />
                 </div>
               ) : (
-                <div className="p-3 rounded-lg bg-gray-900">
-                  {icon}
+                <div className="p-3 rounded-lg bg-gray-900 flex items-center justify-center">
+                  {icon && (icon.startsWith('http') || icon.startsWith('/')) ? (
+                    <img src={icon} alt={name} className="w-5 h-5 object-contain" />
+                  ) : (
+                    <span className="text-white text-sm font-bold">{icon}</span>
+                  )}
                 </div>
               )}
             </div>
@@ -94,7 +116,7 @@ const ToolCard = ({ name, description, category, rating, pricing, icon, delay = 
             </div>
           </div>
         </div>
-      </Link>
+      </button>
     </motion.div>
   );
 };

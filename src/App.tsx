@@ -11,6 +11,11 @@ import Compare from "./pages/Compare";
 import Newsletter from "./pages/Newsletter";
 import Consulting from "./pages/Consulting";
 import Providers from "./pages/Providers";
+import Login from "./pages/Login";
+import Signup from "./pages/Signup";
+import AdminDashboard from "./pages/AdminDashboard";
+import Profile from "./pages/Profile";
+import AllTools from "./pages/AllTools";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -30,6 +35,12 @@ const App = () => (
           <Route path="/newsletter" element={<Newsletter />} />
           <Route path="/consulting" element={<Consulting />} />
           <Route path="/providers" element={<Providers />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/signup" element={<Signup />} />
+          <Route path="/admin" element={<AdminDashboard />} />
+          <Route path="/profile" element={<Profile />} />
+          <Route path="/all-tools" element={<AllTools />} />
+          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

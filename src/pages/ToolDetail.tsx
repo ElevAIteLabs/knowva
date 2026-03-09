@@ -1,11 +1,13 @@
-import { Star, ExternalLink, Check, X, ChevronLeft, ThumbsUp } from "lucide-react";
-import { Link, useParams } from "react-router-dom";
-import { motion } from "framer-motion";
-import { useEffect } from "react";
+import { Star, ExternalLink, Check, X, ChevronLeft, Send, LogIn, Loader2 } from "lucide-react";
+import { Link, useParams, useNavigate } from "react-router-dom";
+import { motion, AnimatePresence } from "framer-motion";
+import { useEffect, useState } from "react";
+import { API_ENDPOINTS, API_BASE_URL } from "@/config/apiConfig";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import ToolCard from "@/components/ToolCard";
-import { trendingTools } from "@/data/mockData";
+
+import { toast } from "sonner";
 import chatgptlogo from "@/assets/chatgptlogo.png";
 import midjourneylogo from "@/assets/midjourney logo.png";
 import claudelogo from "@/assets/claude ai logo.png";
@@ -62,8 +64,8 @@ import geminiUltra4 from "@/assets/gemini ultra4.mp4";
 import udio1 from "@/assets/udio1.mp4";
 import udio2 from "@/assets/udio2.mp4";
 import udio3 from "@/assets/udio3.mp4";
-import udio4 from "@/assets/udio4.mp4"; 
-import runwayvideo from "@/assets/runwayvideo.jpg"; 
+import udio4 from "@/assets/udio4.mp4";
+import runwayvideo from "@/assets/runwayvideo.jpg";
 
 const tools = {
   'chatgpt': {
@@ -283,21 +285,257 @@ const tools = {
   }
 };
 
-const reviews = [
-  { user: "Alex M.", rating: 5, text: "Incredible tool for daily productivity. The code generation alone saves me hours.", date: "2 days ago", helpful: 24 },
-  { user: "Sarah K.", rating: 4, text: "Great for content creation, but sometimes needs fact-checking.", date: "1 week ago", helpful: 12 },
-  { user: "Dev Team", rating: 5, text: "We integrated it into our workflow. Best AI assistant available right now.", date: "2 weeks ago", helpful: 31 },
-];
+// Static reviews removed — now loaded from DB
 
 const ToolDetail = () => {
   const { slug } = useParams();
-  const tool = tools[slug?.toLowerCase() || 'chatgpt'];
-  
+  const navigate = useNavigate();
+  const [tool, setTool] = useState<any>(null);
+  const [allDbTools, setAllDbTools] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Reviews state
+  const [reviews, setReviews] = useState<any[]>([]);
+  const [reviewsLoading, setReviewsLoading] = useState(true);
+  const [submitLoading, setSubmitLoading] = useState(false);
+  const [userRating, setUserRating] = useState(0);
+  const [hoverRating, setHoverRating] = useState(0);
+  const [reviewText, setReviewText] = useState("");
+
+  // Computed live rating — average of all user reviews; falls back to tool's own rating
+  const avgRating = reviews.length > 0
+    ? Math.round((reviews.reduce((sum: number, r: any) => sum + Number(r.rating), 0) / reviews.length) * 10) / 10
+    : null;
+  const displayRating = avgRating ?? tool?.rating ?? 0;
+  const displayReviewCount = reviews.length;
+
+  // Get logged-in user
+  const currentUser = (() => {
+    try { return JSON.parse(localStorage.getItem("user") || "null"); } catch { return null; }
+  })();
+
   // Scroll to top when component mounts
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [slug]);
-  
+
+  useEffect(() => {
+    const fetchTool = async () => {
+      try {
+        const response = await fetch(API_ENDPOINTS.TOOLS);
+        const result = await response.json();
+
+        let foundTool = null;
+        if (result.status === "success") {
+          const dbTool = result.data.find((t: any) =>
+            t.name.toLowerCase().replace(/\s+/g, '-') === slug?.toLowerCase() ||
+            t.id.toString() === slug
+          );
+
+          if (dbTool) {
+            // store all DB tools for alternatives
+            const safeParseAll = (str: string, fallback: any) => {
+              try { return JSON.parse(str); } catch { return fallback; }
+            };
+            setAllDbTools(result.data
+              .filter((t: any) => t.name && t.name.trim() !== "")
+              .map((t: any) => ({
+                name: t.name,
+                description: t.description,
+                category: t.category,
+                pricing: t.pricing,
+                rating: parseFloat(t.rating) || 4.5,
+                icon: t.icon_url
+                  ? (t.icon_url.startsWith('http')
+                    ? t.icon_url
+                    : `${API_BASE_URL}/${t.icon_url.startsWith('/') ? t.icon_url.slice(1) : t.icon_url}`)
+                  : (t.name ? t.name.charAt(0) : '?'),
+              })));
+
+            // Parse JSON fields safely, and unwrap if double-encoded/triple-encoded
+            const safeParse = (str: string, fallback: any) => {
+              if (!str) return fallback;
+              let content = str;
+              // If it starts with [ and ends with ] but isn't valid JSON (e.g. single quotes), fix it
+              if (typeof content === 'string' && content.trim().startsWith('[') && content.trim().endsWith(']')) {
+                const trimmed = content.trim();
+                // Check if it uses single quotes instead of double
+                if (trimmed.includes("'") && !trimmed.includes('"')) {
+                  try {
+                    // Try to convert single quotes to double quotes for JSON.parse
+                    // Simple replacement, won't handle escaped single quotes inside strings perfectly but good for basic tags
+                    const fixed = trimmed.replace(/'/g, '"');
+                    return JSON.parse(fixed);
+                  } catch { }
+                }
+              }
+
+              try {
+                let parsed = JSON.parse(content);
+                // Unload double stringification if any
+                if (typeof parsed === 'string') {
+                  try {
+                    const inner = JSON.parse(parsed);
+                    if (Array.isArray(inner) || typeof inner === 'object') parsed = inner;
+                  } catch { }
+                }
+
+                if (Array.isArray(parsed)) {
+                  return parsed.map(item => {
+                    if (typeof item === 'string' && item.startsWith('[') && item.endsWith(']')) {
+                      // Handle double nested strings like ["[\"Item\"]"]
+                      try {
+                        const sub = JSON.parse(item);
+                        return Array.isArray(sub) ? sub[0] : item;
+                      } catch {
+                        // Try single quote fix for sub-items too
+                        try {
+                          return JSON.parse(item.replace(/'/g, '"'))[0];
+                        } catch { return item; }
+                      }
+                    }
+                    return item;
+                  });
+                }
+                return Array.isArray(parsed) ? parsed : fallback;
+              } catch (e) {
+                // Fallback to splitting by comma if not JSON but comma-separated
+                if (typeof content === 'string') {
+                  // Clean up brackets if they exist but JSON failed
+                  const clean = content.replace(/^\[|\]$/g, '').replace(/'/g, '');
+                  return clean.split(',').map(s => s.trim()).filter(Boolean);
+                }
+                return fallback;
+              }
+            };
+
+            foundTool = {
+              name: dbTool.name,
+              icon: (() => {
+                const nameLower = dbTool.name.toLowerCase();
+                if (nameLower === "chatgpt") return <div className="p-3 rounded-lg bg-gray-900 w-full h-full flex items-center justify-center"><img src={chatgptlogo} alt="ChatGPT" className="w-full h-full object-contain" /></div>;
+                if (nameLower === "midjourney") return <div className="p-3 rounded-lg bg-blue-900 w-full h-full flex items-center justify-center"><img src={midjourneylogo} alt="Midjourney" className="w-full h-full object-contain" /></div>;
+                if (nameLower === "claude") return <div className="p-3 rounded-lg bg-orange-600 w-full h-full flex items-center justify-center"><img src={claudelogo} alt="Claude" className="w-full h-full object-contain" /></div>;
+                if (nameLower === "runway") return <div className="p-3 rounded-lg bg-purple-700 w-full h-full flex items-center justify-center"><img src={runwaylogo} alt="Runway" className="w-full h-full object-contain" /></div>;
+                if (nameLower === "jasper ai" || nameLower === "jasper") return <div className="p-3 rounded-lg bg-yellow-600 w-full h-full flex items-center justify-center"><img src={jasperlogo} alt="Jasper" className="w-full h-full object-contain" /></div>;
+                if (nameLower === "cursor") return <div className="p-3 rounded-lg bg-green-700 w-full h-full flex items-center justify-center"><img src={cursorlogo} alt="Cursor" className="w-full h-full object-contain" /></div>;
+                if (nameLower === "elevenlabs") return <div className="p-3 rounded-lg bg-gradient-to-br from-neutral-900 to-zinc-800 w-full h-full flex items-center justify-center"><img src={elevenlabslogo} alt="ElevenLabs" className="w-full h-full object-contain" /></div>;
+                if (nameLower === "perplexity") return <div className="p-3 rounded-lg bg-gradient-to-br from-emerald-700 to-teal-800 w-full h-full flex items-center justify-center"><img src={perplexitylogo} alt="Perplexity" className="w-full h-full object-contain" /></div>;
+
+                return dbTool.icon_url ? (
+                  <img
+                    src={dbTool.icon_url.startsWith('http')
+                      ? dbTool.icon_url
+                      : `${API_BASE_URL}/${dbTool.icon_url.startsWith('/') ? dbTool.icon_url.slice(1) : dbTool.icon_url}`}
+                    alt={dbTool.name}
+                    className="w-full h-full object-contain"
+                  />
+                ) : (
+                  <div className="text-xl font-bold bg-white text-black w-full h-full flex items-center justify-center rounded-[20px]">
+                    {dbTool.name.charAt(0)}
+                  </div>
+                );
+              })(),
+              description: dbTool.description,
+              category: dbTool.category,
+              pricing: dbTool.pricing,
+              rating: parseFloat(dbTool.rating) || 4.5,
+              reviews: parseInt(dbTool.reviews_count) || 0,
+              website: dbTool.website_url,
+              pros: safeParse(dbTool.pros, []),
+              cons: safeParse(dbTool.cons, []),
+              features: safeParse(dbTool.features, []),
+              pricingTiers: safeParse(dbTool.pricing_tiers, []),
+              media_urls: safeParse(dbTool.media_urls, []),
+            };
+          }
+        }
+
+        // Fallback to local mock data if not in DB
+        if (!foundTool) {
+          foundTool = tools[slug?.toLowerCase() || 'chatgpt'];
+        }
+
+        setTool(foundTool);
+      } catch (error) {
+        setTool(tools[slug?.toLowerCase() || 'chatgpt']);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchTool();
+  }, [slug]);
+
+  // Fetch reviews from DB
+  const fetchReviews = async () => {
+    if (!slug) return;
+    setReviewsLoading(true);
+    try {
+      const res = await fetch(`${API_ENDPOINTS.REVIEWS}?tool_slug=${encodeURIComponent(slug)}`);
+      const result = await res.json();
+      if (result.status === "success") setReviews(result.data);
+    } catch { /* silent */ }
+    finally { setReviewsLoading(false); }
+  };
+
+  useEffect(() => { fetchReviews(); }, [slug]);
+
+  // Submit review
+  const handleSubmitReview = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!currentUser) { navigate("/login"); return; }
+    if (userRating === 0) { toast.error("Please select a star rating."); return; }
+    if (!reviewText.trim()) { toast.error("Please write a review."); return; }
+
+    setSubmitLoading(true);
+    try {
+      const res = await fetch(API_ENDPOINTS.REVIEWS, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          tool_slug: slug,
+          user_id: currentUser.id,
+          user_name: currentUser.fullName || currentUser.email,
+          rating: userRating,
+          review_text: reviewText.trim(),
+        }),
+      });
+      const result = await res.json();
+      if (result.status === "success") {
+        toast.success(result.message);
+        setReviewText("");
+        setUserRating(0);
+        fetchReviews();
+      } else {
+        toast.error(result.message || "Failed to submit review.");
+      }
+    } catch { toast.error("Network error. Please try again."); }
+    finally { setSubmitLoading(false); }
+  };
+
+  const formatDate = (dateStr: string) => {
+    try {
+      const d = new Date(dateStr);
+      const now = new Date();
+      const diffMs = now.getTime() - d.getTime();
+      const diffDays = Math.floor(diffMs / 86400000);
+      if (diffDays === 0) return "Today";
+      if (diffDays === 1) return "Yesterday";
+      if (diffDays < 7) return `${diffDays} days ago`;
+      if (diffDays < 30) return `${Math.floor(diffDays / 7)} week${Math.floor(diffDays / 7) > 1 ? "s" : ""} ago`;
+      return d.toLocaleDateString();
+    } catch { return dateStr; }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    );
+  }
+
   // Fallback if tool not found
   if (!tool) {
     return (
@@ -313,20 +551,20 @@ const ToolDetail = () => {
     );
   }
 
-  const alternatives = trendingTools.filter((t) => t.name !== tool.name).slice(0, 4);
+  const alternatives = allDbTools.filter((t) => t.name !== tool.name).slice(0, 4);
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
-      
+
       {/* Hero Section */}
-      <section className="relative min-h-[60vh] flex items-center justify-center overflow-hidden pt-5 md:pt-10" 
-               style={{
-                 backgroundImage: `url(${runwayvideo})`,
-                 backgroundSize: 'cover',
-                 backgroundPosition: 'center',
-                 backgroundRepeat: 'no-repeat'
-               }}>
-        
+      <section className="relative min-h-[60vh] flex items-center justify-center overflow-hidden pt-5 md:pt-10"
+        style={{
+          backgroundImage: `url(${runwayvideo})`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundRepeat: 'no-repeat'
+        }}>
+
         <div className="relative section-container max-w-6xl mx-auto text-center px-6 z-10">
           <motion.div
             initial={{ opacity: 0, y: 40 }}
@@ -335,7 +573,7 @@ const ToolDetail = () => {
             className="max-w-5xl mx-auto"
           >
             {/* Badge */}
-            <motion.div 
+            <motion.div
               className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-[#FFB347]/30 bg-[#FFB347]/10 backdrop-blur-sm mb-4"
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
@@ -345,7 +583,7 @@ const ToolDetail = () => {
             </motion.div>
 
             {/* Main Headline */}
-            <motion.h1 
+            <motion.h1
               className="font-display text-2xl md:text-4xl font-bold text-white mb-4 leading-tight tracking-tight"
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
@@ -355,13 +593,13 @@ const ToolDetail = () => {
             </motion.h1>
 
             {/* Subheading */}
-            <motion.p 
+            <motion.p
               className="text-lg md:text-xl text-[#AAAAAA] mb-4 max-w-3xl mx-auto leading-relaxed"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.5, duration: 0.8 }}
             >
-              {tool.category} • {tool.pricing} • {tool.rating} ⭐
+              {tool.category} • {tool.pricing} • {reviewsLoading ? tool.rating : displayRating} ⭐
             </motion.p>
           </motion.div>
         </div>
@@ -392,14 +630,21 @@ const ToolDetail = () => {
                 <div className="flex flex-wrap items-center gap-4">
                   <div className="flex items-center gap-1.5">
                     <Star className="w-4 h-4 fill-primary text-primary" />
-                    <span className="font-semibold text-foreground">{tool.rating}</span>
-                    <span className="text-sm text-muted-foreground">({tool.reviews} reviews)</span>
+                    <span className="font-semibold text-foreground">
+                      {reviewsLoading ? tool.rating : displayRating}
+                    </span>
+                    <span className="text-sm text-muted-foreground">
+                      ({displayReviewCount} {displayReviewCount === 1 ? "review" : "reviews"})
+                      {avgRating !== null && (
+                        <span className="ml-1 text-xs text-primary font-medium">• Live avg</span>
+                      )}
+                    </span>
                   </div>
                   <span className="text-xs text-muted-foreground bg-secondary px-2.5 py-1 rounded-md">{tool.category}</span>
                 </div>
               </div>
               <div className="flex gap-3 flex-shrink-0">
-                <a href="#" className="px-6 py-3 bg-primary text-primary-foreground rounded-xl font-medium text-sm hover:bg-primary/90 transition-colors flex items-center gap-2">
+                <a href={tool.website} target="_blank" rel="noopener noreferrer" className="px-6 py-3 bg-primary text-primary-foreground rounded-xl font-medium text-sm hover:bg-primary/90 transition-colors flex items-center gap-2">
                   Visit Website <ExternalLink className="w-4 h-4" />
                 </a>
                 <Link to="/compare" className="px-6 py-3 bg-secondary text-secondary-foreground rounded-xl font-medium text-sm hover:bg-secondary/80 transition-colors">
@@ -607,15 +852,30 @@ const ToolDetail = () => {
                       </div>
                     </>
                   )}
-                  {tool.name !== "ChatGPT" && tool.name !== "Midjourney" && tool.name !== "Claude" && tool.name !== "Cursor" && tool.name !== "Jasper AI" && tool.name !== "ElevenLabs" && tool.name !== "Perplexity" && tool.name !== "Sora" && tool.name !== "Devin" && tool.name !== "Gemini Ultra" && tool.name !== "Udio" && tool.name !== "Runway" && (
+                  {tool.media_urls && tool.media_urls.length > 0 && (
+                    <>
+                      {tool.media_urls.map((url: string, i: number) => {
+                        const fullUrl = url.startsWith('http')
+                          ? url
+                          : `${API_BASE_URL}/${url.startsWith('/') ? url.slice(1) : url}`;
+
+                        return (
+                          <div key={i} className="aspect-video bg-black/50 border border-white/20 rounded-xl overflow-hidden">
+                            <img src={fullUrl} alt={`${tool.name} Screenshot ${i + 1}`} className="w-full h-full object-cover" />
+                          </div>
+                        );
+                      })}
+                    </>
+                  )}
+                  {(!tool.media_urls || tool.media_urls.length === 0) && tool.name !== "ChatGPT" && tool.name !== "Midjourney" && tool.name !== "Claude" && tool.name !== "Cursor" && tool.name !== "Jasper AI" && tool.name !== "ElevenLabs" && tool.name !== "Perplexity" && tool.name !== "Sora" && tool.name !== "Devin" && tool.name !== "Gemini Ultra" && tool.name !== "Udio" && tool.name !== "Runway" && (
                     <>
                       {[1, 2, 3, 4].map((i) => (
                         <div key={i} className="aspect-video bg-black/50 border border-white/20 rounded-xl flex items-center justify-center">
                           <div className="text-center">
                             <div className="w-16 h-16 mx-auto mb-3 rounded-lg bg-[#FFB347]/20 flex items-center justify-center">
                               <svg className="w-8 h-8 text-[#FFB347]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <rect x="3" y="3" width="18" height="18" rx="2" ry="2" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                                <path d="M8 12h8M12 8v8M8 16h8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                <rect x="3" y="3" width="18" height="18" rx="2" ry="2" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                <path d="M8 12h8M12 8v8M8 16h8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                               </svg>
                             </div>
                             <div className="text-sm font-medium text-white mb-1">Screenshot {i}</div>
@@ -632,38 +892,131 @@ const ToolDetail = () => {
               <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }} className="glass-card p-6">
                 <h2 className="font-display text-xl font-semibold text-foreground mb-4">Key Features</h2>
                 <div className="grid grid-cols-2 gap-3">
-                  {tool.features.map((f) => (
-                    <div key={f} className="flex items-center gap-2 text-sm text-foreground">
+                  {tool.features?.map((f: string, index: number) => (
+                    <div key={index} className="flex items-center gap-2 text-sm text-foreground">
                       <Check className="w-4 h-4 text-primary flex-shrink-0" /> {f}
                     </div>
                   ))}
                 </div>
               </motion.div>
 
-              {/* Reviews */}
-              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="glass-card p-6">
-                <h2 className="font-display text-xl font-semibold text-foreground mb-4">User Reviews</h2>
-                <div className="space-y-4">
-                  {reviews.map((r, i) => (
-                    <div key={i} className="p-4 bg-secondary/50 rounded-xl">
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center gap-2">
-                          <span className="font-medium text-foreground text-sm">{r.user}</span>
-                          <div className="flex">
-                            {Array.from({ length: r.rating }).map((_, j) => (
-                              <Star key={j} className="w-3 h-3 fill-primary text-primary" />
-                            ))}
-                          </div>
-                        </div>
-                        <span className="text-xs text-muted-foreground">{r.date}</span>
-                      </div>
-                      <p className="text-sm text-muted-foreground mb-2">{r.text}</p>
-                      <button className="flex items-center gap-1 text-xs text-muted-foreground hover:text-primary transition-colors">
-                        <ThumbsUp className="w-3 h-3" /> Helpful ({r.helpful})
-                      </button>
-                    </div>
-                  ))}
+              {/* Reviews Section */}
+              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="glass-card p-6 space-y-6">
+                <div className="flex items-center justify-between">
+                  <h2 className="font-display text-xl font-semibold text-foreground">User Reviews</h2>
+                  <span className="text-sm text-muted-foreground">{reviews.length} review{reviews.length !== 1 ? "s" : ""}</span>
                 </div>
+
+                {/* ── Submit Review Form ── */}
+                {currentUser ? (
+                  <form onSubmit={handleSubmitReview} className="p-4 bg-white/5 border border-white/10 rounded-2xl space-y-4">
+                    <p className="text-sm font-semibold text-foreground">Write a Review</p>
+
+                    {/* Star Picker */}
+                    <div className="flex items-center gap-1">
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <button
+                          key={star}
+                          type="button"
+                          onClick={() => setUserRating(star)}
+                          onMouseEnter={() => setHoverRating(star)}
+                          onMouseLeave={() => setHoverRating(0)}
+                          className="transition-transform hover:scale-110"
+                        >
+                          <Star
+                            className={`w-6 h-6 ${star <= (hoverRating || userRating)
+                              ? "fill-primary text-primary"
+                              : "fill-transparent text-muted-foreground"
+                              }`}
+                          />
+                        </button>
+                      ))}
+                      {userRating > 0 && (
+                        <span className="ml-2 text-xs text-muted-foreground">
+                          {["Poor", "Fair", "Good", "Great", "Excellent"][userRating - 1]}
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Review Text */}
+                    <textarea
+                      value={reviewText}
+                      onChange={(e) => setReviewText(e.target.value)}
+                      placeholder="Share your experience with this tool..."
+                      rows={3}
+                      className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary transition-colors resize-none"
+                    />
+
+                    <button
+                      type="submit"
+                      disabled={submitLoading}
+                      className="flex items-center gap-2 px-5 py-2.5 bg-primary text-primary-foreground rounded-xl font-semibold text-sm hover:bg-primary/90 transition-colors disabled:opacity-50"
+                    >
+                      {submitLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                      {submitLoading ? "Submitting..." : "Submit Review"}
+                    </button>
+                  </form>
+                ) : (
+                  <div className="p-4 bg-white/5 border border-white/10 rounded-2xl flex items-center justify-between">
+                    <p className="text-sm text-muted-foreground">Log in to leave a review for this tool.</p>
+                    <Link
+                      to="/login"
+                      className="flex items-center gap-1.5 text-sm text-primary font-semibold hover:underline"
+                    >
+                      <LogIn className="w-4 h-4" /> Log In
+                    </Link>
+                  </div>
+                )}
+
+                {/* ── Reviews List ── */}
+                {reviewsLoading ? (
+                  <div className="flex items-center justify-center py-8">
+                    <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+                  </div>
+                ) : reviews.length === 0 ? (
+                  <div className="text-center py-8">
+                    <p className="text-2xl mb-2">💬</p>
+                    <p className="text-muted-foreground text-sm">No reviews yet. Be the first!</p>
+                  </div>
+                ) : (
+                  <AnimatePresence>
+                    <div className="space-y-3">
+                      {reviews.map((r, i) => (
+                        <motion.div
+                          key={r.id}
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: i * 0.05 }}
+                          className="p-4 bg-secondary/50 rounded-xl"
+                        >
+                          <div className="flex items-start justify-between mb-2">
+                            <div className="flex items-center gap-2">
+                              <div className="w-8 h-8 rounded-full bg-primary/20 border border-primary/30 flex items-center justify-center text-xs font-bold text-primary">
+                                {(r.user_name || "?").charAt(0).toUpperCase()}
+                              </div>
+                              <div>
+                                <span className="font-medium text-foreground text-sm block">{r.user_name}</span>
+                                <div className="flex">
+                                  {[1, 2, 3, 4, 5].map((s) => (
+                                    <Star
+                                      key={s}
+                                      className={`w-3 h-3 ${s <= r.rating
+                                        ? "fill-primary text-primary"
+                                        : "fill-transparent text-muted-foreground"
+                                        }`}
+                                    />
+                                  ))}
+                                </div>
+                              </div>
+                            </div>
+                            <span className="text-xs text-muted-foreground flex-shrink-0">{formatDate(r.created_at)}</span>
+                          </div>
+                          <p className="text-sm text-muted-foreground leading-relaxed">{r.review_text}</p>
+                        </motion.div>
+                      ))}
+                    </div>
+                  </AnimatePresence>
+                )}
               </motion.div>
             </div>
 
@@ -673,15 +1026,15 @@ const ToolDetail = () => {
               <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="glass-card p-6">
                 <h2 className="font-display text-xl font-semibold text-foreground mb-4">Pricing</h2>
                 <div className="space-y-3">
-                  {tool.pricingTiers.map((tier) => (
-                    <div key={tier.name} className="p-4 bg-secondary/50 rounded-xl">
+                  {tool.pricingTiers?.map((tier: any, index: number) => (
+                    <div key={index} className="p-4 bg-secondary/50 rounded-xl">
                       <div className="flex items-center justify-between mb-2">
                         <span className="font-medium text-foreground">{tier.name}</span>
                         <span className="text-primary font-semibold">{tier.price}</span>
                       </div>
                       <ul className="space-y-1">
-                        {tier.features.map((f) => (
-                          <li key={f} className="text-xs text-muted-foreground flex items-center gap-1.5">
+                        {tier.features?.map((f: string, i: number) => (
+                          <li key={i} className="text-xs text-muted-foreground flex items-center gap-1.5">
                             <Check className="w-3 h-3 text-primary" /> {f}
                           </li>
                         ))}
@@ -695,16 +1048,16 @@ const ToolDetail = () => {
               <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }} className="glass-card p-6">
                 <h2 className="font-display text-xl font-semibold text-foreground mb-4">Pros & Cons</h2>
                 <div className="space-y-3 mb-4">
-                  {tool.pros.map((p) => (
-                    <div key={p} className="flex items-start gap-2 text-sm">
+                  {tool.pros?.map((p: string, i: number) => (
+                    <div key={i} className="flex items-start gap-2 text-sm">
                       <Check className="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
                       <span className="text-foreground">{p}</span>
                     </div>
                   ))}
                 </div>
                 <div className="space-y-3">
-                  {tool.cons.map((c) => (
-                    <div key={c} className="flex items-start gap-2 text-sm">
+                  {tool.cons?.map((c: string, i: number) => (
+                    <div key={i} className="flex items-start gap-2 text-sm">
                       <X className="w-4 h-4 text-destructive flex-shrink-0 mt-0.5" />
                       <span className="text-foreground">{c}</span>
                     </div>
