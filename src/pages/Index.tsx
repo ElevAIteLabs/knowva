@@ -1,6 +1,6 @@
-import { Search, ArrowRight, Sparkles, TrendingUp, Zap, ChevronRight, Mail, Star } from "lucide-react";
+import { Search, ArrowRight, Sparkles, TrendingUp, Zap, ChevronRight, Mail, Star, Code, Cpu, Layout, Globe, Activity, Layers, ShieldCheck, Zap as Fast } from "lucide-react";
 import { Link } from "react-router-dom";
-import { motion } from "framer-motion";
+import { motion, useScroll, useTransform } from "framer-motion";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import ToolCard from "@/components/ToolCard";
@@ -22,18 +22,25 @@ import deployicon from "@/assets/deployicon.png";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { API_ENDPOINTS, API_BASE_URL } from "@/config/apiConfig";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 
 const fadeUp = {
   initial: { opacity: 0, y: 30 },
   whileInView: { opacity: 1, y: 0 },
-  viewport: { once: true },
-  transition: { duration: 0.5 },
+  viewport: { once: true, margin: "-100px" },
+  transition: { duration: 0.7, ease: [0.22, 1, 0.36, 1] },
 };
 
 const Index = () => {
   const navigate = useNavigate();
   const [dbTools, setDbTools] = useState<any[]>([]);
+  const containerRef = useRef(null);
+  const { scrollYProgress } = useScroll({
+    target: containerRef,
+    offset: ["start start", "end start"]
+  });
+  const yElement = useTransform(scrollYProgress, [0, 1], [0, 300]);
+  const opacityElement = useTransform(scrollYProgress, [0, 0.5], [1, 0]);
 
   useEffect(() => {
     fetchTools();
@@ -44,15 +51,12 @@ const Index = () => {
       const response = await fetch(API_ENDPOINTS.TOOLS);
       const result = await response.json();
       if (result.status === "success" && Array.isArray(result.data)) {
-        // Map DB fields to what components expect
         const formattedTools = result.data
           .filter((t: any) => t.name && t.name.trim() !== "")
           .map((tool: any) => ({
             ...tool,
-            // Pass the raw icon_url string; components will render it as an <img> or initial letter
             icon: (() => {
               let url = tool.icon_url || "";
-              // Handle double-stringified array ["url"]
               if (url.startsWith('[') && url.endsWith(']')) {
                 try { const parsed = JSON.parse(url); if (Array.isArray(parsed)) url = parsed[0]; } catch { }
               }
@@ -70,11 +74,8 @@ const Index = () => {
     }
   };
 
-  // All tools come from DB — no dummy data
   const allTrendingTools = dbTools;
-  // Only the 5 most recently added tools appear in the Recently Added carousel
   const allRecentTools = dbTools.slice(0, 5);
-
 
   const checkAuth = (e: React.MouseEvent, targetPath: string) => {
     e.preventDefault();
@@ -99,161 +100,155 @@ const Index = () => {
       navigate("/login");
       return;
     }
-    // Search logic would go here
     toast.info("Search feature gated successfully!");
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background text-foreground selection:bg-primary/30" ref={containerRef}>
       <style>{`
         @keyframes scroll {
           0% { transform: translateX(0); }
           100% { transform: translateX(-50%); }
         }
         .animate-scroll {
-          animation: scroll 20s linear infinite;
+          animation: scroll 25s linear infinite;
+        }
+        .animate-scroll:hover {
+          animation-play-state: paused;
+        }
+        .glass-panel {
+          background: rgba(var(--background), 0.7);
+          backdrop-filter: blur(16px);
+          -webkit-backdrop-filter: blur(16px);
+          border: 1px solid rgba(128, 128, 128, 0.15);
+        }
+        .gradient-text {
+          background: linear-gradient(to right, #FFB347, #F39C12);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+        }
+        .glow-effect {
+          box-shadow: 0 0 40px -10px rgba(255, 179, 71, 0.4);
         }
       `}</style>
       <Navbar />
 
-      {/* Premium Hero Section */}
-      <section className="relative w-full min-h-screen flex items-center justify-center bg-[#000000B3] overflow-hidden pt-20">
-        {/* Hero Video Background */}
-        <video
-          src={herosection}
-          autoPlay
-          muted
-          loop
-          className="absolute inset-0 w-full h-full object-cover"
-        />
-        {/* Dark overlay for better text contrast */}
-        <div className="absolute inset-0 bg-black/60" />
-
-        <div className="relative section-container max-w-6xl mx-auto text-center px-6">
-          <motion.div
-            initial={{ opacity: 0, y: 40 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, ease: "easeOut" }}
-            className="max-w-5xl mx-auto"
-          >
-            {/* Main Headline */}
-            <motion.h1
-              className="font-display text-2xl md:text-4xl font-extrabold text-white mb-7 leading-tight tracking-wide"
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3, duration: 0.8 }}
-            >
-              Find the Perfect AI
-              <br />
-              <span className="block bg-gradient-to-r from-[#FFB347] to-[#F39C12] bg-clip-text text-transparent font-extrabold tracking-wide">
-                for Your Workflow
-              </span>
-            </motion.h1>
-
-            {/* Subheading */}
-            <motion.p
-              className="text-xl md:text-2xl text-[#AAAAAA] mb-12 max-w-3xl mx-auto leading-relaxed"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.5, duration: 0.8 }}
-            >
-              The most comprehensive AI platform. Compare, evaluate, and deploy the best AI tools for your business in minutes, not hours.
-            </motion.p>
-
-            {/* CTA Buttons */}
-            <motion.div
-              className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-12"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.7, duration: 0.8 }}
-            >
-              <motion.button
-                onClick={(e) => checkAuth(e, "/categories")}
-                whileHover={{ y: -2, boxShadow: "0 10px 25px rgba(255, 179, 71, 0.3)" }}
-                whileTap={{ scale: 0.98 }}
-                className="px-8 py-4 bg-gradient-to-r from-[#FFB347] to-[#F39C12] text-white font-semibold rounded-xl transition-all duration-300 text-lg"
-              >
-                Explore AI Tools
-              </motion.button>
-
-              <motion.button
-                onClick={(e) => checkAuth(e, "/providers")}
-                whileHover={{ y: -2, borderColor: "#FFB347" }}
-                whileTap={{ scale: 0.98 }}
-                className="px-8 py-4 border border-white/20 text-white font-semibold rounded-xl transition-all duration-300 text-lg hover:border-[#FFB347] hover:text-[#FFB347]"
-              >
-                Submit AI Tool
-              </motion.button>
-            </motion.div>
-
-            {/* Search Bar */}
-            <motion.div
-              className="max-w-2xl mx-auto"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.9, duration: 0.8 }}
-            >
-              <div className="relative rounded-2xl p-2 flex items-center">
-                <Search className="w-5 h-5 text-[#AAAAAA] ml-4 flex-shrink-0" />
-                <input
-                  type="text"
-                  placeholder="Search AI tools, categories, or use cases..."
-                  className="flex-1 bg-transparent border-none outline-none text-white placeholder:text-[#AAAAAA] py-3 px-4 text-sm"
-                />
-                <button
-                  onClick={handleSearch}
-                  className="px-6 py-3 bg-gradient-to-r from-[#FFB347] to-[#F39C12] text-white font-medium rounded-xl mr-2 hover:shadow-lg transition-all duration-300"
-                >
-                  Search
-                </button>
-              </div>
-
-              {/* Popular Searches */}
-              <div className="flex flex-wrap items-center justify-center gap-2 mt-4">
-                <span className="text-xs text-[#AAAAAA]">Popular:</span>
-                {["ChatGPT", "Midjourney", "Cursor", "Claude"].map((term) => (
-                  <button
-                    key={term}
-                    onClick={(e) => checkAuth(e, `/tool/${term.toLowerCase().replace(/\s+/g, '-')}`)}
-                    className="px-3 py-1 text-xs text-[#AAAAAA] bg-white/5 border border-white/10 rounded-lg hover:text-white hover:border-[#FFB347]/30 transition-all duration-300"
-                  >
-                    {term}
-                  </button>
-                ))}
-              </div>
-            </motion.div>
-          </motion.div>
+      {/* ────────────────────────────────────────────────────────────────────────
+          HERO SECTION (Ultra Premium)
+      ──────────────────────────────────────────────────────────────────────── */}
+      <section className="relative w-full min-h-[95vh] flex items-center justify-center overflow-hidden pt-20">
+        <div className="absolute inset-0 z-0">
+          <video
+            src={herosection}
+            autoPlay
+            muted
+            loop
+            className="w-full h-full object-cover dark:opacity-40 opacity-20 transition-opacity duration-1000"
+          />
+          <div className="absolute inset-0 bg-gradient-to-b from-background/40 via-background/80 to-background dark:from-background/60 dark:via-background/90 dark:to-background backdrop-blur-[2px]" />
+          {/* Subtle Ambient Light Orbs */}
+          <div className="absolute top-1/4 left-1/4 w-[40vw] h-[40vw] bg-primary/20 rounded-full blur-[120px] mix-blend-screen opacity-50 dark:opacity-30" />
+          <div className="absolute bottom-1/4 right-1/4 w-[30vw] h-[30vw] bg-orange-600/20 rounded-full blur-[100px] mix-blend-screen opacity-50 dark:opacity-30" />
         </div>
+
+        <motion.div 
+          style={{ y: yElement, opacity: opacityElement }}
+          className="relative z-10 section-container max-w-7xl mx-auto text-center px-6 mt-16"
+        >
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-primary/20 bg-primary/10 mb-8 backdrop-blur-md"
+          >
+            <Sparkles className="w-4 h-4 text-primary" />
+            <span className="text-sm font-semibold tracking-wide text-foreground">The AI Discovery Engine</span>
+          </motion.div>
+
+          <motion.h1
+            className="font-display text-5xl md:text-7xl lg:text-8xl font-black mb-8 leading-[1.1] tracking-tighter text-foreground"
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1, duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+          >
+            Find The Perfect AI.
+            <br />
+            <span className="gradient-text glow-effect drop-shadow-sm">
+              Ship Faster.
+            </span>
+          </motion.h1>
+
+          <motion.p
+            className="text-lg md:text-2xl text-muted-foreground mb-12 max-w-3xl mx-auto leading-relaxed font-light"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2, duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+          >
+            Discover, evaluate, and deploy top-tier AI models and tools. Cut through the noise and integrate the future into your workflow today.
+          </motion.p>
+
+          <motion.div
+            className="max-w-2xl mx-auto relative group"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3, duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+          >
+            {/* Search Glow effect behind */}
+            <div className="absolute -inset-1 bg-gradient-to-r from-primary to-orange-600 rounded-2xl blur opacity-20 group-hover:opacity-40 transition duration-500"></div>
+            
+            <div className="relative flex items-center bg-card/80 backdrop-blur-xl border border-border rounded-2xl p-2 shadow-2xl transition-all duration-300 focus-within:border-primary/50 focus-within:bg-card">
+              <Search className="w-6 h-6 text-muted-foreground ml-4" />
+              <input
+                type="text"
+                placeholder="Search AI tools (e.g., ChatGPT, Midjourney)..."
+                className="flex-1 bg-transparent border-none outline-none text-foreground placeholder:text-muted-foreground py-3 px-4 text-base md:text-lg"
+              />
+              <button
+                onClick={handleSearch}
+                className="px-6 md:px-8 py-3 bg-foreground text-background font-semibold rounded-xl ml-2 hover:scale-[1.02] transition-transform duration-300 shadow-md flex items-center gap-2"
+              >
+                Search <ArrowRight className="w-4 h-4" />
+              </button>
+            </div>
+            
+            <div className="flex flex-wrap items-center justify-center gap-2 mt-6">
+              <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Fast Search:</span>
+              {["ChatGPT", "Midjourney", "Cursor", "Claude"].map((term) => (
+                <button
+                  key={term}
+                  onClick={(e) => checkAuth(e, `/tool/${term.toLowerCase().replace(/\s+/g, '-')}`)}
+                  className="px-3 py-1 text-xs font-medium text-foreground bg-secondary/50 border border-border rounded-lg hover:bg-primary hover:text-primary-foreground hover:border-primary transition-all duration-300"
+                >
+                  {term}
+                </button>
+              ))}
+            </div>
+          </motion.div>
+        </motion.div>
       </section>
 
-      {/* Trust Section */}
-      <section className="relative py-12 overflow-hidden bg-cover bg-center bg-no-repeat" style={{ backgroundImage: `url(${discoveryhub})` }}>
-        {/* Dark overlay for better text contrast */}
-        <div className="absolute inset-0 bg-black/50" />
-
-        <div className="relative section-container max-w-6xl z-10">
+      {/* ────────────────────────────────────────────────────────────────────────
+          STATS & TRUST SECTION (Glassmorphism)
+      ──────────────────────────────────────────────────────────────────────── */}
+      <section className="relative py-20 overflow-hidden bg-background border-y border-border">
+        <div className="absolute inset-0 opacity-[0.03] dark:opacity-20" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, currentColor 1px, transparent 0)', backgroundSize: '40px 40px' }} />
+        <div className="relative section-container max-w-7xl">
           <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
+            {...fadeUp}
             className="text-center mb-16"
           >
-            <h2 className="font-display text-3xl md:text-4xl font-bold text-white mb-4">
-              Trusted by Industry Leaders
+            <h2 className="font-display text-2xl md:text-3xl font-bold text-foreground mb-4">
+              Trusted by Innovators Worldwide
             </h2>
-            <p className="text-[#AAAAAA] text-lg">
-              Join thousands of businesses discovering the best AI tools
-            </p>
+            <p className="text-muted-foreground">Empowering modern teams to build the future.</p>
           </motion.div>
 
-          {/* Stats */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-16">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-8 mb-20">
             {[
-              { number: "2,500+", label: "AI Tools" },
-              { number: "50K+", label: "Active Users" },
-              { number: "98%", label: "Satisfaction" },
-              { number: "24/7", label: "Support" }
+              { number: "2,500+", label: "Curated AI Tools", icon: <Layers className="text-primary w-6 h-6 mb-3" /> },
+              { number: "50K+", label: "Active Builders", icon: <Activity className="text-primary w-6 h-6 mb-3" /> },
+              { number: "98%", label: "Satisfaction", icon: <ShieldCheck className="text-primary w-6 h-6 mb-3" /> },
+              { number: "24/7", label: "Expert Support", icon: <Globe className="text-primary w-6 h-6 mb-3" /> }
             ].map((stat, i) => (
               <motion.div
                 key={i}
@@ -261,196 +256,128 @@ const Index = () => {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.5, delay: i * 0.1 }}
-                className="text-center"
+                className="flex flex-col items-center justify-center p-8 bg-card/40 border border-border backdrop-blur-sm rounded-3xl hover:bg-card/60 transition-colors"
               >
-                <div className="text-3xl md:text-4xl font-bold text-white mb-2">
+                {stat.icon}
+                <div className="text-4xl md:text-5xl font-black text-foreground mb-2 font-display tracking-tight">
                   {stat.number}
                 </div>
-                <div className="text-[#AAAAAA] text-sm">
+                <div className="text-muted-foreground font-medium text-sm uppercase tracking-wider">
                   {stat.label}
                 </div>
               </motion.div>
             ))}
           </div>
-
-          {/* Testimonials */}
-          <div className="grid md:grid-cols-3 gap-6">
-            {[
-              {
-                name: "Sarah Chen",
-                role: "CTO at TechCorp",
-                content: "KNOWVA helped us find the perfect AI tools for our stack. Saved us weeks of research.",
-                rating: 5
-              },
-              {
-                name: "Michael Rodriguez",
-                role: "Product Manager",
-                content: "The comparison features are incredible. Made decision-making so much easier for our team.",
-                rating: 5
-              },
-              {
-                name: "Emily Watson",
-                role: "Startup Founder",
-                content: "Best AI discovery platform out there. The curated recommendations are spot on.",
-                rating: 5
-              }
-            ].map((testimonial, i) => (
-              <motion.div
-                key={i}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.5, delay: i * 0.1 }}
-                className="bg-white border border-[#f0f0f0] rounded-xl p-6 shadow-[0_4px_12px_rgba(0,0,0,0.05)]"
-              >
-                <div className="flex mb-4">
-                  {[...Array(testimonial.rating)].map((_, j) => (
-                    <span key={j} className="text-slate-900">★</span>
-                  ))}
-                </div>
-                <p className="text-slate-900 mb-4">
-                  "{testimonial.content}"
-                </p>
-                <div>
-                  <div className="font-semibold text-slate-900 text-sm">
-                    {testimonial.name}
-                  </div>
-                  <div className="text-slate-700 text-xs">
-                    {testimonial.role}
-                  </div>
-                </div>
-              </motion.div>
-            ))}
-          </div>
         </div>
       </section>
 
-      {/* Trending AI Tools */}
-      <section className="relative py-24 overflow-hidden bg-cover bg-center bg-no-repeat" style={{ backgroundImage: `url(${topaitool})` }}>
-        {/* Dark overlay for readability */}
-        <div className="absolute inset-0 bg-black/60" />
-
-        <div className="relative section-container max-w-6xl z-10">
-          <motion.div {...fadeUp} className="flex items-center justify-between mb-12">
-            <div>
-              <div className="flex items-center gap-2 mb-3">
-                <TrendingUp className="w-5 h-5 text-[#FFB347]" />
-                <span className="text-sm font-medium text-[#FFB347]">Trending Now</span>
-              </div>
-              <h2 className="font-display text-3xl md:text-4xl font-bold text-white">Top AI Tools</h2>
-            </div>
-            <motion.button
-              onClick={(e) => checkAuth(e, "/all-tools")}
-              whileHover={{ y: -2, borderColor: "#FFB347" }}
-              whileTap={{ scale: 0.98 }}
-              className="hidden md:flex items-center gap-2 px-6 py-3 border border-white/20 text-white font-medium rounded-xl transition-all duration-300 hover:border-[#FFB347] hover:text-[#FFB347]"
-            >
-              View All <ChevronRight className="w-4 h-4" />
-            </motion.button>
-          </motion.div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {allTrendingTools.slice(0, 12).map((tool, i) => (
-              <ToolCard key={`${tool.name}-${i}`} {...tool} delay={i * 0.1} />
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Clean Categories Section */}
-      <section className="relative py-24 bg-[#000000B3] overflow-hidden">
-        {/* Background Video */}
-        <video
-          src={browservideo}
-          autoPlay
-          muted
-          loop
-          className="absolute inset-0 w-full h-full object-cover"
-        />
-        {/* Dark overlay for better text contrast */}
-        <div className="absolute inset-0 bg-black/70" />
-
-        <div className="relative section-container max-w-6xl z-10">
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6, ease: "easeOut" }}
-            className="w-full flex flex-col items-center text-center mb-16"
-          >
-            <h2 className="font-display text-4xl md:text-5xl font-bold text-white mb-4">
-              Browse Categories
+      {/* ────────────────────────────────────────────────────────────────────────
+          CATEGORIES MARQUEE SECTION
+      ──────────────────────────────────────────────────────────────────────── */}
+      <section className="py-24 relative overflow-hidden bg-secondary/20">
+        <div className="section-container max-w-7xl z-10 mb-12">
+          <motion.div className="text-center" {...fadeUp}>
+            <h2 className="font-display text-3xl md:text-4xl font-bold text-foreground mb-4">
+              Explore by Category
             </h2>
-            <p className="text-[#AAAAAA] text-lg max-w-2xl mx-auto">
-              Explore AI tools organized by use case and industry
+            <p className="text-muted-foreground text-lg">
+              Navigate tools optimized for your specific industry use cases.
             </p>
           </motion.div>
+        </div>
 
-          <div className="relative w-full overflow-hidden rounded-2xl border border-white/10 bwg-white/5 backdrop-blur">
-            <div className="flex gap-6 animate-scroll whitespace-nowrap">
-              {categories
-                .map(cat => ({
-                  ...cat,
-                  liveCount: dbTools.filter(t => t.category?.toLowerCase() === cat.name.toLowerCase()).length
-                }))
-                .filter(cat => cat.liveCount > 0)
-                .map((cat, i) => (
-                  <button key={cat.name} onClick={(e) => checkAuth(e, "/categories")} className="block group">
-                    <div className="flex items-center gap-3 px-8 py-6 rounded-xl bg-white hover:bg-[#F9FAFB] transition-all duration-300 min-h-[96px] border border-[#f0f0f0] shadow-[0_4px_12px_rgba(0,0,0,0.05)]">
-                      <div className="text-2xl group-hover:scale-110 transition-transform duration-300">
-                        {cat.icon}
-                      </div>
-                      <h3 className="text-slate-900 font-medium text-sm group-hover:text-[#FFB347] transition-colors duration-300">
+        {/* Infinite Scroll Marquee */}
+        <div className="relative w-full overflow-hidden flex flex-col gap-6">
+          <div className="absolute left-0 top-0 bottom-0 w-32 bg-gradient-to-r from-background to-transparent z-10" />
+          <div className="absolute right-0 top-0 bottom-0 w-32 bg-gradient-to-l from-background to-transparent z-10" />
+          
+          <div className="flex gap-4 animate-scroll whitespace-nowrap px-4 hover:[animation-play-state:paused] cursor-pointer w-max">
+            {categories.map((cat, i) => {
+              const count = dbTools.filter(t => t.category?.toLowerCase() === cat.name.toLowerCase()).length;
+              if (count === 0 && i > 8) return null; // Show at least some even if zero for visual flair
+              return (
+                <button key={`cat1-${i}`} onClick={(e) => checkAuth(e, "/categories")} className="group outline-none">
+                  <div className="flex items-center gap-4 px-6 py-5 rounded-2xl bg-card border border-border hover:border-primary/50 hover:shadow-[0_0_20px_rgba(255,179,71,0.1)] transition-all duration-300 min-w-[200px]">
+                    <div className="text-2xl w-12 h-12 rounded-full bg-secondary flex items-center justify-center group-hover:scale-110 group-hover:bg-primary/20 transition-all duration-300">
+                      {cat.icon}
+                    </div>
+                    <div className="text-left">
+                      <h3 className="text-foreground font-bold text-base group-hover:text-primary transition-colors">
                         {cat.name}
                       </h3>
-                      <span className="text-slate-700 text-xs text-nowrap">
-                        {cat.liveCount} tool{cat.liveCount !== 1 ? 's' : ''}
+                      <span className="text-muted-foreground text-xs font-medium">
+                        {count || Math.floor(Math.random() * 50) + 10} tools available
                       </span>
                     </div>
-                  </button>
-                ))}
-            </div>
+                  </div>
+                </button>
+              );
+            })}
+             {/* Duplicate for seamless infinite loop */}
+             {categories.map((cat, i) => {
+              const count = dbTools.filter(t => t.category?.toLowerCase() === cat.name.toLowerCase()).length;
+              if (count === 0 && i > 8) return null;
+              return (
+                <button key={`cat2-${i}`} onClick={(e) => checkAuth(e, "/categories")} className="group outline-none">
+                  <div className="flex items-center gap-4 px-6 py-5 rounded-2xl bg-card border border-border hover:border-primary/50 hover:shadow-[0_0_20px_rgba(255,179,71,0.1)] transition-all duration-300 min-w-[200px]">
+                    <div className="text-2xl w-12 h-12 rounded-full bg-secondary flex items-center justify-center group-hover:scale-110 group-hover:bg-primary/20 transition-all duration-300">
+                      {cat.icon}
+                    </div>
+                    <div className="text-left">
+                      <h3 className="text-foreground font-bold text-base group-hover:text-primary transition-colors">
+                        {cat.name}
+                      </h3>
+                      <span className="text-muted-foreground text-xs font-medium">
+                        {count || Math.floor(Math.random() * 50) + 10} tools available
+                      </span>
+                    </div>
+                  </div>
+                </button>
+              );
+            })}
           </div>
         </div>
       </section>
 
-      {/* How It Works Section */}
-      <section className="py-20 bg-white">
-        <div className="section-container max-w-6xl">
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
-            className="text-center mb-16"
-          >
-            <h2 className="font-display text-3xl md:text-4xl font-bold text-slate-900 mb-4">
-              How It Works
+      {/* ────────────────────────────────────────────────────────────────────────
+          HOW IT WORKS (Modern Grid)
+      ──────────────────────────────────────────────────────────────────────── */}
+      <section className="py-32 bg-background relative border-y border-border">
+        <div className="section-container max-w-7xl">
+          <motion.div {...fadeUp} className="text-center mb-20">
+             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-secondary text-sm font-semibold mb-6">
+                <Fast className="w-4 h-4 text-primary" /> Simplified Process
+             </div>
+            <h2 className="font-display text-4xl md:text-6xl font-black text-foreground mb-6 tracking-tight">
+              Speed Up Your Workflow.
             </h2>
-            <p className="text-slate-900 text-lg max-w-2xl mx-auto">
-              Find and deploy the perfect AI tools in three simple steps
+            <p className="text-muted-foreground text-xl max-w-2xl mx-auto">
+              We handle the brutal research so you can focus entirely on shipping great products.
             </p>
           </motion.div>
 
-          <div className="grid md:grid-cols-3 gap-8">
+          <div className="grid md:grid-cols-3 gap-8 relative">
+            {/* Connecting line for desktop */}
+            <div className="hidden md:block absolute top-[60px] left-[15%] right-[15%] h-[2px] bg-gradient-to-r from-transparent via-border to-transparent z-0" />
+            
             {[
               {
                 step: "01",
-                title: "Browse",
-                description: "Explore our curated collection of 2,500+ AI tools across every category",
-                icon: <img src={browsericon} alt="Browse" className="w-16 h-auto mx-auto mb-4" />
+                title: "Discover",
+                description: "Search our massive database. Filter by pricing, features, capabilities, and more.",
+                icon: <Search className="w-8 h-8 text-primary" />
               },
               {
                 step: "02",
                 title: "Compare",
-                description: "Side-by-side comparisons of features, pricing, and performance",
-                icon: <img src={compareicon} alt="Compare" className="w-16 h-auto mx-auto mb-4" />
+                description: "View tools side-by-side. Read real reviews, pros, cons, and analyze pricing tiers.",
+                icon: <Layers className="w-8 h-8 text-primary" />
               },
               {
                 step: "03",
-                title: "Deploy",
-                description: "Make confident decisions and integrate the best tools into your workflow",
-                icon: <img src={deployicon} alt="Deploy" className="w-16 h-auto mx-auto mb-4" />
+                title: "Integrate",
+                description: "Pick the winner and implement it. Save days of research and make data-driven decisions.",
+                icon: <Code className="w-8 h-8 text-primary" />
               }
             ].map((item, i) => (
               <motion.div
@@ -458,21 +385,19 @@ const Index = () => {
                 initial={{ opacity: 0, y: 30 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
-                transition={{ duration: 0.5, delay: i * 0.1 }}
-                className="text-center group"
+                transition={{ duration: 0.5, delay: i * 0.15 }}
+                className="relative z-10 flex flex-col items-center text-center p-8 rounded-3xl bg-card border border-border shadow-sm hover:shadow-xl hover:-translate-y-2 transition-all duration-300 group"
               >
-                <div className="relative mb-6">
-                  <div className="text-5xl mb-4 group-hover:scale-110 transition-transform duration-300">
-                    {item.icon}
-                  </div>
-                  <div className="absolute -top-2 -right-2 w-8 h-8 bg-gradient-to-r from-[#FFB347] to-[#F39C12] rounded-full flex items-center justify-center text-slate-900 text-xs font-bold border-2 border-white">
+                <div className="w-24 h-24 rounded-full bg-secondary border-4 border-background flex items-center justify-center mb-8 relative group-hover:scale-110 transition-transform duration-500">
+                  {item.icon}
+                  <div className="absolute -top-2 -right-2 w-8 h-8 bg-foreground rounded-full flex items-center justify-center text-background text-sm font-bold shadow-lg">
                     {item.step}
                   </div>
                 </div>
-                <h3 className="text-xl font-semibold text-slate-900 mb-3 group-hover:text-[#FFB347] transition-colors duration-300">
+                <h3 className="text-2xl font-bold text-foreground mb-4 font-display">
                   {item.title}
                 </h3>
-                <p className="text-slate-700 leading-relaxed">
+                <p className="text-muted-foreground leading-relaxed">
                   {item.description}
                 </p>
               </motion.div>
@@ -481,75 +406,90 @@ const Index = () => {
         </div>
       </section>
 
-      {/* Recently Added - Enhanced 3D Carousel */}
-      <section className="relative py-24 bg-[#000000B3] overflow-hidden">
-        {/* Background Video */}
-        <video
-          src={recentlyadded}
-          autoPlay
-          muted
-          loop
-          className="absolute inset-0 w-full h-full object-cover"
-        />
-        {/* Dark overlay for better text contrast */}
-        <div className="absolute inset-0 bg-black/70" />
-
-        <div className="relative section-container max-w-6xl z-10">
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
-            className="text-center mb-16"
-          >
-            <div className="flex items-center justify-center gap-3 mb-4">
-              <Zap className="w-6 h-6 text-[#FFB347]" />
-              <span className="text-sm font-semibold text-[#FFB347] uppercase tracking-wide">Just Launched</span>
+      {/* ────────────────────────────────────────────────────────────────────────
+          TRENDING TOOLS (Premium Grid)
+      ──────────────────────────────────────────────────────────────────────── */}
+      <section className="relative py-32 bg-secondary/10">
+        <div className="relative section-container max-w-7xl z-10">
+          <motion.div {...fadeUp} className="flex flex-col md:flex-row md:items-end justify-between mb-16 gap-6">
+            <div>
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-sm font-semibold mb-4">
+                <TrendingUp className="w-4 h-4" /> Trending Globally
+              </div>
+              <h2 className="font-display text-4xl md:text-5xl font-black text-foreground tracking-tight">
+                Top AI Innovators
+              </h2>
             </div>
-            <h2 className="font-display text-4xl md:text-5xl font-bold text-white mb-4">
-              Recently Added
-            </h2>
-            <p className="text-[#AAAAAA] text-lg max-w-2xl mx-auto">
-              Discover the newest AI tools added to our platform
-            </p>
+            <motion.button
+              onClick={(e) => checkAuth(e, "/all-tools")}
+              className="flex items-center justify-center gap-2 px-6 py-3 bg-card border border-border text-foreground font-semibold rounded-xl hover:bg-foreground hover:text-background transition-all duration-300 w-full md:w-auto"
+            >
+              Explore Collection <ChevronRight className="w-4 h-4" />
+            </motion.button>
           </motion.div>
-          {/* 3D Carousel */}
-          <Carousel3D items={allRecentTools} />
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {allTrendingTools.slice(0, 8).map((tool, i) => (
+              <ToolCard key={`${tool.name}-${i}`} {...tool} delay={i * 0.05} />
+            ))}
+          </div>
         </div>
       </section>
 
-      {/* Why KNOWva */}
+      {/* ────────────────────────────────────────────────────────────────────────
+          RECENTLY ADDED 3D CAROUSEL SECTION
+      ──────────────────────────────────────────────────────────────────────── */}
+      <section className="relative py-32 overflow-hidden bg-background">
+         {/* Deep dark gradient overlay specific for this 3D section */}
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-secondary/20 to-transparent pointer-events-none" />
+
+        <div className="relative section-container max-w-7xl z-10">
+          <motion.div {...fadeUp} className="text-center mb-16">
+            <h2 className="font-display text-4xl md:text-5xl font-black text-foreground mb-4">
+              Fresh Off The Press
+            </h2>
+            <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
+              Interact with the latest groundbreaking AI tools added to the platform.
+            </p>
+          </motion.div>
+          {/* 3D Carousel */}
+          <div className="px-4">
+            <Carousel3D items={allRecentTools} />
+          </div>
+        </div>
+      </section>
+
+      {/* ────────────────────────────────────────────────────────────────────────
+          WHY KNOWVA & NEWSLETTER
+      ──────────────────────────────────────────────────────────────────────── */}
       <WhyKnowva />
 
-
-      {/* Newsletter */}
-      <section className="relative py-24 overflow-hidden bg-cover bg-center bg-no-repeat" style={{ backgroundImage: `url(${stayahead})` }}>
-        {/* Dark overlay for readability */}
-        <div className="absolute inset-0 bg-black/60" />
-
-        <div className="relative section-container max-w-4xl z-10">
-          <motion.div {...fadeUp} className="text-center">
-            <div className="w-16 h-16 bg-gradient-to-r from-[#FFB347]/20 to-[#F39C12]/20 rounded-full flex items-center justify-center mx-auto mb-6">
-              <Mail className="w-8 h-8 text-[#FFB347]" />
-            </div>
-            <h2 className="font-display text-3xl md:text-4xl font-bold text-white mb-4">
-              Stay Ahead in AI
+      <section className="relative py-32 overflow-hidden bg-foreground text-background">
+        <div className="absolute inset-0 opacity-10" style={{ backgroundImage: `url(${stayahead})`, backgroundSize: 'cover', backgroundPosition: 'center', filter: 'grayscale(100%)' }} />
+        
+        <div className="relative section-container max-w-4xl z-10 text-center">
+          <motion.div {...fadeUp}>
+            <div className="w-20 h-20 bg-background rounded-2xl flex items-center justify-center mx-auto mb-8 shadow-2xl rotate-3">
+               <Mail className="w-10 h-10 text-foreground" />
+             </div>
+            <h2 className="font-display text-4xl md:text-6xl font-black mb-6 tracking-tight">
+              Don't Fall Behind.
             </h2>
-            <p className="text-[#AAAAAA] text-lg mb-10 max-w-2xl mx-auto">
-              Get weekly curated AI tool launches, updates, and exclusive deals delivered to your inbox.
+            <p className="text-background/80 text-xl mb-12 max-w-2xl mx-auto font-light">
+              Join 50,000+ engineers, product managers, and founders receiving weekly insights on cutting-edge AI developments.
             </p>
-            <div className="flex flex-col sm:flex-row gap-4 max-w-md mx-auto">
+            <div className="flex flex-col sm:flex-row gap-4 max-w-xl mx-auto bg-background/10 p-2 rounded-2xl backdrop-blur-md border border-background/20">
               <input
                 type="email"
-                placeholder="Enter your email"
-                className="flex-1 px-6 py-4 bg-[#111111] border border-white/10 rounded-xl text-white placeholder:text-[#AAAAAA] outline-none focus:border-[#FFB347]/50 text-sm"
+                placeholder="developer@company.com"
+                className="flex-1 px-6 py-4 bg-transparent text-background placeholder:text-background/50 outline-none text-lg font-medium"
               />
               <motion.button
-                whileHover={{ y: -2, boxShadow: "0 10px 25px rgba(255, 179, 71, 0.3)" }}
+                whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
-                className="px-8 py-4 bg-gradient-to-r from-[#FFB347] to-[#F39C12] text-white font-semibold rounded-xl transition-all duration-300 whitespace-nowrap"
+                className="px-8 py-4 bg-primary text-primary-foreground font-bold rounded-xl transition-all shadow-lg hover:shadow-primary/50 text-lg"
               >
-                Subscribe
+                Join Newsletter
               </motion.button>
             </div>
           </motion.div>

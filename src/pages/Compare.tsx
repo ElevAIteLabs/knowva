@@ -1,4 +1,4 @@
-import { Check, X, Star } from "lucide-react";
+import { Check, X, Star, Layers, Activity, Zap } from "lucide-react";
 import { motion } from "framer-motion";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
@@ -22,88 +22,116 @@ const features = [
 
 const Compare = () => {
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background text-foreground selection:bg-primary/30">
       <Navbar />
-      <div className="pt-24 pb-20 relative overflow-hidden" 
+      
+      {/* ── Hero Section ──────────────────────────────────────────────── */}
+      <div className="pt-36 pb-32 relative overflow-hidden border-b border-border" 
            style={{
              backgroundImage: `url(${compareaitools})`,
              backgroundSize: 'cover',
              backgroundPosition: 'center',
              backgroundRepeat: 'no-repeat'
            }}>
-        {/* Dark overlay for better text contrast */}
-        <div className="absolute inset-0 bg-black/70" />
+        {/* Deep dark gradient overlay compatible with dark mode */}
+        <div className="absolute inset-0 bg-gradient-to-b from-background/95 via-background/80 to-background backdrop-blur-sm" />
         
-        <div className="relative section-container z-10">
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-10">
-            <h1 className="font-display text-3xl md:text-4xl font-bold text-foreground mb-3">
-              Compare AI Tools <span className="text-gradient">Side by Side</span>
+        <div className="relative section-container z-10 max-w-7xl mx-auto">
+          <motion.div 
+            initial={{ opacity: 0, y: 30 }} 
+            animate={{ opacity: 1, y: 0 }} 
+            transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+            className="text-center mb-16"
+          >
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-primary text-sm font-bold mb-6 tracking-wide uppercase">
+                <Layers className="w-4 h-4" />
+                Side-By-Side Analysis
+            </div>
+            <h1 className="font-display text-5xl md:text-7xl font-black text-foreground mb-6 tracking-tight">
+              Compare AI Tools <span className="gradient-text glow-effect drop-shadow-sm">Side by Side</span>
             </h1>
-            <p className="text-muted-foreground max-w-lg mx-auto">Evaluate features, pricing, and capabilities to find the perfect tool</p>
+            <p className="text-muted-foreground text-xl max-w-2xl mx-auto font-light">
+              Evaluate features, pricing, and technical capabilities to find the perfect foundation for your workflow.
+            </p>
           </motion.div>
 
+          {/* Compare Cards Container */}
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-            className="flex gap-6 justify-center flex-wrap"
+            transition={{ delay: 0.2, duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+            className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto px-4"
           >
             {comparisonTools.map((tool, index) => (
               <motion.div
                 key={tool.name}
-                initial={{ opacity: 0, y: 20 }}
+                initial={{ opacity: 0, y: 40 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.1 + index * 0.1 }}
-                className="bg-white rounded-2xl shadow-lg overflow-hidden w-80 text-center"
+                transition={{ delay: 0.2 + index * 0.15, duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+                className="bg-card backdrop-blur-md rounded-3xl border border-border shadow-[0_20px_40px_rgba(0,0,0,0.05)] overflow-hidden flex flex-col hover:-translate-y-2 hover:shadow-[0_20px_40px_rgba(255,179,71,0.08)] hover:border-primary/40 transition-all duration-500 group relative"
               >
-                {/* Card Header with Gradient */}
-                <div className={`h-28 ${
-                  tool.name === 'ChatGPT' ? 'bg-gradient-to-r from-teal-400 to-teal-600' :
-                  tool.name === 'Claude' ? 'bg-gradient-to-r from-purple-400 to-purple-600' :
-                  'bg-gradient-to-r from-orange-400 to-pink-600'
-                } rounded-b-[50%]`}>
-                  <div className="flex items-center justify-center h-full">
-                    {tool.name === 'ChatGPT' ? <img src={chatgptlogo} alt="ChatGPT" className="w-8 h-8 object-contain" /> : 
-                     tool.name === 'Claude' ? <img src={claudelogo} alt="Claude" className="w-8 h-8 object-contain" /> : 
-                     tool.name === 'Gemini' ? <img src={geminilogo} alt="Gemini" className="w-8 h-8 object-contain" /> : 
-                     tool.icon}
+                
+                {/* Dynamic Inner Glow */}
+                <div className={`absolute top-0 inset-x-0 h-40 opacity-0 group-hover:opacity-20 transition-opacity duration-500 blur-3xl pointer-events-none -z-10 bg-gradient-to-b ${
+                    tool.name === 'ChatGPT' ? 'from-green-500' :
+                    tool.name === 'Claude' ? 'from-orange-500' :
+                    'from-blue-500'
+                  }`}
+                />
+
+                {/* Card Header */}
+                <div className="p-8 pb-0 text-center relative z-10 flex-col items-center">
+                  <div className={`w-20 h-20 mx-auto rounded-3xl mb-6 flex items-center justify-center shadow-inner relative group-hover:scale-110 transition-transform duration-500 ${
+                    tool.name === 'ChatGPT' ? 'bg-gradient-to-br from-teal-500/20 to-emerald-600/20 border border-teal-500/30' :
+                    tool.name === 'Claude' ? 'bg-gradient-to-br from-orange-400/20 to-red-500/20 border border-orange-500/30' :
+                    'bg-gradient-to-br from-blue-400/20 to-indigo-600/20 border border-blue-500/30'
+                  }`}>
+                    {tool.name === 'ChatGPT' ? <img src={chatgptlogo} alt="ChatGPT" className="w-10 h-10 object-contain drop-shadow" /> : 
+                     tool.name === 'Claude' ? <img src={claudelogo} alt="Claude" className="w-10 h-10 object-contain drop-shadow" /> : 
+                     tool.name === 'Gemini' ? <img src={geminilogo} alt="Gemini" className="w-10 h-10 object-contain drop-shadow" /> : 
+                     <span className="text-3xl">{tool.icon}</span>}
+                  </div>
+                  
+                  <h3 className="font-display text-3xl font-black text-foreground mb-3">{tool.name}</h3>
+                  <div className="inline-flex items-center justify-center gap-1.5 bg-yellow-500/10 border border-yellow-500/20 px-3 py-1.5 rounded-lg mb-6">
+                    <Star className="w-4 h-4 fill-yellow-500 text-yellow-500" />
+                    <span className="text-sm font-bold text-foreground">{tool.rating.toFixed(1)}</span>
                   </div>
                 </div>
 
-                {/* Card Content */}
-                <div className="p-6">
-                  <h3 className="font-display text-xl font-bold text-gray-900 mb-2">{tool.name}</h3>
-                  
-                  {/* Rating */}
-                  <div className="flex items-center justify-center gap-2 mb-4">
-                    <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-                    <span className="text-lg font-semibold text-gray-900">{tool.rating}</span>
-                  </div>
+                <div className="h-px w-full bg-border mx-auto mb-6"></div>
 
-                  {/* Features List */}
-                  <div className="space-y-3 mb-6">
+                {/* Features List */}
+                <div className="px-8 pb-8 flex-1 flex flex-col">
+                  <div className="space-y-4 mb-8 flex-1">
                     {features.map((feature) => {
                       const val = (tool as any)[feature.key];
                       return (
-                        <div key={feature.label} className="flex items-center gap-2 text-sm text-gray-600">
-                          {feature.boolean ? (
-                            <Check className="w-4 h-4 text-green-500 flex-shrink-0" />
-                          ) : (
-                            <X className="w-4 h-4 text-gray-400 flex-shrink-0" />
-                          )}
-                          <span>{feature.label}</span>
+                        <div key={feature.label} className="flex items-center justify-between text-sm group/feature">
+                          <span className="text-muted-foreground font-medium">{feature.label}</span>
+                          <span className="text-foreground font-bold text-right flex items-center justify-end">
+                            {feature.boolean ? (
+                                val ? (
+                                    <div className="bg-emerald-500/10 p-1 rounded-md border border-emerald-500/20"><Check className="w-4 h-4 text-emerald-500" /></div>
+                                ) : (
+                                    <div className="bg-destructive/10 p-1 rounded-md border border-destructive/20"><X className="w-4 h-4 text-destructive" /></div>
+                                )
+                            ) : (
+                              val
+                            )}
+                          </span>
                         </div>
                       );
                     })}
                   </div>
 
                   {/* Get Started Button */}
-                  <button className={`w-full py-3 rounded-full font-semibold text-sm transition-colors ${
-                    tool.name === 'ChatGPT' ? 'bg-teal-500 hover:bg-teal-600 text-white' :
-                    tool.name === 'Claude' ? 'bg-purple-500 hover:bg-purple-600 text-white' :
-                    'bg-orange-500 hover:bg-orange-600 text-white'
+                  <button className={`w-full py-4 rounded-xl font-bold text-sm transition-all shadow-md flex items-center justify-center gap-2 group-hover:scale-[1.02] ${
+                    tool.name === 'ChatGPT' ? 'bg-teal-500 hover:bg-teal-600 hover:shadow-teal-500/30 text-white' :
+                    tool.name === 'Claude' ? 'bg-orange-600 hover:bg-orange-700 hover:shadow-orange-600/30 text-white' :
+                    'bg-blue-600 hover:bg-blue-700 hover:shadow-blue-600/30 text-white'
                   }`}>
-                    Get Started
+                    Deploy {tool.name} <Zap className="w-4 h-4" />
                   </button>
                 </div>
               </motion.div>
