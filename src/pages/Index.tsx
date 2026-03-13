@@ -33,7 +33,8 @@ const fadeUp = {
 
 const Index = () => {
   const navigate = useNavigate();
-  const [dbTools, setDbTools] = useState<any[]>([]);
+   const [dbTools, setDbTools] = useState<any[]>([]);
+  const [trendingTools, setTrendingTools] = useState<any[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const containerRef = useRef(null);
   const { scrollYProgress } = useScroll({
@@ -45,7 +46,28 @@ const Index = () => {
 
   useEffect(() => {
     fetchTools();
+    fetchTrendingTools();
   }, []);
+
+  const fetchTrendingTools = async () => {
+    try {
+      const response = await fetch(API_ENDPOINTS.TRENDING);
+      const result = await response.json();
+      if (result.status === "success" && Array.isArray(result.data)) {
+        setTrendingTools(result.data.map((t: any) => ({
+          ...t,
+          icon: (() => {
+            let url = t.icon_url || "";
+            if (url.startsWith('[') && url.endsWith(']')) {
+              try { const parsed = JSON.parse(url); if (Array.isArray(parsed)) url = parsed[0]; } catch { }
+            }
+            return url;
+          })(),
+          rating: parseFloat(t.rating) || 0,
+        })));
+      }
+    } catch (e) { console.error("Trending fetch error", e); }
+  };
 
   const fetchTools = async () => {
     try {
@@ -76,7 +98,7 @@ const Index = () => {
     }
   };
 
-  const allTrendingTools = dbTools.filter(t => parseInt(t.is_trending) === 1);
+  const allTrendingTools = trendingTools.length > 0 ? trendingTools : dbTools.filter(t => parseInt(t.is_trending) === 1);
   const displayTrending = allTrendingTools.length > 0 ? allTrendingTools : dbTools.slice(0, 8);
   const allRecentTools = dbTools.slice(0, 5);
 

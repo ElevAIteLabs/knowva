@@ -30,6 +30,14 @@ try {
     exit();
 }
 
+// --- AUTO-CREATE/UPDATE TABLES ---
+try {
+    // Add role column if it doesn't exist
+    $conn->exec("ALTER TABLE users ADD COLUMN IF NOT EXISTS role VARCHAR(50) DEFAULT 'user'");
+} catch (Exception $e) {
+    // Ignore error if column exists or MySQL version doesn't support IF NOT EXISTS in ALTER
+}
+
 // --- MAIN LOGIC ---
 
 // Get JSON input
@@ -53,7 +61,7 @@ if ($action === 'login') {
     $password = $data->password;
 
     try {
-        $stmt = $conn->prepare("SELECT id, fullName, email, mobile, password FROM users WHERE email = ?");
+        $stmt = $conn->prepare("SELECT id, fullName, email, mobile, password, role FROM users WHERE email = ?");
         $stmt->execute([$email]);
         $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -85,6 +93,7 @@ else if ($action === 'signup') {
     $email = filter_var($data->email, FILTER_SANITIZE_EMAIL);
     $mobile = strip_tags($data->mobile);
     $password = password_hash($data->password, PASSWORD_BCRYPT);
+    $role = 'user'; // Default role
 
     try {
         // Check if email already exists
@@ -97,8 +106,8 @@ else if ($action === 'signup') {
         }
 
         // Insert new user
-        $stmt = $conn->prepare("INSERT INTO users (fullName, email, mobile, password) VALUES (?, ?, ?, ?)");
-        if ($stmt->execute([$fullName, $email, $mobile, $password])) {
+        $stmt = $conn->prepare("INSERT INTO users (fullName, email, mobile, password, role) VALUES (?, ?, ?, ?, ?)");
+        if ($stmt->execute([$fullName, $email, $mobile, $password, $role])) {
             echo json_encode(["status" => "success", "message" => "User created successfully."]);
         } else {
             echo json_encode(["status" => "error", "message" => "Could not register user."]);
@@ -143,7 +152,7 @@ else if ($action === 'update_profile') {
 
         if ($success) {
             // Fetch updated user to return
-            $stmt = $conn->prepare("SELECT id, fullName, email, mobile FROM users WHERE id = ?");
+            $stmt = $conn->prepare("SELECT id, fullName, email, mobile, role FROM users WHERE id = ?");
             $stmt->execute([$id]);
             $updatedUser = $stmt->fetch(PDO::FETCH_ASSOC);
 

@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { Save, CheckCircle2, User, Mail, Phone, Lock, ShieldCheck, Bookmark, Settings, LogOut, Loader2, Sparkles } from "lucide-react";
+import { Save, CheckCircle2, User, Mail, Phone, Lock, ShieldCheck, Bookmark, Settings, LogOut, Loader2, Sparkles, Star, MessageSquare, Pin, ChevronRight, Pencil, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
     Form,
@@ -35,9 +35,12 @@ const Profile = () => {
     const [userId, setUserId] = useState<number | null>(null);
     const [savedBanner, setSavedBanner] = useState(false);
     const [originalValues, setOriginalValues] = useState<Partial<ProfileFormValues>>({});
-    const [activeTab, setActiveTab] = useState<"settings" | "saved">("settings");
+    const [activeTab, setActiveTab] = useState<"settings" | "saved" | "reviews" | "questions">("settings");
     const [savedTools, setSavedTools] = useState<any[]>([]);
+    const [userReviews, setUserReviews] = useState<any[]>([]);
+    const [userQuestions, setUserQuestions] = useState<any[]>([]);
     const [isToolsLoading, setIsToolsLoading] = useState(false);
+    const [isDataLoading, setIsDataLoading] = useState(false);
     const navigate = useNavigate();
 
     const form = useForm<ProfileFormValues>({
@@ -72,10 +75,11 @@ const Profile = () => {
         form.reset(vals);
         setOriginalValues(vals);
         
-        if (activeTab === "saved") {
-            fetchSavedTools(user.id);
-        }
-    }, [navigate, form, activeTab]);
+        // Refresh all data on mount to ensure sidebar stats are correct
+        fetchSavedTools(user.id);
+        fetchUserReviews(user.id);
+        fetchUserQuestions(user.id);
+    }, [navigate, form, activeTab]); // Added activeTab to ensure sidebar stats refresh on tab change
 
     const fetchSavedTools = async (uid: number) => {
         setIsToolsLoading(true);
@@ -99,6 +103,54 @@ const Profile = () => {
             toast.error("Failed to load saved tools");
         } finally {
             setIsToolsLoading(false);
+        }
+    };
+
+    const fetchUserReviews = async (uid: number) => {
+        setIsDataLoading(true);
+        try {
+            const response = await fetch(`${API_ENDPOINTS.REVIEWS}?user_id=${uid}`);
+            const result = await response.json();
+            if (result.status === "success") setUserReviews(result.data);
+        } catch { toast.error("Failed to load reviews"); }
+        finally { setIsDataLoading(false); }
+    };
+
+    const fetchUserQuestions = async (uid: number) => {
+        setIsDataLoading(true);
+        try {
+            const response = await fetch(`${API_ENDPOINTS.COMMUNITY}?user_id=${uid}`);
+            const result = await response.json();
+            if (result.status === "success") setUserQuestions(result.data);
+        } catch { toast.error("Failed to load questions"); }
+        finally { setIsDataLoading(false); }
+    };
+
+    const handleDeleteDiscussion = async (e: React.MouseEvent, threadId: number) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (!userId) return;
+        if (!window.confirm("Delete this discussion permanently?")) return;
+
+        try {
+            const res = await fetch(API_ENDPOINTS.COMMUNITY, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    action: "delete",
+                    user_id: userId,
+                    thread_id: threadId
+                }),
+            });
+            const result = await res.json();
+            if (result.status === "success") {
+                toast.success("Discussion deleted");
+                fetchUserQuestions(userId);
+            } else {
+                toast.error(result.message);
+            }
+        } catch {
+            toast.error("Deletion failed");
         }
     };
 
@@ -178,18 +230,30 @@ const Profile = () => {
                             </div>
                         </div>
 
-                        <div className="flex bg-slate-200/50 p-1 rounded-2xl border border-slate-200 backdrop-blur-md">
+                        <div className="flex bg-slate-200/50 p-1 rounded-2xl border border-slate-200 backdrop-blur-md overflow-x-auto no-scrollbar">
                             <button 
                                 onClick={() => setActiveTab("settings")}
-                                className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold transition-all ${activeTab === "settings" ? "bg-white text-primary shadow-sm" : "text-slate-500 hover:text-slate-900"}`}
+                                className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold transition-all whitespace-nowrap ${activeTab === "settings" ? "bg-white text-primary shadow-sm" : "text-slate-500 hover:text-slate-900"}`}
                             >
                                 <Settings size={16} /> Settings
                             </button>
                             <button 
                                 onClick={() => setActiveTab("saved")}
-                                className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold transition-all ${activeTab === "saved" ? "bg-white text-primary shadow-sm" : "text-slate-500 hover:text-slate-900"}`}
+                                className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold transition-all whitespace-nowrap ${activeTab === "saved" ? "bg-white text-primary shadow-sm" : "text-slate-500 hover:text-slate-900"}`}
                             >
-                                <Bookmark size={16} /> Saved Tools
+                                <Bookmark size={16} /> Saved
+                            </button>
+                            <button 
+                                onClick={() => setActiveTab("reviews")}
+                                className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold transition-all whitespace-nowrap ${activeTab === "reviews" ? "bg-white text-primary shadow-sm" : "text-slate-500 hover:text-slate-900"}`}
+                            >
+                                <Star size={16} /> Reviews
+                            </button>
+                            <button 
+                                onClick={() => setActiveTab("questions")}
+                                className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold transition-all whitespace-nowrap ${activeTab === "questions" ? "bg-white text-primary shadow-sm" : "text-slate-500 hover:text-slate-900"}`}
+                            >
+                                <MessageSquare size={16} /> Questions
                             </button>
                         </div>
                     </div>
@@ -337,6 +401,18 @@ const Profile = () => {
                                                         {savedTools.length || 0}
                                                     </span>
                                                 </div>
+                                                <div className="flex justify-between items-center group cursor-pointer" onClick={() => setActiveTab("reviews")}>
+                                                    <span className="text-slate-500 font-bold text-sm">Total Reviews</span>
+                                                    <span className="text-2xl font-black text-slate-900 group-hover:scale-110 transition-transform group-hover:text-primary">
+                                                        {userReviews.length || 0}
+                                                    </span>
+                                                </div>
+                                                <div className="flex justify-between items-center group cursor-pointer" onClick={() => setActiveTab("questions")}>
+                                                    <span className="text-slate-500 font-bold text-sm">Discussions</span>
+                                                    <span className="text-2xl font-black text-slate-900 group-hover:scale-110 transition-transform group-hover:text-primary">
+                                                        {userQuestions.length || 0}
+                                                    </span>
+                                                </div>
                                                 <div className="flex justify-between items-center">
                                                     <span className="text-slate-500 font-bold text-sm">Member Since</span>
                                                     <span className="text-sm font-bold text-slate-800">March 2026</span>
@@ -357,7 +433,11 @@ const Profile = () => {
                                     </div>
                                 </div>
                             </motion.div>
-                        ) : (
+                         ) : activeTab === "saved" ? (
+
+
+
+
                             <motion.div
                                 key="saved"
                                 initial={{ opacity: 0, y: 10 }}
@@ -369,7 +449,7 @@ const Profile = () => {
                                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                                     <div>
                                         <h2 className="text-2xl font-black mb-1 flex items-center gap-3 text-slate-900">
-                                            <Bookmark className="text-primary" /> Saved Inventory
+                                            <Bookmark className="text-primary text-black" /> Saved Inventory
                                         </h2>
                                         <p className="text-slate-500 text-sm">Access your curated collection of AI architecture & tools.</p>
                                     </div>
@@ -409,7 +489,144 @@ const Profile = () => {
                                     </div>
                                 )}
                             </motion.div>
-                        )}
+                         ) : activeTab === "reviews" ? (
+                            <motion.div
+                                key="reviews"
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, y: -10 }}
+                                transition={{ duration: 0.4, ease: "easeOut" }}
+                                className="space-y-8"
+                            >
+                                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                                    <div>
+                                        <h2 className="text-2xl font-black mb-1 flex items-center gap-3 text-slate-900">
+                                            <Star className="text-primary fill-current" /> My Contributions
+                                        </h2>
+                                        <p className="text-slate-500 text-sm">Reviews and ratings you've shared with the community.</p>
+                                    </div>
+                                    {userReviews.length > 0 && (
+                                        <div className="text-xs font-bold text-primary bg-primary/10 px-4 py-2 rounded-full border border-primary/20">
+                                            {userReviews.length} Reviews Written
+                                        </div>
+                                    )}
+                                </div>
+
+                                {isDataLoading ? (
+                                    <div className="flex flex-col items-center justify-center py-32">
+                                        <Loader2 className="w-12 h-12 text-primary animate-spin mb-4" />
+                                        <p className="font-bold tracking-widest uppercase text-xs text-slate-400">Loading reviews...</p>
+                                    </div>
+                                ) : userReviews.length > 0 ? (
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        {userReviews.map((r, i) => (
+                                            <div key={i} className="bg-white border border-slate-200 rounded-[32px] p-8 shadow-sm hover:border-primary/40 transition-all group relative overflow-hidden">
+                                                <div className="flex justify-between items-start mb-4">
+                                                    <div>
+                                                        <span className="text-[10px] font-black uppercase text-primary tracking-[0.2em] block mb-2">{r.tool_slug}</span>
+                                                        <div className="flex gap-1">
+                                                            {[1,2,3,4,5].map(s => <Star key={s} size={14} className={s <= r.rating ? "fill-primary text-primary" : "text-slate-200"} />)}
+                                                        </div>
+                                                    </div>
+                                                    <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest">{new Date(r.created_at).toLocaleDateString()}</span>
+                                                </div>
+                                                <p className="text-slate-600 leading-relaxed italic text-sm">"{r.review_text}"</p>
+                                                {r.is_verified == 1 && (
+                                                    <div className="mt-6 inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-green-50 text-green-600 text-[10px] font-black uppercase tracking-tighter border border-green-100">
+                                                        <ShieldCheck size={12} /> Expert Verified
+                                                    </div>
+                                                )}
+                                            </div>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <div className="bg-white border border-slate-200 rounded-[40px] py-32 text-center shadow-sm">
+                                        <div className="w-20 h-20 rounded-full bg-slate-50 flex items-center justify-center mx-auto mb-6">
+                                            <Star size={32} className="text-slate-200" />
+                                        </div>
+                                        <p className="text-slate-400 font-bold mb-6">You haven't shared any reviews yet.</p>
+                                        <Button onClick={() => navigate("/")} className="bg-primary text-black font-black rounded-2xl h-14 px-10 shadow-xl shadow-primary/10">Write First Review</Button>
+                                    </div>
+                                )}
+                            </motion.div>
+                         ) : (
+                            <motion.div
+                                key="questions"
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, y: -10 }}
+                                transition={{ duration: 0.4, ease: "easeOut" }}
+                                className="space-y-8"
+                            >
+                                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                                    <div>
+                                        <h2 className="text-2xl font-black mb-1 flex items-center gap-3 text-slate-900">
+                                            <MessageSquare className="text-primary" /> My Discussions
+                                        </h2>
+                                        <p className="text-slate-500 text-sm">Threads you've started in the community forum.</p>
+                                    </div>
+                                    {userQuestions.length > 0 && (
+                                        <div className="text-xs font-bold text-primary bg-primary/10 px-4 py-2 rounded-full border border-primary/20">
+                                            {userQuestions.length} Questions Asked
+                                        </div>
+                                    )}
+                                </div>
+
+                                {isDataLoading ? (
+                                    <div className="flex flex-col items-center justify-center py-32">
+                                        <Loader2 className="w-12 h-12 text-primary animate-spin mb-4" />
+                                        <p className="font-bold tracking-widest uppercase text-xs text-slate-400">Loading discussions...</p>
+                                    </div>
+                                ) : userQuestions.length > 0 ? (
+                                    <div className="space-y-4">
+                                        {userQuestions.map((q, i) => (
+                                            <div key={i} className="bg-white border border-slate-200 rounded-[32px] p-8 shadow-sm hover:border-primary transition-all flex items-center justify-between group cursor-pointer" onClick={() => navigate(`/community/${q.id}`)}>
+                                                <div>
+                                                    <div className="flex items-center gap-4 mb-3">
+                                                        <span className="px-3 py-1 bg-slate-100 text-slate-500 rounded-xl text-[10px] font-black uppercase tracking-widest">{q.category}</span>
+                                                        <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest">{new Date(q.created_at).toLocaleDateString()}</span>
+                                                    </div>
+                                                    <h3 className="text-xl font-bold text-slate-800 group-hover:text-primary transition-colors">{q.title}</h3>
+                                                </div>
+                                                <div className="flex items-center gap-4">
+                                                    {q.is_pinned == 1 && <Pin size={20} className="text-primary animate-pulse" />}
+                                                    {q.is_locked == 1 && <Lock size={20} className="text-slate-400" />}
+                                                    
+                                                    <div className="flex gap-2">
+                                                        <button 
+                                                            onClick={(e) => { e.stopPropagation(); navigate(`/community/${q.id}`); }}
+                                                            className="p-3 bg-slate-50 text-slate-400 hover:bg-primary/10 hover:text-primary rounded-2xl transition-all"
+                                                            title="Edit Discussion"
+                                                        >
+                                                            <Pencil size={18} />
+                                                        </button>
+                                                        <button 
+                                                            onClick={(e) => handleDeleteDiscussion(e, q.id)}
+                                                            className="p-3 bg-slate-50 text-slate-400 hover:bg-red-50 hover:text-red-500 rounded-2xl transition-all"
+                                                            title="Delete Discussion"
+                                                        >
+                                                            <Trash2 size={18} />
+                                                        </button>
+                                                    </div>
+
+                                                    <div className="w-12 h-12 rounded-2xl bg-slate-50 flex items-center justify-center text-slate-300 group-hover:bg-primary group-hover:text-black transition-all group-hover:rotate-45">
+                                                        <ChevronRight size={24} />
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <div className="bg-white border border-slate-200 rounded-[40px] py-32 text-center shadow-sm">
+                                        <div className="w-20 h-20 rounded-full bg-slate-50 flex items-center justify-center mx-auto mb-6">
+                                            <MessageSquare size={32} className="text-slate-200" />
+                                        </div>
+                                        <p className="text-slate-400 font-bold mb-6">No community discussions yet.</p>
+                                        <Button onClick={() => navigate("/community")} className="bg-primary text-black font-black rounded-2xl h-14 px-10 shadow-xl shadow-primary/10">Join Discussion</Button>
+                                    </div>
+                                )}
+                            </motion.div>
+                         )}
                     </AnimatePresence>
                 </div>
             </main>

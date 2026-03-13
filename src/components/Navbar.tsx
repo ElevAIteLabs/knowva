@@ -7,10 +7,8 @@ import logo from "@/assets/knowva-logo.png";
 const navLinks = [
   { label: "Home", path: "/" },
   { label: "Categories", path: "/categories" },
+  { label: "Community", path: "/community" },
   { label: "Compare", path: "/compare" },
-  // { label: "Newsletter", path: "/newsletter" },
-  // { label: "Consulting", path: "/consulting" },
-  // { label: "For Providers", path: "/providers" },
 ];
 
 const Navbar = () => {

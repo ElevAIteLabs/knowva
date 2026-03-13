@@ -1,4 +1,4 @@
-import { Star, ExternalLink, Check, X, ChevronLeft, Send, LogIn, Loader2, Bookmark, LayoutGrid, CreditCard, Terminal, HelpCircle, History, MessageSquare, Info } from "lucide-react";
+import { Star, ExternalLink, Check, X, ChevronLeft, Send, LogIn, Loader2, Bookmark, LayoutGrid, CreditCard, Terminal, HelpCircle, History, MessageSquare, Info, ShieldCheck, Triangle } from "lucide-react";
 import { Link, useParams, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { useEffect, useState } from "react";
@@ -32,6 +32,9 @@ const ToolDetail = () => {
   const [reviewText, setReviewText] = useState("");
   const [isSaved, setIsSaved] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [upvoteCount, setUpvoteCount] = useState(0);
+  const [hasUpvoted, setHasUpvoted] = useState(false);
+  const [upvoteLoading, setUpvoteLoading] = useState(false);
 
   // Computed live rating — average of all user reviews; falls back to tool's own rating
   const avgRating = reviews.length > 0
@@ -49,6 +52,68 @@ const ToolDetail = () => {
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [slug]);
+
+  useEffect(() => {
+    const fetchUpvotes = async () => {
+      if (!slug) return;
+      try {
+        const res = await fetch(`${API_ENDPOINTS.UPVOTES}?target_id=${slug}&target_type=tool&user_id=${currentUser?.id || 0}`);
+        const result = await res.json();
+        if (result.status === "success") {
+          setUpvoteCount(result.count);
+          setHasUpvoted(result.has_upvoted);
+        }
+      } catch { }
+    };
+    fetchUpvotes();
+  }, [slug, currentUser?.id]);
+
+  const handleUpvote = async () => {
+    if (!currentUser) { navigate("/login"); return; }
+    if (!slug) return;
+    setUpvoteLoading(true);
+    try {
+      const res = await fetch(API_ENDPOINTS.UPVOTES, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          user_id: currentUser.id,
+          target_id: slug,
+          target_type: 'tool'
+        }),
+      });
+      const result = await res.json();
+      if (result.status === "success") {
+        setUpvoteCount(result.new_count);
+        setHasUpvoted(result.action === 'added');
+        toast.success(result.action === 'added' ? "Tool upvoted!" : "Upvote removed");
+      }
+    } catch { toast.error("Upvote failed"); }
+    finally { setUpvoteLoading(false); }
+  };
+
+  const handleModeration = async (reviewId: number, action: 'verify' | 'hide', currentStatus: boolean) => {
+    if (!currentUser || currentUser.role !== 'admin') return;
+    try {
+      const res = await fetch(API_ENDPOINTS.REVIEWS, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action,
+          admin_id: currentUser.id,
+          review_id: reviewId,
+          status: !currentStatus
+        }),
+      });
+      const result = await res.json();
+      if (result.status === "success") {
+        toast.success(result.message);
+        fetchReviews(); // Refresh
+      } else {
+        toast.error(result.message);
+      }
+    } catch { toast.error("Moderation failed"); }
+  };
 
   useEffect(() => {
     const fetchTool = async () => {
@@ -428,7 +493,15 @@ const ToolDetail = () => {
                   <span className="text-xs text-muted-foreground bg-secondary px-2.5 py-1 rounded-md">{tool.category}</span>
                 </div>
               </div>
-              <div className="flex gap-3 flex-shrink-0">
+              <div className="flex gap-3 flex-shrink-0 flex-wrap md:flex-nowrap">
+                <button
+                  onClick={handleUpvote}
+                  disabled={upvoteLoading}
+                  className={`flex flex-col items-center justify-center px-4 py-2 rounded-xl border transition-all ${hasUpvoted ? "bg-primary/20 text-primary border-primary shadow-[0_0_15px_rgba(255,179,71,0.15)]" : "bg-card border-border text-muted-foreground hover:bg-primary/5 hover:text-primary hover:border-primary/30"}`}
+                >
+                  <Triangle className={`w-5 h-5 ${hasUpvoted ? "fill-current" : ""}`} />
+                  <span className="text-[10px] font-black mt-1">{upvoteCount}</span>
+                </button>
                 <button
                   onClick={handleSaveToggle}
                   disabled={isSaving}
@@ -687,15 +760,22 @@ const ToolDetail = () => {
                                 initial={{ opacity: 0, y: 10 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ delay: i * 0.05 }}
-                                className="p-4 bg-secondary/50 rounded-xl"
+                                className={`p-5 rounded-2xl border transition-all ${r.is_verified ? "bg-primary/5 border-primary/20 shadow-[0_0_15px_rgba(255,179,71,0.05)]" : "bg-secondary/50 border-border"}`}
                               >
-                                <div className="flex items-start justify-between mb-2">
-                                  <div className="flex items-center gap-2">
-                                    <div className="w-8 h-8 rounded-full bg-primary/20 border border-primary/30 flex items-center justify-center text-xs font-bold text-primary">
+                                <div className="flex items-start justify-between mb-3">
+                                  <div className="flex items-center gap-3">
+                                    <div className="w-10 h-10 rounded-full bg-slate-200 flex items-center justify-center text-sm font-black text-slate-600 border border-white/20 select-none shadow-inner">
                                       {(r.user_name || "?").charAt(0).toUpperCase()}
                                     </div>
                                     <div>
-                                      <span className="font-medium text-foreground text-sm block">{r.user_name}</span>
+                                      <div className="flex items-center gap-2 mb-0.5">
+                                        <span className="font-bold text-foreground text-sm">{r.user_name}</span>
+                                        {r.is_verified == 1 && (
+                                          <span className="flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-primary text-black text-[9px] font-black uppercase tracking-tighter">
+                                            <ShieldCheck size={10} /> Expert
+                                          </span>
+                                        )}
+                                      </div>
                                       <div className="flex">
                                         {[1, 2, 3, 4, 5].map((s) => (
                                           <Star
@@ -709,9 +789,29 @@ const ToolDetail = () => {
                                       </div>
                                     </div>
                                   </div>
-                                  <span className="text-xs text-muted-foreground flex-shrink-0">{formatDate(r.created_at)}</span>
+                                  <div className="flex flex-col items-end gap-2">
+                                    <span className="text-[10px] uppercase font-black tracking-widest text-muted-foreground">{formatDate(r.created_at)}</span>
+                                    {currentUser?.role === 'admin' && (
+                                      <div className="flex gap-2">
+                                        <button 
+                                          onClick={() => handleModeration(r.id, 'verify', r.is_verified == 1)}
+                                          className={`p-1.5 rounded-lg border transition-colors ${r.is_verified == 1 ? "bg-primary text-black border-primary" : "bg-white/5 border-white/10 text-muted-foreground hover:text-primary"}`}
+                                          title={r.is_verified == 1 ? "Unverify Review" : "Verify as Expert"}
+                                        >
+                                          <ShieldCheck size={14} />
+                                        </button>
+                                        <button 
+                                          onClick={() => handleModeration(r.id, 'hide', r.is_hidden == 1)}
+                                          className={`p-1.5 rounded-lg border border-white/10 bg-white/5 text-muted-foreground hover:text-red-500 hover:border-red-500/30 transition-colors`}
+                                          title="Hide Review"
+                                        >
+                                          <X size={14} />
+                                        </button>
+                                      </div>
+                                    )}
+                                  </div>
                                 </div>
-                                <p className="text-sm text-muted-foreground leading-relaxed">{r.review_text}</p>
+                                <p className="text-sm text-muted-foreground leading-relaxed italic">"{r.review_text}"</p>
                               </motion.div>
                             ))}
                           </div>

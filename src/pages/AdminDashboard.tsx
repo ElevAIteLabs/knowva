@@ -3,7 +3,8 @@ import { useNavigate } from "react-router-dom";
 import {
     Plus, Trash2, ShieldAlert, Edit2, CheckCircle2, Zap,
     Layers, X, FileSpreadsheet, Upload, Download, AlertCircle,
-    ChevronDown, ChevronUp, Info, BarChart2, Search, TrendingUp
+    ChevronDown, ChevronUp, Info, BarChart2, Search, TrendingUp,
+    MessageSquare, Users, Settings, MessageCircle, ChevronRight
 } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
@@ -29,6 +30,11 @@ const AdminDashboard = () => {
     const [isLoading, setIsLoading] = useState(false);
     const [editingId, setEditingId] = useState<number | null>(null);
     const [searchQuery, setSearchQuery] = useState("");
+    const [activeTab, setActiveTab] = useState<"inventory" | "community">("inventory");
+    const [communityThreads, setCommunityThreads] = useState<any[]>([]);
+    const [communityReplies, setCommunityReplies] = useState<any[]>([]);
+    const [isCommunityLoading, setIsCommunityLoading] = useState(false);
+    const [communitySubTab, setCommunitySubTab] = useState<"threads" | "replies">("threads");
     const fileInputRef = useRef<HTMLInputElement>(null);
     const dropZoneRef = useRef<HTMLDivElement>(null);
 
@@ -75,7 +81,72 @@ const AdminDashboard = () => {
             return;
         }
         fetchTools();
+        fetchCommunityThreads();
+        fetchCommunityReplies();
     }, [navigate]);
+
+    const fetchCommunityReplies = async () => {
+        const user = JSON.parse(localStorage.getItem("user") || "{}");
+        try {
+            const response = await fetch(`${API_ENDPOINTS.COMMUNITY}?action=get_all_replies&user_id=${user.id}`);
+            const result = await response.json();
+            if (result.status === "success") {
+                setCommunityReplies(result.data);
+            }
+        } catch {
+            toast.error("Failed to fetch community replies.");
+        }
+    };
+
+    const handleDeleteReply = async (id: number) => {
+        if (!confirm("Remove this reply?")) return;
+        const user = JSON.parse(localStorage.getItem("user") || "{}");
+        try {
+            const response = await fetch(API_ENDPOINTS.COMMUNITY, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ action: "delete_reply", reply_id: id, user_id: user.id }),
+            });
+            const result = await response.json();
+            if (result.status === "success") {
+                toast.success("Reply deleted.");
+                fetchCommunityReplies();
+            }
+        } catch { toast.error("Failed to delete reply."); }
+    };
+
+    const fetchCommunityThreads = async () => {
+        setIsCommunityLoading(true);
+        const user = JSON.parse(localStorage.getItem("user") || "{}");
+        try {
+            const response = await fetch(`${API_ENDPOINTS.COMMUNITY}?uid=${user.id || 0}`);
+            const result = await response.json();
+            if (result.status === "success") {
+                setCommunityThreads(result.data);
+            }
+        } catch {
+            toast.error("Failed to fetch community threads.");
+        } finally {
+            setIsCommunityLoading(false);
+        }
+    };
+
+    const handleDeleteThread = async (id: number) => {
+        if (!confirm("Delete this entire discussion and all its replies?")) return;
+        const user = JSON.parse(localStorage.getItem("user") || "{}");
+        try {
+            const response = await fetch(API_ENDPOINTS.COMMUNITY, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ action: "delete", thread_id: id, user_id: user.id }),
+            });
+            const result = await response.json();
+            if (result.status === "success") {
+                toast.success("Discussion removed.");
+                fetchCommunityThreads();
+            }
+        } catch { toast.error("Failed to delete thread."); }
+    };
 
     // ── Fetch tools from DB ──────────────────────────────────────────────────────
     const fetchTools = async () => {
@@ -592,163 +663,257 @@ const AdminDashboard = () => {
 
             <main className="flex-grow pt-24 pb-20 px-4 md:px-8 max-w-7xl mx-auto w-full">
 
-                {/* ── Dashboard Header ─────────────────────────────────────────────── */}
-                <div className="flex flex-col md:flex-row justify-between w-full md:items-end mb-10 gap-6 glass-card p-8 glow-box mt-4">
-                    <div className="flex items-center gap-5">
-                        <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary/20 to-orange-500/20 border border-primary/30 flex items-center justify-center flex-shrink-0">
-                            <ShieldAlert size={32} className="text-primary" />
+                <div className="flex flex-col lg:flex-row gap-8">
+                    {/* ── Left Sidebar Navigation ──────────────────────────────────── */}
+                    <aside className="lg:w-64 space-y-2 flex-shrink-0">
+                        <div className="glass-card p-4 space-y-1">
+                            <button
+                                onClick={() => setActiveTab("inventory")}
+                                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm transition-all ${activeTab === "inventory" ? "bg-primary text-black shadow-lg shadow-primary/20" : "text-foreground/40 hover:bg-white/5 hover:text-foreground"}`}
+                            >
+                                <Layers size={18} />
+                                Content Inventory
+                            </button>
+                            <button
+                                onClick={() => setActiveTab("community")}
+                                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm transition-all ${activeTab === "community" ? "bg-primary text-black shadow-lg shadow-primary/20" : "text-foreground/40 hover:bg-white/5 hover:text-foreground"}`}
+                            >
+                                <MessageSquare size={18} />
+                                Community Center
+                            </button>
                         </div>
-                        <div>
-                            <h1 className="text-3xl font-display font-bold tracking-tight mb-2">Command Center</h1>
-                            <p className="text-foreground/40 text-sm max-w-xs">Manage AI tools, update system metrics, and monitor platform usage.</p>
-                        </div>
-                    </div>
-                    <div className="flex items-center gap-3">
-                        {/* Bulk Import button */}
-                        <button
-                            onClick={() => setIsImportModalOpen(true)}
-                            className="flex items-center gap-2 bg-green-500/10 text-green-400 border border-green-500/20 px-5 py-3 rounded-xl font-bold hover:bg-green-500/20 transition-all active:scale-95 text-sm"
-                        >
-                            <FileSpreadsheet size={18} /> Bulk Import Excel
-                        </button>
-                        {/* Add New Tool button */}
-                        <button
-                            onClick={() => { resetForm(); setIsAddModalOpen(true); }}
-                            className="flex items-center gap-2 bg-primary text-primary-foreground px-5 py-3 rounded-xl font-bold hover:bg-white/90 transition-all shadow-lg hover:shadow-xl hover:shadow-white/10 active:scale-95 text-sm"
-                        >
-                            <Plus size={18} /> Add New Tool
-                        </button>
-                    </div>
-                </div>
 
-                {/* ── Stats Bar ────────────────────────────────────────────────────── */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
-                    {[
-                        { label: "Total Tools in DB", value: stats.totalTools, icon: <Layers size={20} className="text-primary" /> },
-                        { label: "Active Categories", value: "8", icon: <BarChart2 size={20} className="text-blue-400" /> },
-                    ].map((stat, i) => (
-                        <div key={i} className="glass-card p-5 flex items-center gap-4">
-                            <div className="w-10 h-10 rounded-xl bg-secondary/30 border border-border flex items-center justify-center flex-shrink-0">
-                                {stat.icon}
+                        <div className="p-6 glass-card border border-primary/10 bg-primary/5 rounded-2xl hidden lg:block">
+                            <div className="flex items-center gap-2 text-primary mb-2">
+                                <ShieldAlert size={14} />
+                                <span className="text-[10px] uppercase font-black tracking-widest">Admin Status</span>
                             </div>
-                            <div>
-                                <div className="text-xl font-bold">{stat.value}</div>
-                                <div className="text-xs text-foreground/40">{stat.label}</div>
-                            </div>
+                            <p className="text-[10px] text-foreground/50 leading-relaxed font-bold">You are operating in elevated mode. Every action is recorded.</p>
                         </div>
-                    ))}
-                </div>
+                    </aside>
 
-                {/* ── Tool Database Table ───────────────────────────────────────────── */}
-                <div className="glass-card overflow-hidden">
-                    <div className="p-4 sm:p-6 border-b border-border flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-secondary/30">
-                        <h2 className="text-lg font-bold font-display flex items-center gap-2">
-                            <Layers className="text-primary w-5 h-5" /> Tool Database
-                            <span className="ml-2 text-xs font-normal text-foreground/40 bg-secondary/30 border border-border px-2 py-0.5 rounded-full">{tools.length} entries</span>
-                        </h2>
-                        {/* Search Input */}
-                        <div className="relative w-full sm:w-64 flex-shrink-0">
-                            <input
-                                type="text"
-                                placeholder="Search inventory..."
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                                className="w-full bg-card border border-border text-foreground rounded-xl px-4 py-2.5 pl-10 text-sm focus:outline-none focus:border-primary transition-colors placeholder:text-muted-foreground/50 shadow-sm"
-                            />
-                            <Search className="w-4 h-4 text-muted-foreground absolute left-3.5 top-1/2 -translate-y-1/2" />
-                            {searchQuery && (
-                                <button
-                                    onClick={() => setSearchQuery("")}
-                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                                >
-                                    <X size={14} />
-                                </button>
-                            )}
-                        </div>
-                    </div>
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-left text-sm">
-                            <thead className="bg-card text-muted-foreground uppercase text-xs tracking-wider border-b border-border">
-                                <tr>
-                                    <th className="px-6 py-4 font-semibold">Category</th>
-                                    <th className="px-6 py-4 font-semibold text-center">Engagement</th>
-                                    <th className="px-6 py-4 font-semibold text-right">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-white/5">
-                                {tools.length === 0 ? (
-                                    <tr>
-                                        <td colSpan={3} className="px-6 py-12 text-center text-foreground/40">
-                                            <FileSpreadsheet size={32} className="mx-auto mb-3 opacity-30" />
-                                            No tools found. Add your first tool or import from Excel!
-                                        </td>
-                                    </tr>
-                                ) : filteredTools.length === 0 ? (
-                                    <tr>
-                                        <td colSpan={3} className="px-6 py-12 text-center text-foreground/40">
-                                            <Search size={32} className="mx-auto mb-3 opacity-30 text-muted-foreground" />
-                                            No matching tools found for "{searchQuery}".
-                                        </td>
-                                    </tr>
+                    {/* ── Right Content Area ───────────────────────────────────────── */}
+                    <div className="flex-1 min-w-0">
+                        {activeTab === "inventory" ? (
+                            <motion.div
+                                initial={{ opacity: 0, x: 20 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                className="space-y-8"
+                            >
+                                {/* ── Inventory Header ── */}
+                                <div className="flex flex-col md:flex-row justify-between w-full md:items-end mb-10 gap-6 glass-card p-8 glow-box">
+                                    <div className="flex items-center gap-5">
+                                        <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary/20 to-blue-500/20 border border-primary/30 flex items-center justify-center flex-shrink-0">
+                                            <Layers size={32} className="text-primary" />
+                                        </div>
+                                        <div>
+                                            <h1 className="text-3xl font-display font-bold tracking-tight mb-2">Inventory</h1>
+                                            <p className="text-foreground/40 text-sm max-w-xs">Global repository for AI tools and frameworks.</p>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center gap-3">
+                                        <button onClick={() => setIsImportModalOpen(true)} className="flex items-center gap-2 bg-green-500/10 text-green-400 border border-green-500/20 px-5 py-3 rounded-xl font-bold hover:bg-green-500/20 transition-all text-sm"><FileSpreadsheet size={18} /> Bulk Import</button>
+                                        <button onClick={() => { resetForm(); setIsAddModalOpen(true); }} className="flex items-center gap-2 bg-primary text-primary-foreground px-5 py-3 rounded-xl font-bold hover:bg-white/90 transition-all shadow-lg text-sm"><Plus size={18} /> Add Tool</button>
+                                    </div>
+                                </div>
+
+                                {/* ── Stats Bar (Moved inside tab) ── */}
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                                    {[
+                                        { label: "Total Tools in DB", value: stats.totalTools, icon: <Layers size={20} className="text-primary" /> },
+                                        { label: "Active Categories", value: "8", icon: <BarChart2 size={20} className="text-blue-400" /> },
+                                    ].map((stat, i) => (
+                                        <div key={i} className="glass-card p-5 flex items-center gap-4">
+                                            <div className="w-10 h-10 rounded-xl bg-secondary/30 border border-border flex items-center justify-center flex-shrink-0">
+                                                {stat.icon}
+                                            </div>
+                                            <div>
+                                                <div className="text-xl font-bold">{stat.value}</div>
+                                                <div className="text-xs text-foreground/40">{stat.label}</div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+
+                                {/* ── Inventory Database ── */}
+                                <div className="glass-card overflow-hidden">
+                                    <div className="p-4 sm:p-6 border-b border-border flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-secondary/30">
+                                        <h2 className="text-lg font-bold font-display flex items-center gap-2">
+                                            <Layers className="text-primary w-5 h-5" /> All Inventory
+                                            <span className="ml-2 text-xs font-normal text-foreground/40 bg-secondary/30 border border-border px-2 py-0.5 rounded-full">{tools.length} entries</span>
+                                        </h2>
+                                        <div className="relative w-full sm:w-64">
+                                            <input type="text" placeholder="Search..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full bg-card border border-border rounded-xl px-4 py-2.5 pl-10 text-sm focus:border-primary transition-colors placeholder:text-muted-foreground/50" />
+                                            <Search className="w-4 h-4 text-muted-foreground absolute left-3.5 top-1/2 -translate-y-1/2" />
+                                        </div>
+                                    </div>
+                                    <div className="overflow-x-auto">
+                                        <table className="w-full text-left text-sm">
+                                            <thead className="bg-card text-muted-foreground uppercase text-[10px] tracking-widest border-b border-border font-black">
+                                                <tr>
+                                                    <th className="px-6 py-4">Tool / Identity</th>
+                                                    <th className="px-6 py-4">Status / Tags</th>
+                                                    <th className="px-6 py-4 text-center">Engagement</th>
+                                                    <th className="px-6 py-4 text-right">Ops</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody className="divide-y divide-white/5 text-sm font-bold">
+                                                {/* Existing Inventory Rows Mapping */}
+                                                {(searchQuery ? filteredTools : tools).map((tool) => (
+                                                    <tr key={tool.id} className="hover:bg-white/[0.02] transition-colors group">
+                                                        <td className="px-6 py-4">
+                                                            <div className="flex items-center gap-4">
+                                                                <div className="w-10 h-10 rounded-xl bg-secondary/30 border border-border flex items-center justify-center overflow-hidden">
+                                                                     {tool.icon_url ? (
+                                                                         <img src={tool.icon_url.startsWith('http') ? tool.icon_url : `${API_BASE_URL}/${tool.icon_url}`} className="w-full h-full object-cover" />
+                                                                     ) : <Zap size={16} className="text-foreground/20" />}
+                                                                </div>
+                                                                <div>
+                                                                    <div className="text-foreground group-hover:text-primary transition-colors">{tool.name}</div>
+                                                                    <div className="text-[10px] text-foreground/40 font-bold">{tool.pricing} • {tool.rating}⭐</div>
+                                                                </div>
+                                                            </div>
+                                                        </td>
+                                                        <td className="px-6 py-4">
+                                                            <span className="px-2 py-1 bg-secondary/50 rounded-lg text-[10px] border border-border">{tool.category}</span>
+                                                        </td>
+                                                        <td className="px-6 py-4 text-center">
+                                                            <div className="text-primary font-black">{tool.upvotes || 0}</div>
+                                                        </td>
+                                                        <td className="px-6 py-4 text-right">
+                                                            <div className="flex items-center justify-end gap-1">
+                                                                <button onClick={() => handleEditClick(tool)} className="p-2 text-foreground/20 hover:text-primary hover:bg-primary/10 rounded-lg transition-all"><Edit2 size={16} /></button>
+                                                                <button onClick={() => handleDeleteTool(tool.id)} className="p-2 text-foreground/20 hover:text-red-400 hover:bg-red-400/10 rounded-lg transition-all"><Trash2 size={16} /></button>
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </motion.div>
+                        ) : (
+                            <motion.div
+                                initial={{ opacity: 0, x: 20 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                className="space-y-8"
+                            >
+                                <div className="flex flex-col md:flex-row justify-between w-full md:items-end mb-10 gap-6 glass-card p-8 glow-box-primary">
+                                    <div className="flex items-center gap-5">
+                                        <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary/20 to-orange-500/20 border border-primary/30 flex items-center justify-center flex-shrink-0">
+                                            <MessageSquare size={32} className="text-primary" />
+                                        </div>
+                                        <div>
+                                            <h1 className="text-3xl font-display font-bold tracking-tight mb-2">Community</h1>
+                                            <p className="text-foreground/40 text-sm max-w-xs">Moderate threads and manage conversations.</p>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center gap-4">
+                                        <div className="bg-secondary/30 px-6 py-4 rounded-2xl border border-border">
+                                            <div className="text-[10px] font-black uppercase text-foreground/40 mb-1">Threads</div>
+                                            <div className="text-2xl font-black text-foreground">{communityThreads.length}</div>
+                                        </div>
+                                        <div className="bg-secondary/30 px-6 py-4 rounded-2xl border border-border">
+                                            <div className="text-[10px] font-black uppercase text-foreground/40 mb-1">Total Replies</div>
+                                            <div className="text-2xl font-black text-foreground">{communityReplies.length}</div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="flex gap-4 mb-6">
+                                    <button 
+                                        onClick={() => setCommunitySubTab("threads")}
+                                        className={`px-6 py-2 rounded-full font-bold text-sm transition-all ${communitySubTab === "threads" ? "bg-primary text-black" : "bg-secondary/30 text-foreground/40 hover:text-foreground"}`}
+                                    >
+                                        Discussions ({communityThreads.length})
+                                    </button>
+                                    <button 
+                                        onClick={() => setCommunitySubTab("replies")}
+                                        className={`px-6 py-2 rounded-full font-bold text-sm transition-all ${communitySubTab === "replies" ? "bg-primary text-black" : "bg-secondary/30 text-foreground/40 hover:text-foreground"}`}
+                                    >
+                                        User Replies ({communityReplies.length})
+                                    </button>
+                                </div>
+
+                                {communitySubTab === "threads" ? (
+                                    <div className="glass-card overflow-hidden">
+                                        <div className="p-6 border-b border-border bg-secondary/30">
+                                            <h2 className="text-lg font-bold font-display flex items-center gap-2">
+                                                <Users className="text-primary w-5 h-5" /> Discussion Threads
+                                            </h2>
+                                        </div>
+                                        <div className="overflow-x-auto">
+                                            <table className="w-full text-left text-sm">
+                                                <thead className="bg-card text-muted-foreground uppercase text-[10px] tracking-widest border-b border-border font-black">
+                                                    <tr>
+                                                        <th className="px-6 py-4">Title / Context</th>
+                                                        <th className="px-6 py-4">Author</th>
+                                                        <th className="px-6 py-4 text-right">Ops</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody className="divide-y divide-white/5 text-sm font-bold">
+                                                    {communityThreads.map((thread) => (
+                                                        <tr key={thread.id} className="hover:bg-white/[0.02] transition-colors group">
+                                                            <td className="px-6 py-4">
+                                                                <div className="max-w-md">
+                                                                    <div className="text-foreground group-hover:text-primary transition-colors text-base line-clamp-1">{thread.title}</div>
+                                                                    <div className="text-[10px] text-foreground/40 font-bold mt-1 uppercase tracking-widest">{thread.category}</div>
+                                                                </div>
+                                                            </td>
+                                                            <td className="px-6 py-4 text-xs">{thread.user_name}</td>
+                                                            <td className="px-6 py-4 text-right">
+                                                                <div className="flex items-center justify-end gap-1">
+                                                                    <button onClick={() => navigate(`/community/${thread.id}`)} className="p-2 text-foreground/20 hover:text-primary hover:bg-primary/10 rounded-lg transition-all"><ChevronRight size={16} /></button>
+                                                                    <button onClick={() => handleDeleteThread(thread.id)} className="p-2 text-foreground/20 hover:text-red-400 hover:bg-red-400/10 rounded-lg transition-all"><Trash2 size={16} /></button>
+                                                                </div>
+                                                            </td>
+                                                        </tr>
+                                                    ))}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
                                 ) : (
-                                    filteredTools.map((tool) => (
-                                        <tr key={tool.id} className="hover:bg-white/[0.02] transition-colors group">
-                                            <td className="px-6 py-4">
-                                                <div className="flex items-center gap-4">
-                                                    <div className="w-10 h-10 rounded-xl bg-secondary/30 border border-border flex items-center justify-center overflow-hidden">
-                                                        {tool.icon_url ? (() => {
-                                                            const cleanIcon = tool.icon_url.replace(/^['"\[]|['"\]]$/g, '').trim();
-                                                            return cleanIcon ? (
-                                                                <img
-                                                                    src={cleanIcon.startsWith('http')
-                                                                        ? cleanIcon
-                                                                        : `${API_BASE_URL}/${cleanIcon.startsWith('/') ? cleanIcon.slice(1) : cleanIcon}`}
-                                                                    className="w-full h-full object-cover"
-                                                                    alt={tool.name}
-                                                                    onError={(e) => {
-                                                                        const target = e.target as HTMLImageElement;
-                                                                        target.style.display = 'none';
-                                                                        if (target.parentElement) target.parentElement.innerHTML = '<div class="text-[10px] font-bold">ERR</div>';
-                                                                    }}
-                                                                />
-                                                            ) : <Zap size={16} className="text-foreground/20" />;
-                                                        })() : (
-                                                            <Zap size={16} className="text-foreground/20" />
-                                                        )}
-                                                    </div>
-                                                    <div>
-                                                        <div className="font-semibold text-foreground group-hover:text-primary transition-colors">{tool.name}</div>
-                                                        <div className="text-xs text-foreground/40">{tool.pricing} • {tool.rating}⭐</div>
-                                                    </div>
-                                                </div>
-                                            </td>
-                                            <td className="px-6 py-4">
-                                                <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-secondary/30 text-muted-foreground border border-border group-hover:border-border transition-colors">
-                                                    {tool.category}
-                                                </span>
-                                            </td>
-                                            <td className="px-6 py-4 text-center">
-                                                <div className="flex flex-col items-center">
-                                                    <span className="text-xs font-bold text-primary">{tool.upvotes || 0}</span>
-                                                    <span className="text-[10px] text-muted-foreground uppercase">Upvotes</span>
-                                                </div>
-                                            </td>
-
-                                            <td className="px-6 py-4 text-right">
-                                                <div className="flex items-center justify-end gap-2">
-                                                    <button onClick={() => handleEditClick(tool)} className="p-2 text-muted-foreground/60 hover:text-primary hover:bg-primary/10 rounded-lg transition-all" title="Edit">
-                                                        <Edit2 size={16} />
-                                                    </button>
-                                                    <button onClick={() => handleDeleteTool(tool.id)} className="p-2 text-muted-foreground/60 hover:text-red-400 hover:bg-red-400/10 rounded-lg transition-all" title="Delete">
-                                                        <Trash2 size={16} />
-                                                    </button>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    ))
+                                    <div className="glass-card overflow-hidden">
+                                        <div className="p-6 border-b border-border bg-secondary/30">
+                                            <h2 className="text-lg font-bold font-display flex items-center gap-2">
+                                                <MessageCircle className="text-primary w-5 h-5" /> Recent User Responses
+                                            </h2>
+                                        </div>
+                                        <div className="overflow-x-auto">
+                                            <table className="w-full text-left text-sm">
+                                                <thead className="bg-card text-muted-foreground uppercase text-[10px] tracking-widest border-b border-border font-black">
+                                                    <tr>
+                                                        <th className="px-6 py-4">Reply Content</th>
+                                                        <th className="px-6 py-4">In Thread</th>
+                                                        <th className="px-6 py-4">Author</th>
+                                                        <th className="px-6 py-4 text-right">Ops</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody className="divide-y divide-white/5 text-sm font-bold">
+                                                    {communityReplies.map((reply) => (
+                                                        <tr key={reply.id} className="hover:bg-white/[0.02] transition-colors group">
+                                                            <td className="px-6 py-4">
+                                                                <div className="max-w-xs line-clamp-2 text-foreground/70 font-normal">{reply.content}</div>
+                                                            </td>
+                                                            <td className="px-6 py-4 text-xs text-primary max-w-[150px] truncate">{reply.thread_title}</td>
+                                                            <td className="px-6 py-4 text-xs">{reply.user_name}</td>
+                                                            <td className="px-6 py-4 text-right">
+                                                                <div className="flex items-center justify-end gap-1">
+                                                                    <button onClick={() => navigate(`/community/${reply.thread_id}`)} className="p-2 text-foreground/20 hover:text-primary hover:bg-primary/10 rounded-lg transition-all"><ChevronRight size={16} /></button>
+                                                                    <button onClick={() => handleDeleteReply(reply.id)} className="p-2 text-foreground/20 hover:text-red-400 hover:bg-red-400/10 rounded-lg transition-all"><Trash2 size={16} /></button>
+                                                                </div>
+                                                            </td>
+                                                        </tr>
+                                                    ))}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
                                 )}
-                            </tbody>
-                        </table>
+                            </motion.div>
+                        )}
                     </div>
                 </div>
             </main>

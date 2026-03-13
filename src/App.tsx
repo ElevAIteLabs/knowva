@@ -16,6 +16,8 @@ import Signup from "./pages/Signup";
 import AdminDashboard from "./pages/AdminDashboard";
 import Profile from "./pages/Profile";
 import AllTools from "./pages/AllTools";
+import Forum from "./pages/Forum";
+import ThreadDetail from "./pages/ThreadDetail";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -40,6 +42,8 @@ const App = () => (
           <Route path="/admin" element={<AdminDashboard />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/all-tools" element={<AllTools />} />
+          <Route path="/community" element={<Forum />} />
+          <Route path="/community/:id" element={<ThreadDetail />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
