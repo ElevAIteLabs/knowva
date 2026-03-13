@@ -6,5 +6,6 @@ export const API_ENDPOINTS = {
     AUTH: `${API_BASE_URL}/knowva_api/auth.php`,
     TOOLS: `${API_BASE_URL}/knowva_api/tools.php`,
     REVIEWS: `${API_BASE_URL}/knowva_api/reviews.php`,
+    SAVED_TOOLS: `${API_BASE_URL}/knowva_api/saved_tools.php`,
     // Add other endpoints as you expand your API
 };

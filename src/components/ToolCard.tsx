@@ -1,19 +1,16 @@
-import { Star, ExternalLink, ArrowUpRight } from "lucide-react";
+import { Star, ExternalLink, ArrowUpRight, Bookmark } from "lucide-react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import chatgptLogo from "@/assets/chatgptlogo.png";
-import midjourneyLogo from "@/assets/midjourney logo.png";
-import claudeLogo from "@/assets/claude ai logo.png";
-import runwayLogo from "@/assets/runway logo.png";
-import jasperLogo from "@/assets/jasper logo.png";
-import cursorLogo from "@/assets/cursor logo.png";
-import elevenlabsLogo from "@/assets/elevenlabs logo.png";
-import perplexityLogo from "@/assets/preplexity logo.png";
+// Hardcoded logos removed
+
 
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
+import { API_BASE_URL, API_ENDPOINTS } from "@/config/apiConfig";
+import { useState, useEffect } from "react";
 
 interface ToolCardProps {
+  id?: number;
   name: string;
   description: string;
   category: string;
@@ -23,13 +20,82 @@ interface ToolCardProps {
   delay?: number;
 }
 
-const ToolCard = ({ name, description, category, rating, pricing, icon, delay = 0 }: ToolCardProps) => {
+const ToolCard = ({ id, name, description, category, rating, pricing, icon, delay = 0 }: ToolCardProps) => {
   const navigate = useNavigate();
+  const [isSaved, setIsSaved] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+
+  const currentUser = (() => {
+    try { return JSON.parse(localStorage.getItem("user") || "null"); } catch { return null; }
+  })();
+
+  useEffect(() => {
+    if (currentUser && id) {
+      checkIfSaved();
+    }
+  }, [id, currentUser?.id]);
+
+  const checkIfSaved = async () => {
+    try {
+      const response = await fetch(API_ENDPOINTS.SAVED_TOOLS, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "check",
+          user_id: currentUser.id,
+          tool_id: id,
+        }),
+      });
+      const result = await response.json();
+      if (result.status === "success") {
+        setIsSaved(result.saved);
+      }
+    } catch (e) {
+      console.error("Error checking saved status", e);
+    }
+  };
+
+  const handleSave = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
+
+    if (!currentUser) {
+      toast("Authentication required", {
+        description: "Please log in to save tools.",
+      });
+      navigate("/login");
+      return;
+    }
+
+    if (!id) return;
+
+    setIsSaving(true);
+    try {
+      const action = isSaved ? "unsave" : "save";
+      const response = await fetch(API_ENDPOINTS.SAVED_TOOLS, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action,
+          user_id: currentUser.id,
+          tool_id: id,
+        }),
+      });
+      const result = await response.json();
+      if (result.status === "success") {
+        setIsSaved(!isSaved);
+        toast.success(isSaved ? "Removed from saved" : "Saved to your profile!");
+      }
+    } catch (e) {
+      toast.error("Failed to update saved status");
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   const handleClick = (e: React.MouseEvent) => {
     e.preventDefault();
-    const user = localStorage.getItem("user");
-    if (!user) {
+    if (!currentUser) {
       toast("Authentication required", {
         description: "Please log in to view tool details.",
       });
@@ -37,6 +103,21 @@ const ToolCard = ({ name, description, category, rating, pricing, icon, delay = 
     } else {
       navigate(`/tool/${name.toLowerCase().replace(/\s+/g, '-')}`);
     }
+  };
+
+  const safeGetIcon = (iconInput: any) => {
+    if (!iconInput) return null;
+    if (typeof iconInput !== 'string') return null;
+    let cleanIcon = iconInput.replace(/^['"\[]|['"\]]$/g, '').trim();
+    if (!cleanIcon) return null;
+    if (cleanIcon.startsWith('http')) return cleanIcon;
+    
+    // Ensure relative paths have uploads/ prefix if they are likely just filenames
+    let cleanPath = cleanIcon.startsWith('/') ? cleanIcon.slice(1) : cleanIcon;
+    if (!cleanPath.startsWith('uploads/')) {
+      cleanPath = `uploads/${cleanPath}`;
+    }
+    return `${API_BASE_URL}/${cleanPath}`;
   };
 
   return (
@@ -49,38 +130,45 @@ const ToolCard = ({ name, description, category, rating, pricing, icon, delay = 
     >
       <button onClick={handleClick} className="block w-full text-left group h-full focus:outline-none">
         <div className="flex flex-col h-full bg-card text-card-foreground border border-border rounded-3xl p-6 transition-all duration-500 hover:-translate-y-2 hover:shadow-[0_20px_40px_rgba(255,179,71,0.08)] hover:border-primary/40 relative overflow-hidden backdrop-blur-sm z-10">
-          
+
           {/* Subtle Background Glow Animation on Hover */}
           <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 rounded-full blur-3xl -mr-10 -mt-10 transition-opacity duration-500 opacity-0 group-hover:opacity-100 pointer-events-none z-[-1]"></div>
 
+          {/* Bookmark Button */}
+          <button
+            onClick={handleSave}
+            className={`absolute top-16 right-5 z-[20] p-2.5 rounded-xl transition-all duration-300 backdrop-blur-md border ${isSaved
+              ? "bg-primary text-primary-foreground border-primary shadow-[0_0_15px_rgba(255,179,71,0.3)]"
+              : "bg-background/40 text-muted-foreground border-white/10 hover:border-primary/50 hover:text-primary"
+              }`}
+            disabled={isSaving}
+          >
+            <Bookmark className={`w-4 h-4 ${isSaved ? "fill-current" : ""}`} />
+          </button>
+
           <div className="flex items-start justify-between mb-6 relative">
             <div className="w-fit">
-              <div className="w-14 h-14 rounded-2xl bg-secondary/80 border border-border flex items-center justify-center p-3 shadow-sm group-hover:scale-110 group-hover:bg-primary/10 transition-all duration-500 overflow-hidden">
-                {name.toLowerCase() === "chatgpt" ? (
-                  <img src={chatgptLogo} alt="ChatGPT" className="w-8 h-8 object-contain drop-shadow" />
-                ) : name.toLowerCase() === "midjourney" ? (
-                  <img src={midjourneyLogo} alt="Midjourney" className="w-8 h-8 object-contain drop-shadow" />
-                ) : name.toLowerCase() === "claude" ? (
-                  <img src={claudeLogo} alt="Claude" className="w-8 h-8 object-contain drop-shadow" />
-                ) : name.toLowerCase() === "runway" ? (
-                  <img src={runwayLogo} alt="Runway" className="w-8 h-8 object-contain drop-shadow" />
-                ) : name.toLowerCase() === "jasper ai" || name.toLowerCase() === "jasper" ? (
-                  <img src={jasperLogo} alt="Jasper" className="w-8 h-8 object-contain drop-shadow" />
-                ) : name.toLowerCase() === "cursor" ? (
-                  <img src={cursorLogo} alt="Cursor" className="w-8 h-8 object-contain drop-shadow" />
-                ) : name.toLowerCase() === "elevenlabs" ? (
-                  <img src={elevenlabsLogo} alt="ElevenLabs" className="w-8 h-8 object-contain drop-shadow" />
-                ) : name.toLowerCase() === "perplexity" ? (
-                  <img src={perplexityLogo} alt="Perplexity" className="w-8 h-8 object-contain drop-shadow" />
-                ) : (
-                  <div className="flex items-center justify-center w-full h-full">
-                    {icon && (icon.startsWith('http') || icon.startsWith('/')) ? (
-                      <img src={icon} alt={name} className="w-full h-full object-contain drop-shadow" />
-                    ) : (
-                      <span className="text-foreground text-xl font-black font-display">{icon}</span>
-                    )}
-                  </div>
-                )}
+              <div className="w-14 h-14 rounded-2xl bg-secondary/80 border border-border flex items-center justify-center p-3 shadow-sm group-hover:scale-110 group-hover:bg-primary/10 transition-all duration-500 overflow-hidden text-foreground">
+                <div className="flex items-center justify-center w-full h-full">
+                  {icon && (typeof icon === 'string' && (icon.replace(/^['"\[]|['"\]]$/g, '').trim().startsWith('http') || icon.includes('.') || icon.includes('/'))) ? (
+                    <img
+                      src={safeGetIcon(icon) || ''}
+                      alt={name}
+                      className="w-full h-full object-contain drop-shadow"
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        target.style.display = 'none';
+                        if (target.parentElement) {
+                          target.parentElement.innerHTML = `<span class="text-foreground text-xl font-black font-display">${name.charAt(0)}</span>`;
+                        }
+                      }}
+                    />
+                  ) : (
+                    <span className="text-foreground text-xl font-black font-display">
+                      {((typeof icon === 'string' && icon.length < 5) ? icon : (name ? name.charAt(0) : '?'))}
+                    </span>
+                  )}
+                </div>
               </div>
             </div>
             <div className="flex items-center gap-2">
@@ -113,7 +201,7 @@ const ToolCard = ({ name, description, category, rating, pricing, icon, delay = 
           </div>
         </div>
       </button>
-    </motion.div>
+    </motion.div >
   );
 };
 

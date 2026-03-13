@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import {
     Plus, Trash2, ShieldAlert, Edit2, CheckCircle2, Zap,
     Layers, X, FileSpreadsheet, Upload, Download, AlertCircle,
-    ChevronDown, ChevronUp, Info, BarChart2, Search
+    ChevronDown, ChevronUp, Info, BarChart2, Search, TrendingUp
 } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
@@ -11,6 +11,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import * as xlsx from "xlsx";
 import { toast } from "sonner";
 import { API_ENDPOINTS, API_BASE_URL } from "@/config/apiConfig";
+import { categories as categoryOptions } from "@/data/mockData";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface ImportRow {
@@ -54,8 +55,12 @@ const AdminDashboard = () => {
         features: "",
         icon_url: "",
         media_urls: "",
+        is_trending: 0,
+        prompts: "",
+        upvotes: "0",
     });
     const [pricingTiers, setPricingTiers] = useState<any[]>([]);
+    const [faqs, setFaqs] = useState<any[]>([]);
     const [iconFile, setIconFile] = useState<File | null>(null);
     const [mediaFiles, setMediaFiles] = useState<File[]>([]);
     const [stats, setStats] = useState({ totalTools: 0 });
@@ -87,13 +92,22 @@ const AdminDashboard = () => {
     };
 
     // ── Pricing tier helpers ─────────────────────────────────────────────────────
-    const handleAddTier = () => setPricingTiers([...pricingTiers, { name: "", price: "", features: "" }]);
+    const handleAddTier = () => setPricingTiers([...pricingTiers, { name: "", price: "", features: "", interval: "" }]);
     const updateTier = (index: number, field: string, value: string) => {
         const updated = [...pricingTiers];
         updated[index][field] = value;
         setPricingTiers(updated);
     };
     const removeTier = (index: number) => setPricingTiers(pricingTiers.filter((_, i) => i !== index));
+    
+    // ── FAQ helpers ──────────────────────────────────────────────────────────────
+    const handleAddFaq = () => setFaqs([...faqs, { question: "", answer: "" }]);
+    const updateFaq = (index: number, field: string, value: string) => {
+        const updated = [...faqs];
+        updated[index][field] = value;
+        setFaqs(updated);
+    };
+    const removeFaq = (index: number) => setFaqs(faqs.filter((_, i) => i !== index));
 
     // ── Add / Edit tool (manual form) ────────────────────────────────────────────
     const handleAddTool = async (e: React.FormEvent) => {
@@ -109,10 +123,12 @@ const AdminDashboard = () => {
 
             // Append basic fields except those we handle specially (Pros, Cons, etc.)
             Object.entries(formData).forEach(([key, value]) => {
-                if (!["pros", "cons", "features", "media_urls", "pricing_tiers"].includes(key)) {
-                    data.append(key, value);
+                if (!["pros", "cons", "features", "media_urls", "pricing_tiers", "is_trending", "faqs", "releases", "prompts"].includes(key)) {
+                    data.append(key, value.toString());
                 }
             });
+
+            data.append("is_trending", formData.is_trending.toString());
 
             if (iconFile) data.append("icon", iconFile);
             mediaFiles.forEach((file) => data.append("media[]", file));
@@ -132,8 +148,16 @@ const AdminDashboard = () => {
             data.append("pricing_tiers", JSON.stringify(pricingTiers.map(t => ({
                 name: t.name,
                 price: t.price,
+                interval: t.interval || "",
                 features: t.features.split(',').map((s: string) => s.trim()).filter(Boolean)
             }))));
+
+            data.append("faqs", JSON.stringify(faqs.map(f => ({
+                question: f.question,
+                answer: f.answer
+            }))));
+
+            data.append("prompts", processArray(formData.prompts));
 
             const response = await fetch(API_ENDPOINTS.TOOLS, {
                 method: "POST",
@@ -157,21 +181,29 @@ const AdminDashboard = () => {
 
     const resetForm = () => {
         setEditingId(null);
-        setFormData({ name: "", description: "", category: "Text Generation", pricing: "Free", website_url: "", rating: "4.5", reviews_count: "0", pros: "", cons: "", features: "", icon_url: "", media_urls: "" });
+        setFormData({ 
+            name: "", description: "", category: "Text Generation", pricing: "Free", 
+            website_url: "", rating: "4.5", reviews_count: "0", pros: "", cons: "", 
+            features: "", icon_url: "", media_urls: "", is_trending: 0,
+            prompts: "", upvotes: "0"
+        });
         setPricingTiers([]);
+        setFaqs([]);
         setIconFile(null);
         setMediaFiles([]);
     };
 
     // ── Edit click handler ────────────────────────────────────────────────────────
     const handleEditClick = (tool: any) => {
-        const safeParseJoin = (str: string) => {
-            if (!str) return '';
+        const safeParseJoin = (val: any) => {
+            if (!val) return '';
+            if (Array.isArray(val)) return val.join(', ');
+            if (typeof val !== 'string') return String(val);
             try {
-                const parsed = JSON.parse(str);
-                return Array.isArray(parsed) ? parsed.join(', ') : str;
+                const parsed = JSON.parse(val);
+                return Array.isArray(parsed) ? parsed.join(', ') : val;
             } catch {
-                return str; // If not JSON, return as is (raw comma separated)
+                return val; // If not JSON, return as is (raw comma separated)
             }
         };
         let parsedTiers: any[] = [];
@@ -189,8 +221,29 @@ const AdminDashboard = () => {
             features: safeParseJoin(tool.features),
             icon_url: tool.icon_url || "",
             media_urls: safeParseJoin(tool.media_urls),
+            is_trending: parseInt(tool.is_trending) || 0,
+            prompts: safeParseJoin(tool.prompts),
+            upvotes: tool.upvotes || "0",
         });
-        setPricingTiers(parsedTiers.map((t: any) => ({ name: t.name, price: t.price, features: t.features.join(', ') })));
+        const safeFeatures = (feat: any) => {
+            if (Array.isArray(feat)) return feat.join(', ');
+            if (typeof feat === 'string') return feat;
+            return "";
+        };
+
+        setPricingTiers(parsedTiers.map((t: any) => ({ 
+            name: t.name || "", 
+            price: t.price || "", 
+            interval: t.interval || "",
+            features: safeFeatures(t.features) 
+        })));
+
+        let parsedFaqs: any[] = [];
+        try { parsedFaqs = JSON.parse(tool.faqs) || []; } catch { }
+        setFaqs(parsedFaqs.map((f: any) => ({
+            question: f.question || "",
+            answer: f.answer || ""
+        })));
         setEditingId(tool.id);
         setIsAddModalOpen(true);
     };
@@ -230,25 +283,80 @@ const AdminDashboard = () => {
     const downloadTemplate = () => {
         const templateData = [
             {
-                "Name": "Example Tool",
-                "Description": "A brief description of what this tool does.",
+                "Name": "ChatGPT",
+                "Description": "A powerful AI language model that can understand and generate human-like text based on the input it receives. Useful for writing, coding, analysis, and conversation.",
                 "Category": "Text Generation",
                 "Pricing": "Free",
-                "Website URL": "https://example.com",
+                "Website URL": "https://chat.openai.com",
+                "Rating": "4.8",
+                "Reviews": "50000",
+                "Pros": "Easy to use, Fast responses, Versatile, Free tier available, High-quality output",
+                "Cons": "Limited knowledge cutoff, Can be slow during peak times, No real-time internet access",
+                "Features": "AI Writing, Code completion, Analysis, Conversation, Translation, Summarization",
+                "Logo URL": "https://example.com/chatgpt-logo.png",
+                "Gallery URLs": "https://example.com/chatgpt-ui.png, https://example.com/chatgpt-mobile.png",
+                "Pricing Tiers": '[{"name":"Free","price":"$0","features":"Basic GPT-3.5, Limited messages"},{"name":"Plus","price":"$20/month","features":"GPT-4, Faster responses, Priority access"}]',
+                "Prompts": "Solve this equation: 2x+5=15, Write a python script to scrape data",
+                "FAQs": '[{"question":"Is ChatGPT free?","answer":"Yes, there is a free version with GPT-4o mini."}]'
+            },
+            {
+                "Name": "Midjourney",
+                "Description": "An AI-powered image generation tool that creates stunning artwork and images from text descriptions using advanced machine learning models.",
+                "Category": "Image Generation",
+                "Pricing": "Paid",
+                "Website URL": "https://midjourney.com",
+                "Rating": "4.6",
+                "Reviews": "25000",
+                "Pros": "High-quality images, Artistic styles, Fast generation, Community features",
+                "Cons": "Subscription required, Learning curve, No free tier",
+                "Features": "Text-to-image, Image variations, Upscaling, Style transfer",
+                "Logo URL": "https://example.com/midjourney-logo.png",
+                "Gallery URLs": "https://example.com/midjourney-art1.png, https://example.com/midjourney-art2.png",
+                "Pricing Tiers": '[{"name":"Basic","price":"$10/month","features":"200 images, Private mode"},{"name":"Standard","price":"$30/month","features":"Unlimited images, Fast queue"}]'
+            },
+            {
+                "Name": "GitHub Copilot",
+                "Description": "An AI-powered code completion tool that helps developers write code faster and more accurately by suggesting entire lines or blocks of code.",
+                "Category": "Code Assistant",
+                "Pricing": "Paid",
+                "Website URL": "https://github.com/features/copilot",
                 "Rating": "4.5",
-                "Reviews": "100",
-                "Pros": "Easy to use, Fast, Free tier",
-                "Cons": "Limited credits, No offline mode",
-                "Features": "AI Writing, Code completion, API Access",
-                "Logo URL": "https://example.com/logo.png",
-                "Gallery URLs": "https://example.com/screenshot1.png, https://example.com/screenshot2.png"
+                "Reviews": "15000",
+                "Pros": "Excellent code suggestions, Multiple language support, IDE integration",
+                "Cons": "Subscription required, Sometimes suggests incorrect code",
+                "Features": "Code completion, Function generation, Documentation help, Multi-language support",
+                "Logo URL": "https://example.com/copilot-logo.png",
+                "Gallery URLs": "https://example.com/copilot-vscode.png, https://example.com/copilot-suggestion.png",
+                "Pricing Tiers": '[{"name":"Individual","price":"$10/month","features":"Individual license"},{"name":"Business","price":"$19/month","features":"Commercial license, Management"}]'
             }
         ];
         const ws = xlsx.utils.json_to_sheet(templateData);
         const wb = xlsx.utils.book_new();
-        xlsx.utils.book_append_sheet(wb, ws, "Tools");
-        xlsx.writeFile(wb, "knowva_tools_template.xlsx");
-        toast.success("Template downloaded!");
+        xlsx.utils.book_append_sheet(wb, ws, "AI Tools Template");
+        
+        // Add a second sheet with instructions
+        const instructions = [
+            { "Field": "Name", "Required": "Yes", "Description": "The name of the AI tool", "Example": "ChatGPT" },
+            { "Field": "Description", "Required": "Yes", "Description": "Detailed description of what the tool does", "Example": "AI language model for text generation" },
+            { "Field": "Category", "Required": "No", "Description": "Tool category (Text Generation, Image Generation, Code Assistant, etc.)", "Example": "Text Generation" },
+            { "Field": "Pricing", "Required": "No", "Description": "Pricing model (Free, Premium, Subscription, etc.)", "Example": "Free / Premium" },
+            { "Field": "Website URL", "Required": "No", "Description": "Official website URL", "Example": "https://example.com" },
+            { "Field": "Rating", "Required": "No", "Description": "Rating from 0-5", "Example": "4.5" },
+            { "Field": "Reviews", "Required": "No", "Description": "Total number of reviews", "Example": "1000" },
+            { "Field": "Pros", "Required": "No", "Description": "Advantages (comma-separated)", "Example": "Easy to use, Fast, Free tier" },
+            { "Field": "Cons", "Required": "No", "Description": "Disadvantages (comma-separated)", "Example": "Limited features, Slow" },
+            { "Field": "Features", "Required": "No", "Description": "Key features (comma-separated)", "Example": "AI Writing, Code completion" },
+            { "Field": "Logo URL", "Required": "No", "Description": "URL to logo image OR filename if uploading separately", "Example": "https://example.com/logo.png OR chatgpt-logo.png" },
+            { "Field": "Gallery URLs", "Required": "No", "Description": "Screenshot URLs (comma-separated) OR filenames if uploading separately", "Example": "https://example.com/screen1.png, screen2.png" },
+            { "Field": "Pricing Tiers", "Required": "No", "Description": "JSON array of pricing plans", "Example": '[{"name":"Free","price":"$0","features":"Basic features"}]' },
+            { "Field": "Prompts", "Required": "No", "Description": "Example prompts (comma-separated)", "Example": "Write a poem, Code a game" },
+            { "Field": "FAQs", "Required": "No", "Description": "JSON array of questions and answers", "Example": '[{"question":"Q?","answer":"A."}]' }
+        ];
+        const wsInstructions = xlsx.utils.json_to_sheet(instructions);
+        xlsx.utils.book_append_sheet(wb, wsInstructions, "Instructions");
+        
+        xlsx.writeFile(wb, "knowva_ai_tools_template.xlsx");
+        toast.success("Comprehensive AI Tools template downloaded!");
     };
 
     const runImport = async () => {
@@ -269,10 +377,20 @@ const AdminDashboard = () => {
                 return;
             }
 
-            const rows: ImportRow[] = jsonData.map(row => ({
-                name: row["Name"] || row["Tool Name"] || "(unnamed)",
-                status: "pending"
-            }));
+            const rows: ImportRow[] = jsonData.map(row => {
+                const namePossibleKeys = ["Name", "Tool Name", "Tool", "Title"];
+                const rowKeys = Object.keys(row);
+                const match = namePossibleKeys.find(pk =>
+                    rowKeys.some(rk => rk.toLowerCase().trim() === pk.toLowerCase().trim())
+                );
+                const actualKey = match ? rowKeys.find(rk => rk.toLowerCase().trim() === match.toLowerCase().trim()) : null;
+                const name = actualKey ? row[actualKey].toString() : "(unnamed)";
+
+                return {
+                    name,
+                    status: "pending"
+                };
+            });
             setImportRows(rows);
 
             let successCount = 0;
@@ -294,53 +412,129 @@ const AdminDashboard = () => {
 
                 const splitArr = (keys: string[]) => {
                     const str = getVal(keys, "");
-                    return str ? str.split(",").map(s => s.trim()).filter(Boolean) : [];
+                    // Split by comma OR newline to be more flexible with Excel input
+                    return str ? str.split(/[,\n\r]+/).map(s => s.trim()).filter(Boolean) : [];
                 };
 
                 const mediaUrls = splitArr(["Media URLs", "Gallery", "Screenshots", "Gallery URLs", "Images", "Media"]);
-                const iconPath = getVal(["Icon URL", "Logo URL", "Logo", "Icon", "Image URL", "Thumbnail"]);
+                const iconPath = getVal(["Icon URL", "Logo URL", "Logo", "Icon", "Image URL", "Thumbnail"]).trim();
+
+                const rawCategory = getVal(["Category"], "Other");
+                const rawPricing = getVal(["Pricing", "Price", "Cost", "Type"], "Free");
+                
+                let finalCategory = rawCategory;
+                let finalPricing = rawPricing;
+
+                // Fix for common mistake: Pricing labels in Category column
+                const pricingKeywords = ["free", "freemium", "paid"];
+                if (pricingKeywords.includes(rawCategory.toLowerCase().trim())) {
+                    finalPricing = rawCategory.charAt(0).toUpperCase() + rawCategory.slice(1).toLowerCase();
+                    // If Category was used for pricing, try to see if Pricing column had the actual category
+                    if (rawPricing && !pricingKeywords.includes(rawPricing.toLowerCase().trim())) {
+                        finalCategory = rawPricing;
+                    } else {
+                        finalCategory = "Other";
+                    }
+                }
 
                 const toolData = new FormData();
                 toolData.append("name", getVal(["Name", "Tool Name", "Tool", "Title"]));
                 toolData.append("description", getVal(["Description", "About", "Summary"]));
-                toolData.append("category", getVal(["Category", "Type"], "Other"));
-                toolData.append("pricing", getVal(["Pricing", "Price", "Cost"], "Free"));
+                toolData.append("category", finalCategory);
+                toolData.append("pricing", finalPricing);
                 toolData.append("website_url", getVal(["Website URL", "Website", "Link", "URL"]));
                 toolData.append("rating", getVal(["Rating", "Stars", "Score"], "4.5"));
                 toolData.append("reviews_count", getVal(["Reviews", "Reviews Count", "Count"], "0"));
 
                 // Match local assets for the icon
                 if (iconPath && !iconPath.startsWith('http')) {
-                    const matchedIcon = importAssets.find(f => f.name === iconPath || f.name === iconPath.split('/').pop());
+                    const iconFilename = iconPath.split(/[/\\]/).pop()?.trim().toLowerCase();
+                    const matchedIcon = importAssets.find(f => {
+                        const assetName = f.name.toLowerCase();
+                        if (!assetName.match(/\.(jpg|jpeg|png|gif|webp|svg|bmp)$/)) return false;
+                        return assetName === iconFilename || 
+                               assetName.split('.')[0] === iconFilename?.split('.')[0];
+                    });
+
                     if (matchedIcon) {
                         toolData.append("icon", matchedIcon);
                     } else {
-                        toolData.append("icon_url", iconPath);
+                        // If not matched locally, assume it's already on the server
+                        // Prepend 'uploads/' if missing
+                        const finalIconPath = iconPath.startsWith('uploads/') ? iconPath : `uploads/${iconPath}`;
+                        toolData.append("icon_url", finalIconPath);
                     }
-                } else {
+                } else if (iconPath) {
                     toolData.append("icon_url", iconPath);
                 }
 
                 // Match local assets for the gallery
                 const finalMediaUrls: string[] = [];
+                let missingMedia = false;
+
                 mediaUrls.forEach(url => {
-                    if (url.startsWith('http')) {
-                        finalMediaUrls.push(url);
+                    const trimmedUrl = url.trim();
+                    if (!trimmedUrl) return;
+
+                    if (trimmedUrl.startsWith('http')) {
+                        finalMediaUrls.push(trimmedUrl);
                     } else {
-                        const matchedFile = importAssets.find(f => f.name === url || f.name === url.split('/').pop());
+                        const filename = trimmedUrl.split(/[/\\]/).pop()?.trim().toLowerCase();
+                        const matchedFile = importAssets.find(f => {
+                            const assetName = f.name.toLowerCase();
+                            return assetName === filename || 
+                                   assetName.split('.')[0] === filename?.split('.')[0];
+                        });
+
                         if (matchedFile) {
                             toolData.append("media[]", matchedFile);
                         } else {
-                            finalMediaUrls.push(url);
+                            // If not matched locally, assume it's already on the server
+                            const finalPath = trimmedUrl.startsWith('uploads/') ? trimmedUrl : `uploads/${trimmedUrl}`;
+                            finalMediaUrls.push(finalPath);
                         }
                     }
                 });
 
-                toolData.append("pros", JSON.stringify(splitArr(["Pros", "Advantages", "Benefits"])));
-                toolData.append("cons", JSON.stringify(splitArr(["Cons", "Disadvantages", "Drawbacks"])));
-                toolData.append("features", JSON.stringify(splitArr(["Features", "Capabilities"])));
+                toolData.append("pros", JSON.stringify(splitArr(["Pros", "Pro", "Advantages", "Benefits"])));
+                toolData.append("cons", JSON.stringify(splitArr(["Cons", "Con", "Disadvantages", "Drawbacks"])));
+                toolData.append("features", JSON.stringify(splitArr(["Features", "Feature", "Capabilities"])));
                 toolData.append("media_urls", JSON.stringify(finalMediaUrls));
-                toolData.append("pricing_tiers", getVal(["Pricing Tiers", "Tiers", "Plans"], "[]"));
+                
+                // Handle Pricing Tiers - Look for complex JSON OR simple Plan columns
+                let pricingTiersStr = getVal(["Pricing Tiers", "Tiers", "Plans"], "");
+                if (!pricingTiersStr || pricingTiersStr === "[]") {
+                    const singlePlanName = getVal(["Plan Name", "Plan", "Price Name"]);
+                    const singlePlanPrice = getVal(["Plan Price", "Price", "Cost", "Value"]);
+                    const singlePlanFeatures = splitArr(["Plan Features", "Features", "What's included"]);
+                    
+                    if (singlePlanName) {
+                        pricingTiersStr = JSON.stringify([{
+                            name: singlePlanName,
+                            price: singlePlanPrice || finalPricing,
+                            features: singlePlanFeatures.length > 0 ? singlePlanFeatures : splitArr(["Features", "Capabilities"])
+                        }]);
+                    }
+                }
+                toolData.append("pricing_tiers", pricingTiersStr || "[]");
+                
+                toolData.append("prompts", JSON.stringify(splitArr(["Prompts", "Examples", "Use Cases"])));
+                const rawFaqs = getVal(["FAQs", "Q&A", "FAQ", "Questions"], "[]");
+                let finalFaqs = "[]";
+                if (rawFaqs.startsWith('[') && rawFaqs.endsWith(']')) {
+                    finalFaqs = rawFaqs;
+                } else if (rawFaqs !== "[]") {
+                    // Try to parse key-value pairs separated by pipe or semicolon
+                    const faqList = rawFaqs.split(',').map(item => {
+                        const parts = item.split(/[|;]/);
+                        if (parts.length >= 2) {
+                            return { question: parts[0].trim(), answer: parts[1].trim() };
+                        }
+                        return { question: item.trim(), answer: "" };
+                    });
+                    finalFaqs = JSON.stringify(faqList);
+                }
+                toolData.append("faqs", finalFaqs);
 
                 try {
                     const response = await fetch(API_ENDPOINTS.TOOLS, { method: "POST", body: toolData });
@@ -386,8 +580,8 @@ const AdminDashboard = () => {
         setShowColumnGuide(false);
     };
 
-    const filteredTools = tools.filter(tool => 
-        tool.name?.toLowerCase().includes(searchQuery.toLowerCase()) || 
+    const filteredTools = tools.filter(tool =>
+        tool.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
         tool.category?.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
@@ -463,8 +657,8 @@ const AdminDashboard = () => {
                             />
                             <Search className="w-4 h-4 text-muted-foreground absolute left-3.5 top-1/2 -translate-y-1/2" />
                             {searchQuery && (
-                                <button 
-                                    onClick={() => setSearchQuery("")} 
+                                <button
+                                    onClick={() => setSearchQuery("")}
                                     className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
                                 >
                                     <X size={14} />
@@ -476,8 +670,8 @@ const AdminDashboard = () => {
                         <table className="w-full text-left text-sm">
                             <thead className="bg-card text-muted-foreground uppercase text-xs tracking-wider border-b border-border">
                                 <tr>
-                                    <th className="px-6 py-4 font-semibold">Asset / Tool</th>
                                     <th className="px-6 py-4 font-semibold">Category</th>
+                                    <th className="px-6 py-4 font-semibold text-center">Engagement</th>
                                     <th className="px-6 py-4 font-semibold text-right">Actions</th>
                                 </tr>
                             </thead>
@@ -502,15 +696,23 @@ const AdminDashboard = () => {
                                             <td className="px-6 py-4">
                                                 <div className="flex items-center gap-4">
                                                     <div className="w-10 h-10 rounded-xl bg-secondary/30 border border-border flex items-center justify-center overflow-hidden">
-                                                        {tool.icon_url ? (
-                                                            <img
-                                                                src={tool.icon_url.startsWith('http')
-                                                                    ? tool.icon_url
-                                                                    : `${API_BASE_URL}/${tool.icon_url.startsWith('/') ? tool.icon_url.slice(1) : tool.icon_url}`}
-                                                                className="w-full h-full object-cover"
-                                                                alt={tool.name}
-                                                            />
-                                                        ) : (
+                                                        {tool.icon_url ? (() => {
+                                                            const cleanIcon = tool.icon_url.replace(/^['"\[]|['"\]]$/g, '').trim();
+                                                            return cleanIcon ? (
+                                                                <img
+                                                                    src={cleanIcon.startsWith('http')
+                                                                        ? cleanIcon
+                                                                        : `${API_BASE_URL}/${cleanIcon.startsWith('/') ? cleanIcon.slice(1) : cleanIcon}`}
+                                                                    className="w-full h-full object-cover"
+                                                                    alt={tool.name}
+                                                                    onError={(e) => {
+                                                                        const target = e.target as HTMLImageElement;
+                                                                        target.style.display = 'none';
+                                                                        if (target.parentElement) target.parentElement.innerHTML = '<div class="text-[10px] font-bold">ERR</div>';
+                                                                    }}
+                                                                />
+                                                            ) : <Zap size={16} className="text-foreground/20" />;
+                                                        })() : (
                                                             <Zap size={16} className="text-foreground/20" />
                                                         )}
                                                     </div>
@@ -524,6 +726,12 @@ const AdminDashboard = () => {
                                                 <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-secondary/30 text-muted-foreground border border-border group-hover:border-border transition-colors">
                                                     {tool.category}
                                                 </span>
+                                            </td>
+                                            <td className="px-6 py-4 text-center">
+                                                <div className="flex flex-col items-center">
+                                                    <span className="text-xs font-bold text-primary">{tool.upvotes || 0}</span>
+                                                    <span className="text-[10px] text-muted-foreground uppercase">Upvotes</span>
+                                                </div>
                                             </td>
 
                                             <td className="px-6 py-4 text-right">
@@ -557,31 +765,31 @@ const AdminDashboard = () => {
                     >
                         <motion.div
                             initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }}
-                            className="bg-[#0f0f0f] border border-border rounded-2xl w-full max-w-2xl shadow-2xl overflow-hidden my-8"
+                            className="bg-card border border-border rounded-2xl w-full max-w-2xl shadow-2xl overflow-hidden my-8"
                         >
                             {/* Modal Header */}
-                            <div className="flex justify-between items-center p-6 border-b border-border bg-[#141414]">
+                            <div className="flex justify-between items-center p-6 border-b border-border bg-secondary/10">
                                 <div className="flex items-center gap-3">
                                     <div className="w-10 h-10 rounded-xl bg-green-500/10 border border-green-500/20 flex items-center justify-center">
-                                        <FileSpreadsheet size={20} className="text-green-400" />
+                                        <FileSpreadsheet size={20} className="text-green-600 dark:text-green-400" />
                                     </div>
                                     <div>
-                                        <h3 className="text-lg font-bold font-display">Bulk Import via Excel / CSV</h3>
-                                        <p className="text-xs text-foreground/40">Upload a spreadsheet to add multiple tools at once</p>
+                                        <h3 className="text-lg font-bold font-display text-foreground">Bulk Import via Excel / CSV</h3>
+                                        <p className="text-xs text-muted-foreground">Upload a spreadsheet to add multiple tools at once</p>
                                     </div>
                                 </div>
-                                <button onClick={closeImportModal} className="text-foreground/40 hover:text-foreground transition-colors p-1"><X size={22} /></button>
+                                <button onClick={closeImportModal} className="text-muted-foreground hover:text-foreground transition-colors p-1"><X size={22} /></button>
                             </div>
 
                             <div className="p-6 space-y-5">
 
                                 {/* ── Column Format Guide (Collapsible) ── */}
-                                <div className="rounded-xl border border-border bg-white/[0.02] overflow-hidden">
+                                <div className="rounded-xl border border-border bg-secondary/5 overflow-hidden">
                                     <button
                                         onClick={() => setShowColumnGuide(v => !v)}
                                         className="w-full flex items-center justify-between px-4 py-3 text-sm font-semibold text-muted-foreground hover:text-foreground transition-colors"
                                     >
-                                        <span className="flex items-center gap-2"><Info size={15} className="text-primary" /> Required Column Format</span>
+                                        <span className="flex items-center gap-2 text-foreground"><Info size={15} className="text-primary" /> Required Column Format</span>
                                         {showColumnGuide ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
                                     </button>
                                     <AnimatePresence>
@@ -593,18 +801,19 @@ const AdminDashboard = () => {
                                                 <div className="px-4 pb-4 border-t border-border pt-3">
                                                     <div className="grid grid-cols-2 gap-2 text-xs">
                                                         {[
-                                                            { col: "Name *", desc: "Tool name (required)" },
-                                                            { col: "Description *", desc: "Full description" },
-                                                            { col: "Category", desc: "e.g. Text Generation" },
-                                                            { col: "Pricing", desc: "e.g. Free / Premium" },
-                                                            { col: "Website URL", desc: "Full URL with https://" },
-                                                            { col: "Rating", desc: "Number 0–5 (e.g. 4.5)" },
-                                                            { col: "Reviews", desc: "Review count (e.g. 100)" },
-                                                            { col: "Pros", desc: "Comma-separated list" },
-                                                            { col: "Cons", desc: "Comma-separated list" },
-                                                            { col: "Features", desc: "Comma-separated list" },
-                                                            { col: "Icon URL", desc: "URL to logo/icon" },
-                                                            { col: "Media URLs", desc: "Comma-separated image URLs" },
+                                                            { col: "Name *", desc: "AI Tool name (e.g. ChatGPT)" },
+                                                            { col: "Description *", desc: "Detailed description of the tool" },
+                                                            { col: "Category", desc: "Text Generation, Image Generation, Code Assistant, etc." },
+                                                            { col: "Pricing", desc: "Free, Premium, Subscription, Freemium" },
+                                                            { col: "Website URL", desc: "Official website (https://example.com)" },
+                                                            { col: "Rating", desc: "Rating 0-5 (e.g. 4.5)" },
+                                                            { col: "Reviews", desc: "Total review count (e.g. 50000)" },
+                                                            { col: "Pros", desc: "Advantages (comma-separated)" },
+                                                            { col: "Cons", desc: "Disadvantages (comma-separated)" },
+                                                            { col: "Features", desc: "Key features (comma-separated)" },
+                                                            { col: "Logo URL", desc: "Image URL OR filename for upload" },
+                                                            { col: "Gallery URLs", desc: "Screenshots (comma-separated URLs or filenames)" },
+                                                            { col: "Pricing Tiers", desc: "JSON array of pricing plans" },
                                                         ].map(({ col, desc }) => (
                                                             <div key={col} className="flex gap-2">
                                                                 <span className="text-primary font-mono font-bold min-w-[110px]">{col}</span>
@@ -623,7 +832,7 @@ const AdminDashboard = () => {
                                     onClick={downloadTemplate}
                                     className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border border-dashed border-primary/40 text-primary text-sm font-semibold hover:bg-primary/5 transition-all"
                                 >
-                                    <Download size={16} /> Download Excel Template
+                                    <Download size={16} /> Download AI Tools Template (with Examples)
                                 </button>
 
                                 {importStatus !== "running" && (
@@ -675,14 +884,22 @@ const AdminDashboard = () => {
                                             multiple
                                             accept="image/*"
                                             className="hidden"
-                                            onChange={(e) => setImportAssets(Array.from(e.target.files || []))}
+                                            onChange={(e) => {
+                                                const files = Array.from(e.target.files || []);
+                                                // Strictly filter for images just in case the browser 'accept' attribute is bypassed
+                                                const images = files.filter(f => f.type.startsWith('image/'));
+                                                setImportAssets(images);
+                                                if (images.length < files.length) {
+                                                    toast.warning(`${files.length - images.length} non-image files ignored.`);
+                                                }
+                                            }}
                                         />
                                         <div className="w-10 h-10 rounded-lg bg-secondary/30 flex items-center justify-center border border-border">
                                             <Upload size={18} className={importAssets.length > 0 ? "text-primary" : "text-foreground/40"} />
                                         </div>
                                         <div className="flex-1">
-                                            <div className="text-sm font-semibold">{importAssets.length > 0 ? `${importAssets.length} Assets Selected` : "2. Select Image Assets (Optional)"}</div>
-                                            <div className="text-[10px] text-foreground/40">Tool will match filenames (e.g. "logo.png") provided in Excel.</div>
+                                            <div className="text-sm font-semibold">{importAssets.length > 0 ? `${importAssets.length} Assets Selected` : "2. Select Image Assets (Required if using filenames)"}</div>
+                                            <div className="text-[10px] text-foreground/40">Only images (PNG, JPG, SVG, WebP) are accepted for logos and galleries.</div>
                                         </div>
                                         {importAssets.length > 0 && (
                                             <button
@@ -751,14 +968,6 @@ const AdminDashboard = () => {
                                             )}
                                         </button>
                                     )}
-                                    {importStatus === "done" && (
-                                        <button
-                                            onClick={() => { setImportFile(null); setImportRows([]); setImportProgress(0); setImportStatus("idle"); }}
-                                            className="flex-[2] py-3 bg-green-500 text-background hover:bg-green-400 rounded-xl font-bold text-sm transition-colors flex items-center justify-center gap-2"
-                                        >
-                                            <Upload size={16} /> Import Another File
-                                        </button>
-                                    )}
                                 </div>
                             </div>
                         </motion.div>
@@ -766,9 +975,7 @@ const AdminDashboard = () => {
                 )}
             </AnimatePresence>
 
-            {/* ════════════════════════════════════════════════════════════════════════
-          MODAL 2: Add / Edit Tool (Manual Form)
-      ════════════════════════════════════════════════════════════════════════ */}
+            {/* Add/Edit Modal */}
             <AnimatePresence>
                 {isAddModalOpen && (
                     <motion.div
@@ -777,19 +984,55 @@ const AdminDashboard = () => {
                     >
                         <motion.div
                             initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }}
-                            className="bg-[#0f0f0f] border border-border rounded-2xl w-full max-w-4xl shadow-2xl overflow-hidden my-8"
+                            className="bg-card border border-border rounded-3xl w-full max-w-4xl shadow-[0_30px_60px_rgba(0,0,0,0.2)] overflow-hidden my-8"
                         >
-                            <div className="flex justify-between items-center p-6 border-b border-border bg-[#141414]">
-                                <h3 className="text-xl font-bold font-display">{editingId ? "Edit" : "Add Detailed"} Tool</h3>
-                                <button onClick={() => setIsAddModalOpen(false)} className="text-foreground/40 hover:text-foreground transition-colors"><X size={24} /></button>
+                            <div className="flex justify-between items-center p-6 border-b border-white/5 bg-white/5 backdrop-blur-md">
+                                <div className="flex items-center gap-4">
+                                    <div className="w-12 h-12 rounded-2xl bg-primary/20 border border-primary/30 flex items-center justify-center shadow-inner">
+                                        <Zap size={24} className="text-primary" />
+                                    </div>
+                                    <div>
+                                        <h3 className="text-2xl font-bold font-display text-white">{editingId ? "Edit" : "Add New"} AI Tool</h3>
+                                        <p className="text-[10px] text-white/40 uppercase tracking-widest font-bold font-sans">Manual Entry Mode</p>
+                                    </div>
+                                </div>
+                                <button onClick={() => setIsAddModalOpen(false)} className="p-2 hover:bg-white/10 rounded-full text-white/40 hover:text-white transition-all"><X size={24} /></button>
                             </div>
 
-                            <form onSubmit={handleAddTool} className="p-6 overflow-y-auto max-h-[75vh]">
-                                <h4 className="text-lg font-bold text-primary mb-4 pt-4 border-t border-border">1. Basic Information</h4>
+                            <form onSubmit={handleAddTool} className="p-8 overflow-y-auto max-h-[75vh] custom-scrollbar">
+                                <h4 className="text-sm font-black text-primary uppercase tracking-[0.2em] mb-6 flex items-center gap-3">
+                                    <span className="w-8 h-[1px] bg-primary/30"></span>
+                                    1. Basic Information
+                                </h4>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-6">
                                     <div><label className="block text-xs uppercase tracking-wider text-muted-foreground mb-2 font-bold">Tool Name *</label><input required value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} className="w-full bg-secondary/30 border border-border rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-primary transition-colors" placeholder="e.g. ChatGPT" /></div>
-                                    <div><label className="block text-xs uppercase tracking-wider text-muted-foreground mb-2 font-bold">Category *</label><input required value={formData.category} onChange={(e) => setFormData({ ...formData, category: e.target.value })} className="w-full bg-secondary/30 border border-border rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-primary transition-colors" placeholder="e.g. Text Generation" /></div>
-                                    <div><label className="block text-xs uppercase tracking-wider text-muted-foreground mb-2 font-bold">Pricing Label *</label><input required value={formData.pricing} onChange={(e) => setFormData({ ...formData, pricing: e.target.value })} className="w-full bg-secondary/30 border border-border rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-primary transition-colors" placeholder="e.g. Premium / Free" /></div>
+                                    <div>
+                                        <label className="block text-xs uppercase tracking-wider text-muted-foreground mb-2 font-bold">Category *</label>
+                                        <select 
+                                            required 
+                                            value={formData.category} 
+                                            onChange={(e) => setFormData({ ...formData, category: e.target.value })} 
+                                            className="w-full bg-secondary/30 border border-border rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-primary transition-colors appearance-none cursor-pointer"
+                                        >
+                                            <option value="" disabled className="bg-background">Select Category</option>
+                                            {categoryOptions.map(cat => (
+                                                <option key={cat.name} value={cat.name} className="bg-background">
+                                                    {cat.name}
+                                                </option>
+                                            ))}
+                                            <option value="Other" className="bg-background">Other</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs uppercase tracking-wider text-muted-foreground mb-2 font-bold">Pricing Label * (e.g. Free, Paid, Lifetime)</label>
+                                        <input 
+                                            required 
+                                            value={formData.pricing} 
+                                            onChange={(e) => setFormData({ ...formData, pricing: e.target.value })} 
+                                            className="w-full bg-secondary/30 border border-border rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-primary transition-colors"
+                                            placeholder="Free / Paid / Freemium..."
+                                        />
+                                    </div>
                                     <div><label className="block text-xs uppercase tracking-wider text-muted-foreground mb-2 font-bold">Website URL *</label><input required type="url" value={formData.website_url} onChange={(e) => setFormData({ ...formData, website_url: e.target.value })} className="w-full bg-secondary/30 border border-border rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-primary transition-colors" placeholder="https://..." /></div>
                                     <div><label className="block text-xs uppercase tracking-wider text-muted-foreground mb-2 font-bold">Rating *</label><input required type="number" step="0.1" max="5" min="0" value={formData.rating} onChange={(e) => setFormData({ ...formData, rating: e.target.value })} className="w-full bg-secondary/30 border border-border rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-primary transition-colors" /></div>
                                     <div><label className="block text-xs uppercase tracking-wider text-muted-foreground mb-2 font-bold">Number of Reviews</label><input type="number" value={formData.reviews_count} onChange={(e) => setFormData({ ...formData, reviews_count: e.target.value })} className="w-full bg-secondary/30 border border-border rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-primary transition-colors" /></div>
@@ -806,10 +1049,25 @@ const AdminDashboard = () => {
                                             </div>
                                         </div>
                                     </div>
-                                    <div className="md:col-span-2"><label className="block text-xs uppercase tracking-wider text-muted-foreground mb-2 font-bold">Full Description *</label><textarea required value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} className="w-full bg-secondary/30 border border-border rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-primary transition-colors min-h-[100px]" placeholder="Detailed description of the tool..." /></div>
+                                    <div className="md:col-span-2"><label className="block text-xs uppercase tracking-wider text-white/50 mb-2 font-bold ml-1">Full Description *</label><textarea required value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} className="w-full bg-white/[0.03] border border-white/10 rounded-2xl px-5 py-4 text-sm focus:outline-none focus:border-primary/50 focus:bg-white/[0.05] transition-all min-h-[120px] shadow-inner" placeholder="Detailed description of the tool..." /></div>
+                                    <div className="md:col-span-2 flex items-center gap-3 bg-primary/5 p-4 rounded-2xl border border-primary/20">
+                                        <input 
+                                            type="checkbox" 
+                                            id="is_trending" 
+                                            checked={formData.is_trending === 1}
+                                            onChange={(e) => setFormData({ ...formData, is_trending: e.target.checked ? 1 : 0 })}
+                                            className="w-5 h-5 accent-primary rounded cursor-pointer"
+                                        />
+                                        <label htmlFor="is_trending" className="text-sm font-bold text-foreground cursor-pointer flex items-center gap-2">
+                                            <TrendingUp size={16} className="text-primary" /> Mark as Trending Tool (Highlights on Homepage)
+                                        </label>
+                                    </div>
                                 </div>
 
-                                <h4 className="text-lg font-bold text-primary mb-4 pt-4 border-t border-border">2. Features & Details (Comma Separated)</h4>
+                                <h4 className="text-sm font-black text-primary uppercase tracking-[0.2em] mb-6 mt-8 flex items-center gap-3">
+                                    <span className="w-8 h-[1px] bg-primary/30"></span>
+                                    2. Features & Details
+                                </h4>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-6">
                                     <div className="md:col-span-2"><label className="block text-xs uppercase tracking-wider text-muted-foreground mb-2 font-bold">Key Features</label><input value={formData.features} onChange={(e) => setFormData({ ...formData, features: e.target.value })} className="w-full bg-secondary/30 border border-border rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-primary transition-colors" placeholder="e.g. Text generation, Code formatting, API Access" /></div>
                                     <div><label className="block text-xs uppercase tracking-wider text-muted-foreground mb-2 font-bold">Pros</label><textarea value={formData.pros} onChange={(e) => setFormData({ ...formData, pros: e.target.value })} className="w-full bg-secondary/30 border border-border rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-primary transition-colors min-h-[80px]" placeholder="e.g. Very fast, Great UI, Free tier" /></div>
@@ -831,19 +1089,48 @@ const AdminDashboard = () => {
                                     </div>
                                 </div>
 
-                                <h4 className="text-lg font-bold text-primary mb-4 pt-4 border-t border-border">3. Pricing Tiers</h4>
+                                <h4 className="text-sm font-black text-primary uppercase tracking-[0.2em] mb-6 mt-8 flex items-center gap-3">
+                                    <span className="w-8 h-[1px] bg-primary/30"></span>
+                                    3. Pricing Tiers
+                                </h4>
                                 {pricingTiers.map((tier, index) => (
                                     <div key={index} className="p-4 bg-secondary/30 border border-border rounded-xl mb-3 relative">
                                         <button type="button" onClick={() => removeTier(index)} className="absolute top-2 right-2 text-muted-foreground/60 hover:text-red-400"><X size={16} /></button>
-                                        <div className="grid grid-cols-2 gap-3 mb-3">
-                                            <div><label className="block text-xs text-muted-foreground mb-1">Tier Name</label><input value={tier.name} onChange={(e) => updateTier(index, 'name', e.target.value)} className="w-full bg-card border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-primary" placeholder="e.g. Pro" /></div>
-                                            <div><label className="block text-xs text-muted-foreground mb-1">Price</label><input value={tier.price} onChange={(e) => updateTier(index, 'price', e.target.value)} className="w-full bg-card border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-primary" placeholder="e.g. $20/mo" /></div>
+                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
+                                            <div><label className="block text-xs text-muted-foreground mb-1">Plan Name</label><input value={tier.name} onChange={(e) => updateTier(index, 'name', e.target.value)} className="w-full bg-card border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-primary" placeholder="e.g. Pro Plan" /></div>
+                                            <div><label className="block text-xs text-muted-foreground mb-1">Price</label><input value={tier.price} onChange={(e) => updateTier(index, 'price', e.target.value)} className="w-full bg-card border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-primary" placeholder="e.g. $20" /></div>
+                                            <div><label className="block text-xs text-muted-foreground mb-1">Billing (e.g. /mo, /yr)</label><input value={tier.interval} onChange={(e) => updateTier(index, 'interval', e.target.value)} className="w-full bg-card border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-primary" placeholder="e.g. /monthly" /></div>
                                         </div>
                                         <div><label className="block text-xs text-muted-foreground mb-1">Included Features (Comma separated)</label><input value={tier.features} onChange={(e) => updateTier(index, 'features', e.target.value)} className="w-full bg-card border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-primary" placeholder="e.g. 500 Credits, 4K Quality" /></div>
                                     </div>
                                 ))}
                                 <button type="button" onClick={handleAddTier} className="w-full py-3 border border-dashed border-border rounded-xl text-muted-foreground text-sm hover:text-foreground hover:border-white/50 hover:bg-secondary/30 transition-all text-center mb-6">
                                     + Add Pricing Tier
+                                </button>
+
+                                <h4 className="text-sm font-black text-primary uppercase tracking-[0.2em] mb-6 mt-8 flex items-center gap-3">
+                                    <span className="w-8 h-[1px] bg-primary/30"></span>
+                                    4. Extended Information
+                                </h4>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-6">
+                                    <div className="md:col-span-2"><label className="block text-xs uppercase tracking-wider text-muted-foreground mb-2 font-bold">Prompts / Examples (Comma separated)</label><textarea value={formData.prompts} onChange={(e) => setFormData({ ...formData, prompts: e.target.value })} className="w-full bg-secondary/30 border border-border rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-primary transition-colors min-h-[100px]" placeholder="e.g. Write a poem about space, Code a React button" /></div>
+                                </div>
+
+                                <h4 className="text-sm font-black text-primary uppercase tracking-[0.2em] mb-6 mt-8 flex items-center gap-3">
+                                    <span className="w-8 h-[1px] bg-primary/30"></span>
+                                    5. Q&A / FAQs
+                                </h4>
+                                {faqs.map((faq, index) => (
+                                    <div key={index} className="p-4 bg-secondary/30 border border-border rounded-xl mb-3 relative">
+                                        <button type="button" onClick={() => removeFaq(index)} className="absolute top-2 right-2 text-muted-foreground/60 hover:text-red-400"><X size={16} /></button>
+                                        <div className="space-y-3">
+                                            <div><label className="block text-xs text-muted-foreground mb-1">Question</label><input value={faq.question} onChange={(e) => updateFaq(index, 'question', e.target.value)} className="w-full bg-card border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-primary" placeholder="e.g. Is there a free trial?" /></div>
+                                            <div><label className="block text-xs text-muted-foreground mb-1">Answer</label><textarea value={faq.answer} onChange={(e) => updateFaq(index, 'answer', e.target.value)} className="w-full bg-card border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-primary min-h-[60px]" placeholder="e.g. Yes, we offer a 7-day free trial..." /></div>
+                                        </div>
+                                    </div>
+                                ))}
+                                <button type="button" onClick={handleAddFaq} className="w-full py-3 border border-dashed border-border rounded-xl text-muted-foreground text-sm hover:text-foreground hover:border-white/50 hover:bg-secondary/30 transition-all text-center mb-6">
+                                    + Add FAQ
                                 </button>
 
                                 <div className="flex gap-4 pt-6 border-t border-border">

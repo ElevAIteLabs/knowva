@@ -4,14 +4,9 @@ import { Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { toast } from "sonner";
-import chatgptLogo from "@/assets/chatgptlogo.png";
-import midjourneyLogo from "@/assets/midjourney logo.png";
-import claudeLogo from "@/assets/claude ai logo.png";
-import runwayLogo from "@/assets/runway logo.png";
-import jasperLogo from "@/assets/jasper logo.png";
-import cursorLogo from "@/assets/cursor logo.png";
-import elevenlabsLogo from "@/assets/elevenlabs logo.png";
-import perplexityLogo from "@/assets/preplexity logo.png";
+// Hardcoded logos removed
+
+import { API_BASE_URL } from "@/config/apiConfig";
 
 interface CarouselCard {
   name: string;
@@ -27,7 +22,7 @@ interface Carousel3DProps {
   autoRotateInterval?: number;
 }
 
-const Carousel3D = ({ items, autoRotateInterval = 3000 }: Carousel3DProps) => {
+const Carousel3D = ({ items, autoRotateInterval = 2000 }: Carousel3DProps) => {
   const [activeIndex, setActiveIndex] = useState(0);
   const [isHovered, setIsHovered] = useState(false);
   const [dragStartX, setDragStartX] = useState<number | null>(null);
@@ -49,14 +44,13 @@ const Carousel3D = ({ items, autoRotateInterval = 3000 }: Carousel3DProps) => {
     }
   };
 
-  // Auto-rotate
+  // Auto-rotate consistently every 1.5s
   useEffect(() => {
-    if (isHovered) return;
     const timer = setInterval(() => {
       setActiveIndex((prev) => (prev + 1) % total);
     }, autoRotateInterval);
     return () => clearInterval(timer);
-  }, [isHovered, total, autoRotateInterval]);
+  }, [total, autoRotateInterval]);
 
   const goNext = useCallback(() => {
     setActiveIndex((prev) => (prev + 1) % total);
@@ -100,20 +94,22 @@ const Carousel3D = ({ items, autoRotateInterval = 3000 }: Carousel3DProps) => {
       };
     }
 
-    // Desktop: 3D circular perspective
-    const angle = offset * (360 / Math.max(total, 5));
-    const radius = 320;
-    const radian = (angle * Math.PI) / 180;
-    const translateX = Math.sin(radian) * radius;
+    const rotateY = -offset * 30;
+    const radius = 420;
+    const radian = (offset * 35 * Math.PI) / 180;
+
+    const translateX = Math.sin(radian) * radius * 1.6; // Increased multiplier to spread to edges
     const translateZ = Math.cos(radian) * radius - radius;
-    const scale = 0.65 + 0.35 * ((translateZ + radius) / radius);
-    const opacity = Math.max(0.25, Math.min(1, 0.3 + 0.7 * ((translateZ + radius) / radius)));
+
+    // Dramatic scale difference for center focus
+    const scale = isCenter ? 1.25 : 0.75 - (absOffset * 0.05);
+    const opacity = isCenter ? 1 : Math.max(0.3, 0.6 - (absOffset * 0.1));
 
     return {
-      transform: `translateX(${translateX}px) translateZ(${translateZ}px) scale(${scale})`,
+      transform: `translateX(${translateX}px) translateZ(${translateZ}px) rotateY(${rotateY}deg) scale(${scale})`,
       opacity,
       zIndex: Math.round((translateZ + radius) * 10),
-      filter: absOffset === 0 ? "none" : `blur(${Math.min(absOffset * 0.8, 2)}px)`,
+      filter: isCenter ? "none" : `blur(${absOffset * 2}px) brightness(${0.4 + (0.6 * (1 - absOffset / (total / 2)))})`,
     };
   };
 
@@ -141,8 +137,8 @@ const Carousel3D = ({ items, autoRotateInterval = 3000 }: Carousel3DProps) => {
         ref={containerRef}
         className="relative mx-auto overflow-hidden"
         style={{
-          perspective: isMobile ? "none" : "1200px",
-          height: isMobile ? "420px" : "460px",
+          perspective: isMobile ? "none" : "2500px",
+          height: isMobile ? "480px" : "640px",
         }}
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
@@ -158,7 +154,7 @@ const Carousel3D = ({ items, autoRotateInterval = 3000 }: Carousel3DProps) => {
             return (
               <motion.div
                 key={`${tool.name}-${index}`}
-                className="absolute w-[320px] sm:w-[360px]"
+                className="absolute w-[300px] sm:w-[340px]"
                 animate={{
                   x: 0,
                   ...style,
@@ -170,44 +166,51 @@ const Carousel3D = ({ items, autoRotateInterval = 3000 }: Carousel3DProps) => {
                 style={{
                   transformStyle: "preserve-3d",
                   zIndex: style.zIndex,
+                  perspective: "2000px"
                 }}
               >
                 <div className="relative group select-none">
                   {/* Outer Button Wrapper to preserve HTML semantics for accessibility */}
                   <button onClick={(e) => handleCardClick(e, tool.name)} className="block w-full text-left h-full focus:outline-none">
-                    <div className="bg-card text-card-foreground border border-border rounded-3xl p-8 hover:bg-secondary/20 hover:scale-[1.05] hover:border-primary/50 transition-all duration-500 ease-in-out shadow-[0_10px_30px_rgba(0,0,0,0.1)] backdrop-blur-md overflow-hidden relative">
-                      
-                      {/* Inner Glow effect on hover */}
-                      <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                    <div className="bg-card text-card-foreground border border-border rounded-3xl p-8 shadow-[0_20px_50px_rgba(0,0,0,0.3)] backdrop-blur-md overflow-hidden relative">
+
+                      {/* Premium card reflection effect */}
+                      <div className="absolute inset-0 bg-gradient-to-tr from-white/5 via-transparent to-transparent pointer-events-none"></div>
+
 
                       {/* Icon Section */}
-                      <div className="w-16 h-16 rounded-2xl bg-secondary/80 border border-border flex items-center justify-center text-4xl mb-6 group-hover:scale-110 group-hover:bg-primary/10 transition-transform duration-500 overflow-hidden shadow-inner p-2 relative z-10">
-                        {tool.name.toLowerCase() === "chatgpt" ? (
-                          <img src={chatgptLogo} alt="ChatGPT" className="w-8 h-8 object-contain drop-shadow" />
-                        ) : tool.name.toLowerCase() === "midjourney" ? (
-                          <img src={midjourneyLogo} alt="Midjourney" className="w-8 h-8 object-contain drop-shadow" />
-                        ) : tool.name.toLowerCase() === "claude" ? (
-                          <img src={claudeLogo} alt="Claude" className="w-8 h-8 object-contain drop-shadow" />
-                        ) : tool.name.toLowerCase() === "runway" ? (
-                          <img src={runwayLogo} alt="Runway" className="w-8 h-8 object-contain drop-shadow" />
-                        ) : tool.name.toLowerCase() === "jasper ai" || tool.name.toLowerCase() === "jasper" ? (
-                          <img src={jasperLogo} alt="Jasper" className="w-8 h-8 object-contain drop-shadow" />
-                        ) : tool.name.toLowerCase() === "cursor" ? (
-                          <img src={cursorLogo} alt="Cursor" className="w-8 h-8 object-contain drop-shadow" />
-                        ) : tool.name.toLowerCase() === "elevenlabs" ? (
-                          <img src={elevenlabsLogo} alt="ElevenLabs" className="w-8 h-8 object-contain drop-shadow" />
-                        ) : tool.name.toLowerCase() === "perplexity" ? (
-                          <img src={perplexityLogo} alt="Perplexity" className="w-8 h-8 object-contain drop-shadow" />
-                        ) : tool.icon && (tool.icon.startsWith('http') || tool.icon.startsWith('/')) ? (
-                          <img src={tool.icon} alt={tool.name} className="w-full h-full object-contain drop-shadow" />
-                        ) : (
-                          <span className="text-foreground text-xl font-black font-display">{tool.icon}</span>
+                      <div className="w-16 h-16 rounded-2xl bg-secondary/80 border border-border flex items-center justify-center text-4xl mb-6 overflow-hidden shadow-inner p-2 relative z-10">
+                        {tool.icon && (typeof tool.icon === 'string' && (tool.icon.replace(/^['"\[]|['"\]]$/g, '').trim().startsWith('http') || tool.icon.includes('.') || tool.icon.includes('/'))) ? (() => {
+                          const cleanIcon = typeof tool.icon === 'string' ? tool.icon.replace(/^['"\[]|['"\]]$/g, '').trim() : '';
+                          return (
+                            <img
+                              src={(() => {
+                                if (cleanIcon.startsWith('http')) return cleanIcon;
+                                const clean = cleanIcon.startsWith('/') ? cleanIcon.slice(1) : cleanIcon;
+                                const final = clean.startsWith('uploads/') ? clean : `uploads/${clean}`;
+                                return `${API_BASE_URL}/${final}`;
+                              })()}
+                              alt={tool.name}
+                              className="w-full h-full object-contain drop-shadow"
+                              onError={(e) => {
+                                const target = e.target as HTMLImageElement;
+                                target.style.display = 'none';
+                                if (target.parentElement) {
+                                  target.parentElement.innerHTML = `<span class="text-foreground text-xl font-black font-display">${tool.name.charAt(0)}</span>`;
+                                }
+                              }}
+                            />
+                          );
+                        })() : (
+                          <span className="text-foreground text-xl font-black font-display">
+                            {((typeof tool.icon === 'string' && tool.icon.length < 5) ? tool.icon : (tool.name ? tool.name.charAt(0) : '?'))}
+                          </span>
                         )}
                       </div>
 
                       {/* Content */}
                       <div className="relative z-10">
-                        <h3 className="font-display text-2xl font-bold text-foreground mb-3 group-hover:text-primary transition-colors duration-300">
+                        <h3 className="font-display text-2xl font-bold text-foreground mb-3 transition-colors duration-300">
                           {tool.name}
                         </h3>
                         <p className="text-muted-foreground mb-6 leading-relaxed line-clamp-3 font-light">

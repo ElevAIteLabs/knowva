@@ -1,4 +1,4 @@
-import { Star, ExternalLink, Check, X, ChevronLeft, Send, LogIn, Loader2 } from "lucide-react";
+import { Star, ExternalLink, Check, X, ChevronLeft, Send, LogIn, Loader2, Bookmark, LayoutGrid, CreditCard, Terminal, HelpCircle, History, MessageSquare, Info } from "lucide-react";
 import { Link, useParams, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { useEffect, useState } from "react";
@@ -8,282 +8,10 @@ import Footer from "@/components/Footer";
 import ToolCard from "@/components/ToolCard";
 
 import { toast } from "sonner";
-import chatgptlogo from "@/assets/chatgptlogo.png";
-import midjourneylogo from "@/assets/midjourney logo.png";
-import claudelogo from "@/assets/claude ai logo.png";
-import cursorlogo from "@/assets/cursor logo.png";
-import runwaylogo from "@/assets/runway logo.png";
-import jasperlogo from "@/assets/jasper logo.png";
-import elevenlabslogo from "@/assets/elevenlabs logo.png";
-import perplexitylogo from "@/assets/preplexity logo.png";
-import chatgpt1 from "@/assets/chatgpt1.png";
-import chatgpt2 from "@/assets/chaptgpt2.png";
-import chatgpt3 from "@/assets/chatgpt3.png";
-import chatgpt4 from "@/assets/chatgpt4.png";
-import midjourney1 from "@/assets/Midjourney1.png";
-import midjourney2 from "@/assets/Midjourney2.png";
-import midjourney3 from "@/assets/Midjourney3.png";
-import midjourney4 from "@/assets/Midjourney4.png";
-import claude1 from "@/assets/claude1.png";
-import claude2 from "@/assets/claude2.png";
-import claude3 from "@/assets/claude3.png";
-import claude4 from "@/assets/claude4.png";
-import cursor1 from "@/assets/cursor1.png";
-import cursor2 from "@/assets/cursor2.png";
-import cursor3 from "@/assets/cursor3.png";
-import cursor4 from "@/assets/cursor4.png";
-import runway1 from "@/assets/runway1.mp4";
-import runway2 from "@/assets/runway2.mp4";
-import runway3 from "@/assets/runway3.mp4";
-import runway4 from "@/assets/runway4.mp4";
-import jasper1 from "@/assets/jasper1.mp4";
-import jasper2 from "@/assets/jasper2.mp4";
-import jasper3 from "@/assets/jasper3.mp4";
-import jasper4 from "@/assets/jasper4.mp4";
-import elevenlabs1 from "@/assets/elevenlabs1.mp4";
-import elevenlabs2 from "@/assets/elevenlabs2.mp4";
-import elevenlabs3 from "@/assets/elevenlabs3.mp4";
-import elevenlabs4 from "@/assets/elevenlabs4.mp4";
-import perplexity1 from "@/assets/preplexity1.png";
-import perplexity2 from "@/assets/preplexity2.png";
-import herosection from "@/assets/herosection.mp4";
-import perplexity3 from "@/assets/preplexity3.png";
-import perplexity4 from "@/assets/preplexity4.png";
-import sora1 from "@/assets/sora1.mp4";
-import sora2 from "@/assets/sora2.mp4";
-import sora3 from "@/assets/sora3.mp4";
-import sora4 from "@/assets/sora4.mp4";
-import devin1 from "@/assets/devin1.mp4";
-import devin2 from "@/assets/devin2.mp4";
-import devin3 from "@/assets/devin3.mp4";
-import devin4 from "@/assets/devin4.mp4";
-import geminiUltra1 from "@/assets/gemini ultra1.mp4";
-import geminiUltra2 from "@/assets/gemini ultra2.mp4";
-import geminiUltra3 from "@/assets/gemini ultra3.mp4";
-import geminiUltra4 from "@/assets/gemini ultra4.mp4";
-import udio1 from "@/assets/udio1.mp4";
-import udio2 from "@/assets/udio2.mp4";
-import udio3 from "@/assets/udio3.mp4";
-import udio4 from "@/assets/udio4.mp4";
+// Local assets removed to rely on DB/Excel images
 import runwayvideo from "@/assets/runwayvideo.jpg";
 
-const tools = {
-  'chatgpt': {
-    name: "ChatGPT",
-    icon: <img src={chatgptlogo} alt="ChatGPT" className="w-full h-full object-contain" />,
-    description: "ChatGPT is an advanced AI language model developed by OpenAI. It excels at natural language understanding, text generation, coding assistance, creative writing, and complex reasoning tasks.",
-    category: "Text Generation",
-    pricing: "Premium",
-    rating: 4.8,
-    reviews: 1247,
-    website: "https://chat.openai.com",
-    pros: ["Excellent natural language understanding", "Strong coding capabilities", "Regular model updates", "Plugin ecosystem", "Multi-modal support"],
-    cons: ["Can hallucinate facts", "Knowledge cutoff date", "Requires subscription for best model", "Rate limits on free tier"],
-    features: ["Text generation", "Code generation", "Image generation (DALL-E)", "File analysis", "Web browsing", "Custom GPTs"],
-    pricingTiers: [
-      { name: "Free", price: "$0", features: ["GPT-3.5 access", "Basic features"] },
-      { name: "Plus", price: "$20/mo", features: ["GPT-4 access", "DALL-E", "Browsing", "Priority access"] },
-      { name: "Team", price: "$25/mo", features: ["Everything in Plus", "Admin console", "Higher limits"] },
-    ],
-  },
-  'midjourney': {
-    name: "Midjourney",
-    icon: <img src={midjourneylogo} alt="Midjourney" className="w-full h-full object-contain" />,
-    description: "Midjourney is an AI-powered image generation service that creates stunning artwork from text prompts. Known for its artistic style and high-quality outputs.",
-    category: "Image Generation",
-    pricing: "Paid",
-    rating: 4.7,
-    reviews: 892,
-    website: "https://midjourney.com",
-    pros: ["Exceptional artistic quality", "Consistent style", "Active community", "Regular updates"],
-    cons: ["Subscription required", "Learning curve", "Limited free trial"],
-    features: ["Text-to-image generation", "Style customization", "Batch generation", "Community gallery"],
-    pricingTiers: [
-      { name: "Basic", price: "$10/mo", features: ["200 generations", "Basic styles"] },
-      { name: "Standard", price: "$30/mo", features: ["Unlimited generations", "All styles"] },
-      { name: "Pro", price: "$60/mo", features: ["Priority queue", "Commercial license"] },
-    ],
-  },
-  'claude': {
-    name: "Claude",
-    icon: <img src={claudelogo} alt="Claude" className="w-full h-full object-contain" />,
-    description: "Claude is an AI assistant known for being helpful, harmless, and honest. Excellent at analysis, writing, and complex reasoning tasks.",
-    category: "Text Generation",
-    pricing: "Premium",
-    rating: 4.6,
-    reviews: 756,
-    website: "https://claude.ai",
-    pros: ["Strong reasoning", "Large context window", "Safety focused", "Good for analysis"],
-    cons: ["Slower responses", "Limited image capabilities", "Knowledge cutoff"],
-    features: ["Text generation", "Code analysis", "Document review", "Conversation memory"],
-    pricingTiers: [
-      { name: "Free", price: "$0", features: ["Basic Claude", "Limited usage"] },
-      { name: "Pro", price: "$20/mo", features: ["Claude 2", "Higher limits", "Priority access"] },
-    ],
-  },
-  'cursor': {
-    name: "Cursor",
-    icon: <img src={cursorlogo} alt="Cursor" className="w-full h-full object-contain" />,
-    description: "Cursor is an AI-powered code editor that helps developers write better code faster with intelligent suggestions and completions.",
-    category: "Developer Tools",
-    pricing: "Premium",
-    rating: 4.5,
-    reviews: 623,
-    website: "https://cursor.sh",
-    pros: ["Excellent code suggestions", "IDE integration", "Fast performance", "Multi-language support"],
-    cons: ["Subscription for advanced features", "Learning curve", "Resource intensive"],
-    features: ["AI code completion", "Code explanation", "Bug detection", "Refactoring suggestions"],
-    pricingTiers: [
-      { name: "Free", price: "$0", features: ["Basic suggestions", "200 requests/day"] },
-      { name: "Pro", price: "$20/mo", features: ["Advanced AI", "Unlimited requests"] },
-      { name: "Business", price: "$40/mo", features: ["Team features", "Priority support"] },
-    ],
-  },
-  'runway': {
-    name: "Runway",
-    icon: <img src={runwaylogo} alt="Runway" className="w-full h-full object-contain" />,
-    description: "Runway is an AI-powered video editing and generation platform for creative professionals. It offers advanced video manipulation, text-to-video generation, and AI-powered editing tools.",
-    category: "Video",
-    pricing: "Premium",
-    rating: 4.5,
-    reviews: 412,
-    website: "https://runwayml.com",
-    pros: ["Professional video tools", "Text-to-video generation", "High-quality output", "Regular updates"],
-    cons: ["Learning curve", "Credit system", "Limited free tier"],
-    features: ["Video generation", "Text-to-video", "Video editing", "AI effects"],
-    pricingTiers: [
-      { name: "Free", price: "$0", features: ["125 credits/month", "Basic features"] },
-      { name: "Standard", price: "$15/mo", features: ["625 credits/month", "HD exports"] },
-      { name: "Pro", price: "$35/mo", features: ["2250 credits/month", "4K exports", "Priority processing"] },
-    ],
-  },
-  'jasper-ai': {
-    name: "Jasper AI",
-    icon: <img src={jasperlogo} alt="Jasper AI" className="w-full h-full object-contain" />,
-    description: "Jasper AI is an AI-powered content creation platform designed for marketing teams and copywriters. It helps generate high-quality marketing copy, blog posts, and creative content.",
-    category: "Marketing",
-    pricing: "Paid",
-    rating: 4.4,
-    reviews: 892,
-    website: "https://jasper.ai",
-    pros: ["Marketing focused", "Brand voice training", "Template library", "SEO optimization"],
-    cons: ["Expensive", "Learning curve", "Limited free trial"],
-    features: ["Content generation", "Brand voice", "Templates", "SEO tools"],
-    pricingTiers: [
-      { name: "Creator", price: "$39/mo", features: ["1 user", "50+ templates", "Brand voice"] },
-      { name: "Pro", price: "$99/mo", features: ["3 users", "Unlimited words", "Advanced features"] },
-      { name: "Business", price: "$199/mo", features: ["10+ users", "API access", "Custom templates"] },
-    ],
-  },
-  'elevenlabs': {
-    name: "ElevenLabs",
-    icon: <img src={elevenlabslogo} alt="ElevenLabs" className="w-full h-full object-contain" />,
-    description: "ElevenLabs is an AI voice synthesis and cloning platform that creates realistic speech from text. Perfect for content creators, developers, and businesses.",
-    category: "Audio",
-    pricing: "Premium",
-    rating: 4.5,
-    reviews: 623,
-    website: "https://elevenlabs.io",
-    pros: ["Realistic voices", "Voice cloning", "Multiple languages", "Fast generation"],
-    cons: ["Credit system", "Limited free tier", "Complex setup"],
-    features: ["Text-to-speech", "Voice cloning", "Voice design", "Audio API"],
-    pricingTiers: [
-      { name: "Free", price: "$0", features: ["10,000 characters/month", "Basic voices"] },
-      { name: "Starter", price: "$5/mo", features: ["30,000 characters/month", "Custom voices"] },
-      { name: "Creator", price: "$22/mo", features: ["100,000 characters/month", "Instant voice cloning"] },
-    ],
-  },
-  'perplexity': {
-    name: "Perplexity",
-    icon: <img src={perplexitylogo} alt="Perplexity" className="w-full h-full object-contain" />,
-    description: "Perplexity is an AI-powered search engine that provides accurate, sourced answers to your questions. It combines AI with real-time web search for reliable information.",
-    category: "Search",
-    pricing: "Premium",
-    rating: 4.6,
-    reviews: 445,
-    website: "https://perplexity.ai",
-    pros: ["Real-time search", "Source citations", "Accurate answers", "Fast responses"],
-    cons: ["Limited free features", "Sometimes slow", "Requires internet"],
-    features: ["AI search", "Source citations", "Real-time data", "Conversation mode"],
-    pricingTiers: [
-      { name: "Free", price: "$0", features: ["Basic search", "Limited queries"] },
-      { name: "Pro", price: "$20/mo", features: ["Unlimited queries", "Advanced models", "File upload"] },
-      { name: "Enterprise", price: "Custom", features: ["API access", "Custom models", "Priority support"] },
-    ],
-  },
-  'sora': {
-    name: "Sora",
-    icon: "📹",
-    description: "Sora is OpenAI's revolutionary text-to-video model that creates realistic, high-quality video scenes from text descriptions. Pushing the boundaries of AI video generation.",
-    category: "Video",
-    pricing: "Paid",
-    rating: 4.3,
-    reviews: 312,
-    website: "https://openai.com/sora",
-    pros: ["High-quality output", "Realistic scenes", "Text-to-video", "OpenAI technology"],
-    cons: ["Limited access", "Expensive", "Long generation times", "Usage limits"],
-    features: ["Text-to-video", "Scene generation", "High resolution", "Realistic physics"],
-    pricingTiers: [
-      { name: "Basic", price: "$29/mo", features: ["100 credits/month", "720p videos"] },
-      { name: "Pro", price: "$99/mo", features: ["500 credits/month", "1080p videos", "Priority queue"] },
-      { name: "Enterprise", price: "Custom", features: ["Unlimited credits", "4K videos", "API access"] },
-    ],
-  },
-  'devin': {
-    name: "Devin",
-    icon: "🛠️",
-    description: "Devin is the world's first autonomous AI software engineer that can plan, code, debug, and deploy software projects independently. Revolutionizing development workflows.",
-    category: "Developer Tools",
-    pricing: "Paid",
-    rating: 4.2,
-    reviews: 278,
-    website: "https://devin.ai",
-    pros: ["Autonomous coding", "Full project handling", "Debugging skills", "Deployment automation"],
-    cons: ["Very expensive", "Limited access", "Complex setup", "Learning curve"],
-    features: ["Autonomous coding", "Project planning", "Debugging", "Deployment"],
-    pricingTiers: [
-      { name: "Individual", price: "$500/mo", features: ["Personal projects", "Basic support"] },
-      { name: "Team", price: "$2000/mo", features: ["Team collaboration", "Advanced features"] },
-      { name: "Enterprise", price: "Custom", features: ["Custom solutions", "Dedicated support", "SLA"] },
-    ],
-  },
-  'gemini-ultra': {
-    name: "Gemini Ultra",
-    icon: "💎",
-    description: "Gemini Ultra is Google's most capable AI model with multimodal reasoning abilities. Excels at complex tasks, coding, analysis, and understanding various data types.",
-    category: "Text Generation",
-    pricing: "Premium",
-    rating: 4.5,
-    reviews: 567,
-    website: "https://gemini.google.com",
-    pros: ["Multimodal capabilities", "Large context window", "Google integration", "Fast responses"],
-    cons: ["Privacy concerns", "Inconsistent quality", "Limited API access"],
-    features: ["Multimodal reasoning", "Code generation", "Image analysis", "Large context"],
-    pricingTiers: [
-      { name: "Free", price: "$0", features: ["Basic Gemini", "Limited usage"] },
-      { name: "Advanced", price: "$20/mo", features: ["Gemini Ultra", "Higher limits", "Advanced features"] },
-      { name: "API", price: "Custom", features: ["API access", "Enterprise features", "Priority support"] },
-    ],
-  },
-  'udio': {
-    name: "Udio",
-    icon: "🎶",
-    description: "Udio is an AI music generation platform that creates complete songs from text descriptions. Generate original music with vocals, instruments, and professional quality.",
-    category: "Audio",
-    pricing: "Premium",
-    rating: 4.1,
-    reviews: 234,
-    website: "https://udio.com",
-    pros: ["Full song generation", "High quality audio", "Multiple genres", "Fast generation"],
-    cons: ["Limited free tier", "Credit system", "Genre limitations"],
-    features: ["Text-to-music", "Song generation", "Multiple genres", "Vocal synthesis"],
-    pricingTiers: [
-      { name: "Free", price: "$0", features: ["10 songs/month", "Basic quality"] },
-      { name: "Standard", price: "$10/mo", features: ["600 songs/month", "High quality"] },
-      { name: "Pro", price: "$30/mo", features: ["Unlimited songs", "Premium quality", "Commercial rights"] },
-    ],
-  }
-};
+const toolsMock: any = {}; // Fallback removed, relying on DB
 
 // Static reviews removed — now loaded from DB
 
@@ -298,9 +26,12 @@ const ToolDetail = () => {
   const [reviews, setReviews] = useState<any[]>([]);
   const [reviewsLoading, setReviewsLoading] = useState(true);
   const [submitLoading, setSubmitLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState("overview");
   const [userRating, setUserRating] = useState(0);
   const [hoverRating, setHoverRating] = useState(0);
   const [reviewText, setReviewText] = useState("");
+  const [isSaved, setIsSaved] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   // Computed live rating — average of all user reviews; falls back to tool's own rating
   const avgRating = reviews.length > 0
@@ -337,6 +68,15 @@ const ToolDetail = () => {
             const safeParseAll = (str: string, fallback: any) => {
               try { return JSON.parse(str); } catch { return fallback; }
             };
+            // store all DB tools for alternatives
+            const safeGetIcon = (iconUrl: string) => {
+              if (!iconUrl) return null;
+              if (iconUrl.startsWith('http')) return iconUrl;
+              const cleanPath = iconUrl.startsWith('/') ? iconUrl.slice(1) : iconUrl;
+              const finalPath = cleanPath.startsWith('uploads/') ? cleanPath : `uploads/${cleanPath}`;
+              return `${API_BASE_URL}/${finalPath}`;
+            };
+
             setAllDbTools(result.data
               .filter((t: any) => t.name && t.name.trim() !== "")
               .map((t: any) => ({
@@ -345,11 +85,7 @@ const ToolDetail = () => {
                 category: t.category,
                 pricing: t.pricing,
                 rating: parseFloat(t.rating) || 4.5,
-                icon: t.icon_url
-                  ? (t.icon_url.startsWith('http')
-                    ? t.icon_url
-                    : `${API_BASE_URL}/${t.icon_url.startsWith('/') ? t.icon_url.slice(1) : t.icon_url}`)
-                  : (t.name ? t.name.charAt(0) : '?'),
+                icon: safeGetIcon(t.icon_url) || (t.name ? t.name.charAt(0) : '?'),
               })));
 
             // Parse JSON fields safely, and unwrap if double-encoded/triple-encoded
@@ -410,25 +146,26 @@ const ToolDetail = () => {
             };
 
             foundTool = {
+              id: dbTool.id,
               name: dbTool.name,
               icon: (() => {
-                const nameLower = dbTool.name.toLowerCase();
-                if (nameLower === "chatgpt") return <div className="p-3 rounded-lg bg-gray-900 w-full h-full flex items-center justify-center"><img src={chatgptlogo} alt="ChatGPT" className="w-full h-full object-contain" /></div>;
-                if (nameLower === "midjourney") return <div className="p-3 rounded-lg bg-blue-900 w-full h-full flex items-center justify-center"><img src={midjourneylogo} alt="Midjourney" className="w-full h-full object-contain" /></div>;
-                if (nameLower === "claude") return <div className="p-3 rounded-lg bg-orange-600 w-full h-full flex items-center justify-center"><img src={claudelogo} alt="Claude" className="w-full h-full object-contain" /></div>;
-                if (nameLower === "runway") return <div className="p-3 rounded-lg bg-purple-700 w-full h-full flex items-center justify-center"><img src={runwaylogo} alt="Runway" className="w-full h-full object-contain" /></div>;
-                if (nameLower === "jasper ai" || nameLower === "jasper") return <div className="p-3 rounded-lg bg-yellow-600 w-full h-full flex items-center justify-center"><img src={jasperlogo} alt="Jasper" className="w-full h-full object-contain" /></div>;
-                if (nameLower === "cursor") return <div className="p-3 rounded-lg bg-green-700 w-full h-full flex items-center justify-center"><img src={cursorlogo} alt="Cursor" className="w-full h-full object-contain" /></div>;
-                if (nameLower === "elevenlabs") return <div className="p-3 rounded-lg bg-gradient-to-br from-neutral-900 to-zinc-800 w-full h-full flex items-center justify-center"><img src={elevenlabslogo} alt="ElevenLabs" className="w-full h-full object-contain" /></div>;
-                if (nameLower === "perplexity") return <div className="p-3 rounded-lg bg-gradient-to-br from-emerald-700 to-teal-800 w-full h-full flex items-center justify-center"><img src={perplexitylogo} alt="Perplexity" className="w-full h-full object-contain" /></div>;
+                const rawIcon = dbTool.icon_url || "";
+                const cleanIcon = rawIcon.replace(/^['"\[]|['"\]]$/g, '').trim();
 
-                return dbTool.icon_url ? (
+                return cleanIcon ? (
                   <img
-                    src={dbTool.icon_url.startsWith('http')
-                      ? dbTool.icon_url
-                      : `${API_BASE_URL}/${dbTool.icon_url.startsWith('/') ? dbTool.icon_url.slice(1) : dbTool.icon_url}`}
+                    src={cleanIcon.startsWith('http')
+                      ? cleanIcon
+                      : `${API_BASE_URL}/${cleanIcon.startsWith('/') ? cleanIcon.slice(1) : cleanIcon}`}
                     alt={dbTool.name}
                     className="w-full h-full object-contain"
+                    onError={(e) => {
+                      const target = e.target as HTMLImageElement;
+                      target.style.display = 'none';
+                      if (target.parentElement) {
+                        target.parentElement.innerHTML = `<div class="text-xl font-bold bg-white text-black w-full h-full flex items-center justify-center rounded-[20px]">${dbTool.name.charAt(0)}</div>`;
+                      }
+                    }}
                   />
                 ) : (
                   <div className="text-xl font-bold bg-white text-black w-full h-full flex items-center justify-center rounded-[20px]">
@@ -445,20 +182,22 @@ const ToolDetail = () => {
               pros: safeParse(dbTool.pros, []),
               cons: safeParse(dbTool.cons, []),
               features: safeParse(dbTool.features, []),
-              pricingTiers: safeParse(dbTool.pricing_tiers, []),
+              pricing_tiers: safeParse(dbTool.pricing_tiers, []),
               media_urls: safeParse(dbTool.media_urls, []),
+              releases: safeParse(dbTool.releases, []),
+              prompts: safeParse(dbTool.prompts, []),
+              faqs: safeParse(dbTool.faqs, []),
             };
           }
         }
 
-        // Fallback to local mock data if not in DB
         if (!foundTool) {
-          foundTool = tools[slug?.toLowerCase() || 'chatgpt'];
+          // No fallback to mock data
         }
 
         setTool(foundTool);
       } catch (error) {
-        setTool(tools[slug?.toLowerCase() || 'chatgpt']);
+        setTool(null);
       } finally {
         setIsLoading(false);
       }
@@ -466,6 +205,52 @@ const ToolDetail = () => {
 
     fetchTool();
   }, [slug]);
+
+  // Check if tool is saved
+  useEffect(() => {
+    if (currentUser && tool?.id) {
+      const checkSaved = async () => {
+        try {
+          const res = await fetch(API_ENDPOINTS.SAVED_TOOLS, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              action: "check",
+              user_id: currentUser.id,
+              tool_id: tool.id,
+            }),
+          });
+          const result = await res.json();
+          if (result.status === "success") setIsSaved(result.saved);
+        } catch { }
+      };
+      checkSaved();
+    }
+  }, [tool?.id, currentUser?.id]);
+
+  const handleSaveToggle = async () => {
+    if (!currentUser) { navigate("/login"); return; }
+    if (!tool?.id) return;
+    setIsSaving(true);
+    try {
+      const action = isSaved ? "unsave" : "save";
+      const res = await fetch(API_ENDPOINTS.SAVED_TOOLS, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action,
+          user_id: currentUser.id,
+          tool_id: tool.id,
+        }),
+      });
+      const result = await res.json();
+      if (result.status === "success") {
+        setIsSaved(!isSaved);
+        toast.success(isSaved ? "Removed from saved" : "Tool saved successfully!");
+      }
+    } catch { toast.error("Failed to update saved status"); }
+    finally { setIsSaving(false); }
+  };
 
   // Fetch reviews from DB
   const fetchReviews = async () => {
@@ -644,6 +429,13 @@ const ToolDetail = () => {
                 </div>
               </div>
               <div className="flex gap-3 flex-shrink-0">
+                <button
+                  onClick={handleSaveToggle}
+                  disabled={isSaving}
+                  className={`p-3 rounded-xl border transition-all ${isSaved ? "bg-primary text-primary-foreground border-primary shadow-[0_0_20px_rgba(255,179,71,0.2)]" : "bg-card border-border text-muted-foreground hover:bg-primary/10 hover:text-primary hover:border-primary/30"}`}
+                >
+                  <Bookmark className={`w-5 h-5 ${isSaved ? "fill-current" : ""}`} />
+                </button>
                 <a href={tool.website} target="_blank" rel="noopener noreferrer" className="px-6 py-3 bg-primary text-primary-foreground rounded-xl font-medium text-sm hover:bg-primary/90 transition-colors flex items-center gap-2">
                   Visit Website <ExternalLink className="w-4 h-4" />
                 </a>
@@ -654,416 +446,431 @@ const ToolDetail = () => {
             </div>
           </motion.div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Main Content */}
-            <div className="lg:col-span-2 space-y-6">
-              {/* Screenshots */}
-              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="glass-card p-6">
-                <div className="grid grid-cols-2 gap-4">
-                  {tool.name === "ChatGPT" && (
-                    <>
-                      <div className="aspect-video bg-black/50 border border-white/20 rounded-xl overflow-hidden">
-                        <img src={chatgpt1} alt="ChatGPT Screenshot 1" className="w-full h-full object-cover" />
-                      </div>
-                      <div className="aspect-video bg-black/50 border border-white/20 rounded-xl overflow-hidden">
-                        <img src={chatgpt2} alt="ChatGPT Screenshot 2" className="w-full h-full object-cover" />
-                      </div>
-                      <div className="aspect-video bg-black/50 border border-white/20 rounded-xl overflow-hidden">
-                        <img src={chatgpt3} alt="ChatGPT Screenshot 3" className="w-full h-full object-cover" />
-                      </div>
-                      <div className="aspect-video bg-black/50 border border-white/20 rounded-xl overflow-hidden">
-                        <img src={chatgpt4} alt="ChatGPT Screenshot 4" className="w-full h-full object-cover" />
-                      </div>
-                    </>
-                  )}
-                  {tool.name === "Midjourney" && (
-                    <>
-                      <div className="aspect-video bg-black/50 border border-white/20 rounded-xl overflow-hidden">
-                        <img src={midjourney1} alt="Midjourney Screenshot 1" className="w-full h-full object-cover" />
-                      </div>
-                      <div className="aspect-video bg-black/50 border border-white/20 rounded-xl overflow-hidden">
-                        <img src={midjourney2} alt="Midjourney Screenshot 2" className="w-full h-full object-cover" />
-                      </div>
-                      <div className="aspect-video bg-black/50 border border-white/20 rounded-xl overflow-hidden">
-                        <img src={midjourney3} alt="Midjourney Screenshot 3" className="w-full h-full object-cover" />
-                      </div>
-                      <div className="aspect-video bg-black/50 border border-white/20 rounded-xl overflow-hidden">
-                        <img src={midjourney4} alt="Midjourney Screenshot 4" className="w-full h-full object-cover" />
-                      </div>
-                    </>
-                  )}
-                  {tool.name === "Claude" && (
-                    <>
-                      <div className="aspect-video bg-black/50 border border-white/20 rounded-xl overflow-hidden">
-                        <img src={claude1} alt="Claude Screenshot 1" className="w-full h-full object-cover" />
-                      </div>
-                      <div className="aspect-video bg-black/50 border border-white/20 rounded-xl overflow-hidden">
-                        <img src={claude2} alt="Claude Screenshot 2" className="w-full h-full object-cover" />
-                      </div>
-                      <div className="aspect-video bg-black/50 border border-white/20 rounded-xl overflow-hidden">
-                        <img src={claude3} alt="Claude Screenshot 3" className="w-full h-full object-cover" />
-                      </div>
-                      <div className="aspect-video bg-black/50 border border-white/20 rounded-xl overflow-hidden">
-                        <img src={claude4} alt="Claude Screenshot 4" className="w-full h-full object-cover" />
-                      </div>
-                    </>
-                  )}
-                  {tool.name === "Cursor" && (
-                    <>
-                      <div className="aspect-video bg-black/50 border border-white/20 rounded-xl overflow-hidden">
-                        <img src={cursor1} alt="Cursor Screenshot 1" className="w-full h-full object-cover" />
-                      </div>
-                      <div className="aspect-video bg-black/50 border border-white/20 rounded-xl overflow-hidden">
-                        <img src={cursor2} alt="Cursor Screenshot 2" className="w-full h-full object-cover" />
-                      </div>
-                      <div className="aspect-video bg-black/50 border border-white/20 rounded-xl overflow-hidden">
-                        <img src={cursor3} alt="Cursor Screenshot 3" className="w-full h-full object-cover" />
-                      </div>
-                      <div className="aspect-video bg-black/50 border border-white/20 rounded-xl overflow-hidden">
-                        <img src={cursor4} alt="Cursor Screenshot 4" className="w-full h-full object-cover" />
-                      </div>
-                    </>
-                  )}
-                  {tool.name === "Jasper AI" && (
-                    <>
-                      <div className="aspect-video bg-black/50 border border-white/20 rounded-xl overflow-hidden">
-                        <video src={jasper1} autoPlay muted loop className="w-full h-full object-cover" />
-                      </div>
-                      <div className="aspect-video bg-black/50 border border-white/20 rounded-xl overflow-hidden">
-                        <video src={jasper2} autoPlay muted loop className="w-full h-full object-cover" />
-                      </div>
-                      <div className="aspect-video bg-black/50 border border-white/20 rounded-xl overflow-hidden">
-                        <video src={jasper3} autoPlay muted loop className="w-full h-full object-cover" />
-                      </div>
-                      <div className="aspect-video bg-black/50 border border-white/20 rounded-xl overflow-hidden">
-                        <video src={jasper4} autoPlay muted loop className="w-full h-full object-cover" />
-                      </div>
-                    </>
-                  )}
-                  {tool.name === "ElevenLabs" && (
-                    <>
-                      <div className="aspect-video bg-black/50 border border-white/20 rounded-xl overflow-hidden">
-                        <video src={elevenlabs1} autoPlay muted loop className="w-full h-full object-cover" />
-                      </div>
-                      <div className="aspect-video bg-black/50 border border-white/20 rounded-xl overflow-hidden">
-                        <video src={elevenlabs2} autoPlay muted loop className="w-full h-full object-cover" />
-                      </div>
-                      <div className="aspect-video bg-black/50 border border-white/20 rounded-xl overflow-hidden">
-                        <video src={elevenlabs3} autoPlay muted loop className="w-full h-full object-cover" />
-                      </div>
-                      <div className="aspect-video bg-black/50 border border-white/20 rounded-xl overflow-hidden">
-                        <video src={elevenlabs4} autoPlay muted loop className="w-full h-full object-cover" />
-                      </div>
-                    </>
-                  )}
-                  {tool.name === "Perplexity" && (
-                    <>
-                      <div className="aspect-video bg-black/50 border border-white/20 rounded-xl overflow-hidden">
-                        <img src={perplexity1} alt="Perplexity Screenshot 1" className="w-full h-full object-cover" />
-                      </div>
-                      <div className="aspect-video bg-black/50 border border-white/20 rounded-xl overflow-hidden">
-                        <img src={perplexity2} alt="Perplexity Screenshot 2" className="w-full h-full object-cover" />
-                      </div>
-                      <div className="aspect-video bg-black/50 border border-white/20 rounded-xl overflow-hidden">
-                        <img src={perplexity3} alt="Perplexity Screenshot 3" className="w-full h-full object-cover" />
-                      </div>
-                      <div className="aspect-video bg-black/50 border border-white/20 rounded-xl overflow-hidden">
-                        <img src={perplexity4} alt="Perplexity Screenshot 4" className="w-full h-full object-cover" />
-                      </div>
-                    </>
-                  )}
-                  {tool.name === "Sora" && (
-                    <>
-                      <div className="aspect-video bg-black/50 border border-white/20 rounded-xl overflow-hidden">
-                        <video src={sora1} autoPlay muted loop className="w-full h-full object-cover" />
-                      </div>
-                      <div className="aspect-video bg-black/50 border border-white/20 rounded-xl overflow-hidden">
-                        <video src={sora2} autoPlay muted loop className="w-full h-full object-cover" />
-                      </div>
-                      <div className="aspect-video bg-black/50 border border-white/20 rounded-xl overflow-hidden">
-                        <video src={sora3} autoPlay muted loop className="w-full h-full object-cover" />
-                      </div>
-                      <div className="aspect-video bg-black/50 border border-white/20 rounded-xl overflow-hidden">
-                        <video src={sora4} autoPlay muted loop className="w-full h-full object-cover" />
-                      </div>
-                    </>
-                  )}
-                  {tool.name === "Devin" && (
-                    <>
-                      <div className="aspect-video bg-black/50 border border-white/20 rounded-xl overflow-hidden">
-                        <video src={devin1} autoPlay muted loop className="w-full h-full object-cover" />
-                      </div>
-                      <div className="aspect-video bg-black/50 border border-white/20 rounded-xl overflow-hidden">
-                        <video src={devin2} autoPlay muted loop className="w-full h-full object-cover" />
-                      </div>
-                      <div className="aspect-video bg-black/50 border border-white/20 rounded-xl overflow-hidden">
-                        <video src={devin3} autoPlay muted loop className="w-full h-full object-cover" />
-                      </div>
-                      <div className="aspect-video bg-black/50 border border-white/20 rounded-xl overflow-hidden">
-                        <video src={devin4} autoPlay muted loop className="w-full h-full object-cover" />
-                      </div>
-                    </>
-                  )}
-                  {tool.name === "Gemini Ultra" && (
-                    <>
-                      <div className="aspect-video bg-black/50 border border-white/20 rounded-xl overflow-hidden">
-                        <video src={geminiUltra1} autoPlay muted loop className="w-full h-full object-cover" />
-                      </div>
-                      <div className="aspect-video bg-black/50 border border-white/20 rounded-xl overflow-hidden">
-                        <video src={geminiUltra2} autoPlay muted loop className="w-full h-full object-cover" />
-                      </div>
-                      <div className="aspect-video bg-black/50 border border-white/20 rounded-xl overflow-hidden">
-                        <video src={geminiUltra3} autoPlay muted loop className="w-full h-full object-cover" />
-                      </div>
-                      <div className="aspect-video bg-black/50 border border-white/20 rounded-xl overflow-hidden">
-                        <video src={geminiUltra4} autoPlay muted loop className="w-full h-full object-cover" />
-                      </div>
-                    </>
-                  )}
-                  {tool.name === "Udio" && (
-                    <>
-                      <div className="aspect-video bg-black/50 border border-white/20 rounded-xl overflow-hidden">
-                        <video src={udio1} autoPlay muted loop className="w-full h-full object-cover" />
-                      </div>
-                      <div className="aspect-video bg-black/50 border border-white/20 rounded-xl overflow-hidden">
-                        <video src={udio2} autoPlay muted loop className="w-full h-full object-cover" />
-                      </div>
-                      <div className="aspect-video bg-black/50 border border-white/20 rounded-xl overflow-hidden">
-                        <video src={udio3} autoPlay muted loop className="w-full h-full object-cover" />
-                      </div>
-                      <div className="aspect-video bg-black/50 border border-white/20 rounded-xl overflow-hidden">
-                        <video src={udio4} autoPlay muted loop className="w-full h-full object-cover" />
-                      </div>
-                    </>
-                  )}
-                  {tool.name === "Runway" && (
-                    <>
-                      <div className="aspect-video bg-black/50 border border-white/20 rounded-xl overflow-hidden">
-                        <video src={runway1} autoPlay muted loop className="w-full h-full object-cover" />
-                      </div>
-                      <div className="aspect-video bg-black/50 border border-white/20 rounded-xl overflow-hidden">
-                        <video src={runway2} autoPlay muted loop className="w-full h-full object-cover" />
-                      </div>
-                      <div className="aspect-video bg-black/50 border border-white/20 rounded-xl overflow-hidden">
-                        <video src={runway3} autoPlay muted loop className="w-full h-full object-cover" />
-                      </div>
-                      <div className="aspect-video bg-black/50 border border-white/20 rounded-xl overflow-hidden">
-                        <video src={runway4} autoPlay muted loop className="w-full h-full object-cover" />
-                      </div>
-                    </>
-                  )}
-                  {tool.media_urls && tool.media_urls.length > 0 && (
-                    <>
-                      {tool.media_urls.map((url: string, i: number) => {
-                        const fullUrl = url.startsWith('http')
-                          ? url
-                          : `${API_BASE_URL}/${url.startsWith('/') ? url.slice(1) : url}`;
+          {/* ── Tab Navigation ── */}
+          <div className="flex items-center gap-1 p-1 bg-secondary/50 backdrop-blur-sm border border-border rounded-xl mb-8 overflow-x-auto no-scrollbar max-w-fit mx-auto sm:mx-0">
+            {[
+              { id: "overview", label: "Overview", icon: LayoutGrid },
+              { id: "pricing", label: "Pricing", icon: CreditCard },
+              { id: "prompts", label: "Prompts", icon: Terminal },
+              { id: "faqs", label: "Q&A", icon: HelpCircle },
+            ].map((t) => (
+              <button
+                key={t.id}
+                onClick={() => setActiveTab(t.id)}
+                className={`flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold transition-all whitespace-nowrap ${activeTab === t.id
+                    ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20"
+                    : "text-muted-foreground hover:bg-white/5 hover:text-foreground"
+                  }`}
+              >
+                <t.icon className="w-4 h-4" /> {t.label}
+              </button>
+            ))}
+          </div>
 
-                        return (
-                          <div key={i} className="aspect-video bg-black/50 border border-white/20 rounded-xl overflow-hidden">
-                            <img src={fullUrl} alt={`${tool.name} Screenshot ${i + 1}`} className="w-full h-full object-cover" />
-                          </div>
-                        );
-                      })}
-                    </>
-                  )}
-                  {(!tool.media_urls || tool.media_urls.length === 0) && tool.name !== "ChatGPT" && tool.name !== "Midjourney" && tool.name !== "Claude" && tool.name !== "Cursor" && tool.name !== "Jasper AI" && tool.name !== "ElevenLabs" && tool.name !== "Perplexity" && tool.name !== "Sora" && tool.name !== "Devin" && tool.name !== "Gemini Ultra" && tool.name !== "Udio" && tool.name !== "Runway" && (
-                    <>
-                      {[1, 2, 3, 4].map((i) => (
-                        <div key={i} className="aspect-video bg-black/50 border border-white/20 rounded-xl flex items-center justify-center">
-                          <div className="text-center">
-                            <div className="w-16 h-16 mx-auto mb-3 rounded-lg bg-[#FFB347]/20 flex items-center justify-center">
-                              <svg className="w-8 h-8 text-[#FFB347]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <rect x="3" y="3" width="18" height="18" rx="2" ry="2" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                                <path d="M8 12h8M12 8v8M8 16h8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                              </svg>
-                            </div>
-                            <div className="text-sm font-medium text-white mb-1">Screenshot {i}</div>
-                            <div className="text-xs text-[#AAAAAA]">Interface preview</div>
-                          </div>
-                        </div>
-                      ))}
-                    </>
-                  )}
-                </div>
-              </motion.div>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            {/* Main Column */}
+            <div className="lg:col-span-2">
+              <AnimatePresence mode="wait">
+                {activeTab === "overview" && (
+                  <motion.div
+                    key="overview"
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: 10 }}
+                    transition={{ duration: 0.2 }}
+                    className="space-y-8"
+                  >
+                    {/* Screenshots */}
+                    <div className="glass-card p-6">
+                      <div className="flex items-center justify-between mb-6">
+                        <h2 className="font-display text-xl font-bold flex items-center gap-2">
+                          <LayoutGrid className="w-5 h-5 text-primary" /> Visual Interface
+                        </h2>
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        {tool.media_urls && tool.media_urls.length > 0 && (
+                          <>
+                            {tool.media_urls
+                              .map((url: string) => {
+                                // Clean up any residual brackets or quotes from malformed storage
+                                return url.replace(/^['"\[]|['"\]]$/g, '').trim();
+                              })
+                              .filter((url: string) => {
+                                if (!url) return false;
+                                const lower = url.toLowerCase();
+                                // Only show if it's a valid extension or a full HTTP URL
+                                return lower.match(/\.(jpg|jpeg|png|gif|webp|svg|bmp)$/) || lower.startsWith('http');
+                              })
+                              .slice(0, 4)
+                              .map((url: string, i: number) => {
+                                const fullUrl = url.startsWith('http')
+                                  ? url
+                                  : (() => {
+                                      const clean = url.startsWith('/') ? url.slice(1) : url;
+                                      const final = clean.startsWith('uploads/') ? clean : `uploads/${clean}`;
+                                      return `${API_BASE_URL}/${final}`;
+                                    })();
 
-              {/* Features */}
-              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }} className="glass-card p-6">
-                <h2 className="font-display text-xl font-semibold text-foreground mb-4">Key Features</h2>
-                <div className="grid grid-cols-2 gap-3">
-                  {tool.features?.map((f: string, index: number) => (
-                    <div key={index} className="flex items-center gap-2 text-sm text-foreground">
-                      <Check className="w-4 h-4 text-primary flex-shrink-0" /> {f}
-                    </div>
-                  ))}
-                </div>
-              </motion.div>
-
-              {/* Reviews Section */}
-              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="glass-card p-6 space-y-6">
-                <div className="flex items-center justify-between">
-                  <h2 className="font-display text-xl font-semibold text-foreground">User Reviews</h2>
-                  <span className="text-sm text-muted-foreground">{reviews.length} review{reviews.length !== 1 ? "s" : ""}</span>
-                </div>
-
-                {/* ── Submit Review Form ── */}
-                {currentUser ? (
-                  <form onSubmit={handleSubmitReview} className="p-4 bg-white/5 border border-white/10 rounded-2xl space-y-4">
-                    <p className="text-sm font-semibold text-foreground">Write a Review</p>
-
-                    {/* Star Picker */}
-                    <div className="flex items-center gap-1">
-                      {[1, 2, 3, 4, 5].map((star) => (
-                        <button
-                          key={star}
-                          type="button"
-                          onClick={() => setUserRating(star)}
-                          onMouseEnter={() => setHoverRating(star)}
-                          onMouseLeave={() => setHoverRating(0)}
-                          className="transition-transform hover:scale-110"
-                        >
-                          <Star
-                            className={`w-6 h-6 ${star <= (hoverRating || userRating)
-                              ? "fill-primary text-primary"
-                              : "fill-transparent text-muted-foreground"
-                              }`}
-                          />
-                        </button>
-                      ))}
-                      {userRating > 0 && (
-                        <span className="ml-2 text-xs text-muted-foreground">
-                          {["Poor", "Fair", "Good", "Great", "Excellent"][userRating - 1]}
-                        </span>
-                      )}
-                    </div>
-
-                    {/* Review Text */}
-                    <textarea
-                      value={reviewText}
-                      onChange={(e) => setReviewText(e.target.value)}
-                      placeholder="Share your experience with this tool..."
-                      rows={3}
-                      className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary transition-colors resize-none"
-                    />
-
-                    <button
-                      type="submit"
-                      disabled={submitLoading}
-                      className="flex items-center gap-2 px-5 py-2.5 bg-primary text-primary-foreground rounded-xl font-semibold text-sm hover:bg-primary/90 transition-colors disabled:opacity-50"
-                    >
-                      {submitLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-                      {submitLoading ? "Submitting..." : "Submit Review"}
-                    </button>
-                  </form>
-                ) : (
-                  <div className="p-4 bg-white/5 border border-white/10 rounded-2xl flex items-center justify-between">
-                    <p className="text-sm text-muted-foreground">Log in to leave a review for this tool.</p>
-                    <Link
-                      to="/login"
-                      className="flex items-center gap-1.5 text-sm text-primary font-semibold hover:underline"
-                    >
-                      <LogIn className="w-4 h-4" /> Log In
-                    </Link>
-                  </div>
-                )}
-
-                {/* ── Reviews List ── */}
-                {reviewsLoading ? (
-                  <div className="flex items-center justify-center py-8">
-                    <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
-                  </div>
-                ) : reviews.length === 0 ? (
-                  <div className="text-center py-8">
-                    <p className="text-2xl mb-2">💬</p>
-                    <p className="text-muted-foreground text-sm">No reviews yet. Be the first!</p>
-                  </div>
-                ) : (
-                  <AnimatePresence>
-                    <div className="space-y-3">
-                      {reviews.map((r, i) => (
-                        <motion.div
-                          key={r.id}
-                          initial={{ opacity: 0, y: 10 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ delay: i * 0.05 }}
-                          className="p-4 bg-secondary/50 rounded-xl"
-                        >
-                          <div className="flex items-start justify-between mb-2">
-                            <div className="flex items-center gap-2">
-                              <div className="w-8 h-8 rounded-full bg-primary/20 border border-primary/30 flex items-center justify-center text-xs font-bold text-primary">
-                                {(r.user_name || "?").charAt(0).toUpperCase()}
-                              </div>
-                              <div>
-                                <span className="font-medium text-foreground text-sm block">{r.user_name}</span>
-                                <div className="flex">
-                                  {[1, 2, 3, 4, 5].map((s) => (
-                                    <Star
-                                      key={s}
-                                      className={`w-3 h-3 ${s <= r.rating
-                                        ? "fill-primary text-primary"
-                                        : "fill-transparent text-muted-foreground"
-                                        }`}
+                                return (
+                                  <div key={i} className="aspect-video bg-black/50 border border-white/20 rounded-xl overflow-hidden shadow-inner group/img relative">
+                                    <img
+                                      src={fullUrl}
+                                      alt={`${tool.name} Screenshot ${i + 1}`}
+                                      className="w-full h-full object-cover transition-transform duration-500 group-hover/img:scale-105"
+                                      onError={(e) => {
+                                        const target = e.target as HTMLImageElement;
+                                        // Use a cleaner fallback or just hide it
+                                        target.src = "https://placehold.co/600x400/1a1a1a/444444?text=Image+Load+Failed";
+                                        // target.style.display = 'none'; 
+                                      }}
                                     />
-                                  ))}
+                                  </div>
+                                );
+                              })}
+                          </>
+                        )}
+                        {(!tool.media_urls || tool.media_urls.length === 0) && (
+                          <>
+                            {[1, 2, 3, 4].map((i) => (
+                              <div key={i} className="aspect-video bg-black/50 border border-white/20 rounded-xl flex items-center justify-center">
+                                <div className="text-center">
+                                  <div className="w-16 h-16 mx-auto mb-3 rounded-lg bg-[#FFB347]/20 flex items-center justify-center">
+                                    <svg className="w-8 h-8 text-[#FFB347]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <rect x="3" y="3" width="18" height="18" rx="2" ry="2" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                      <path d="M8 12h8M12 8v8M8 16h8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                    </svg>
+                                  </div>
+                                  <div className="text-sm font-medium text-white mb-1">Screenshot {i}</div>
+                                  <div className="text-xs text-[#AAAAAA]">Interface preview</div>
                                 </div>
                               </div>
-                            </div>
-                            <span className="text-xs text-muted-foreground flex-shrink-0">{formatDate(r.created_at)}</span>
-                          </div>
-                          <p className="text-sm text-muted-foreground leading-relaxed">{r.review_text}</p>
-                        </motion.div>
-                      ))}
+                            ))}
+                          </>
+                        )}
+                      </div>
                     </div>
-                  </AnimatePresence>
+
+                    {/* Quick Info Grid - Features, Pros, Cons */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                      <div className="glass-card p-6 border-l-4 border-l-primary flex flex-col">
+                        <h3 className="font-bold text-lg mb-4 flex items-center gap-2">
+                          <Check className="w-5 h-5 text-primary" /> Key Features
+                        </h3>
+                        <div className="space-y-3 flex-1">
+                          {tool.features && tool.features.length > 0 ? tool.features.map((f: string, index: number) => (
+                            <div key={index} className="flex items-center gap-2 text-sm text-foreground">
+                              <div className="w-1.5 h-1.5 rounded-full bg-primary" /> {f}
+                            </div>
+                          )) : (
+                            <p className="text-xs text-muted-foreground italic">No features specified</p>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="glass-card p-6 border-l-4 border-l-green-500 flex flex-col">
+                        <h3 className="font-bold text-lg mb-4 flex items-center gap-2">
+                          <Star className="w-5 h-5 text-green-500" /> Pros
+                        </h3>
+                        <div className="space-y-3 flex-1">
+                          {tool.pros && tool.pros.length > 0 ? tool.pros.map((p: string, i: number) => (
+                            <div key={i} className="flex items-start gap-2 text-sm">
+                              <Check className="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" />
+                              <span className="text-foreground">{p}</span>
+                            </div>
+                          )) : (
+                            <p className="text-xs text-muted-foreground italic">No pros specified</p>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="glass-card p-6 border-l-4 border-l-red-500 flex flex-col">
+                        <h3 className="font-bold text-lg mb-4 flex items-center gap-2">
+                          <X className="w-5 h-5 text-red-500" /> Cons
+                        </h3>
+                        <div className="space-y-3 flex-1">
+                          {tool.cons && tool.cons.length > 0 ? tool.cons.map((c: string, i: number) => (
+                            <div key={i} className="flex items-start gap-2 text-sm">
+                              <X className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" />
+                              <span className="text-foreground">{c}</span>
+                            </div>
+                          )) : (
+                            <p className="text-xs text-muted-foreground italic">No cons specified</p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Reviews Section */}
+                    <div className="glass-card p-6 space-y-6">
+                      <div className="flex items-center justify-between">
+                        <h2 className="font-display text-xl font-semibold text-foreground">User Reviews</h2>
+                        <span className="text-sm text-muted-foreground">{reviews.length} review{reviews.length !== 1 ? "s" : ""}</span>
+                      </div>
+
+                      {/* ── Submit Review Form ── */}
+                      {currentUser ? (
+                        <form onSubmit={handleSubmitReview} className="p-4 bg-white/5 border border-white/10 rounded-2xl space-y-4">
+                          <p className="text-sm font-semibold text-foreground">Write a Review</p>
+
+                          {/* Star Picker */}
+                          <div className="flex items-center gap-1">
+                            {[1, 2, 3, 4, 5].map((star) => (
+                              <button
+                                key={star}
+                                type="button"
+                                onClick={() => setUserRating(star)}
+                                onMouseEnter={() => setHoverRating(star)}
+                                onMouseLeave={() => setHoverRating(0)}
+                                className="transition-transform hover:scale-110"
+                              >
+                                <Star
+                                  className={`w-6 h-6 ${star <= (hoverRating || userRating)
+                                    ? "fill-primary text-primary"
+                                    : "fill-transparent text-muted-foreground"
+                                    }`}
+                                />
+                              </button>
+                            ))}
+                            {userRating > 0 && (
+                              <span className="ml-2 text-xs text-muted-foreground">
+                                {["Poor", "Fair", "Good", "Great", "Excellent"][userRating - 1]}
+                              </span>
+                            )}
+                          </div>
+
+                          {/* Review Text */}
+                          <textarea
+                            value={reviewText}
+                            onChange={(e) => setReviewText(e.target.value)}
+                            placeholder="Share your experience with this tool..."
+                            rows={3}
+                            className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary transition-colors resize-none"
+                          />
+
+                          <button
+                            type="submit"
+                            disabled={submitLoading}
+                            className="flex items-center gap-2 px-5 py-2.5 bg-primary text-primary-foreground rounded-xl font-semibold text-sm hover:bg-primary/90 transition-colors disabled:opacity-50"
+                          >
+                            {submitLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                            {submitLoading ? "Submitting..." : "Submit Review"}
+                          </button>
+                        </form>
+                      ) : (
+                        <div className="p-4 bg-white/5 border border-white/10 rounded-2xl flex items-center justify-between">
+                          <p className="text-sm text-muted-foreground">Log in to leave a review for this tool.</p>
+                          <Link
+                            to="/login"
+                            className="flex items-center gap-1.5 text-sm text-primary font-semibold hover:underline"
+                          >
+                            <LogIn className="w-4 h-4" /> Log In
+                          </Link>
+                        </div>
+                      )}
+
+                      {/* ── Reviews List ── */}
+                      {reviewsLoading ? (
+                        <div className="flex items-center justify-center py-8">
+                          <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+                        </div>
+                      ) : reviews.length === 0 ? (
+                        <div className="text-center py-8">
+                          <p className="text-2xl mb-2">💬</p>
+                          <p className="text-muted-foreground text-sm">No reviews yet. Be the first!</p>
+                        </div>
+                      ) : (
+                        <AnimatePresence>
+                          <div className="space-y-3">
+                            {reviews.map((r, i) => (
+                              <motion.div
+                                key={r.id}
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: i * 0.05 }}
+                                className="p-4 bg-secondary/50 rounded-xl"
+                              >
+                                <div className="flex items-start justify-between mb-2">
+                                  <div className="flex items-center gap-2">
+                                    <div className="w-8 h-8 rounded-full bg-primary/20 border border-primary/30 flex items-center justify-center text-xs font-bold text-primary">
+                                      {(r.user_name || "?").charAt(0).toUpperCase()}
+                                    </div>
+                                    <div>
+                                      <span className="font-medium text-foreground text-sm block">{r.user_name}</span>
+                                      <div className="flex">
+                                        {[1, 2, 3, 4, 5].map((s) => (
+                                          <Star
+                                            key={s}
+                                            className={`w-3 h-3 ${s <= r.rating
+                                              ? "fill-primary text-primary"
+                                              : "fill-transparent text-muted-foreground"
+                                              }`}
+                                          />
+                                        ))}
+                                      </div>
+                                    </div>
+                                  </div>
+                                  <span className="text-xs text-muted-foreground flex-shrink-0">{formatDate(r.created_at)}</span>
+                                </div>
+                                <p className="text-sm text-muted-foreground leading-relaxed">{r.review_text}</p>
+                              </motion.div>
+                            ))}
+                          </div>
+                        </AnimatePresence>
+                      )}
+                    </div>
+                  </motion.div>
                 )}
-              </motion.div>
+
+                {activeTab === "pricing" && (
+                  <motion.div
+                    key="pricing"
+                    initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+                    className="space-y-6"
+                  >
+                    <h2 className="font-display text-2xl font-bold flex items-center gap-3">
+                      <CreditCard className="w-6 h-6 text-primary" /> Pricing Plans
+                    </h2>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      {tool.pricing_tiers?.length > 0 ? (
+                        tool.pricing_tiers.map((tier: any, index: number) => (
+                          <div key={index} className="glass-card p-8 relative overflow-hidden group hover:border-primary/50 transition-all flex flex-col items-center text-center">
+                            <div className="absolute top-0 right-0 w-24 h-24 bg-primary/5 -mr-8 -mt-8 rounded-full group-hover:bg-primary/10 transition-colors" />
+
+                            <div className="mb-4 w-full">
+                              <span className="block font-bold text-xl text-foreground mb-1">{((typeof tier === 'string') ? tier : tier.name) || (tool.name + " Plan")}</span>
+                              <div className="text-3xl font-black text-primary tracking-tight">
+                                {((typeof tier === 'string') ? tool.pricing : tier.price) || "Free"}
+                                {tier.interval && <span className="text-sm font-medium text-muted-foreground ml-1">{tier.interval}</span>}
+                              </div>
+                            </div>
+
+                            <div className="w-10 h-1 bg-primary/20 mb-4 rounded-full" />
+
+                            <ul className="space-y-3 mb-6 w-full">
+                              {((typeof tier === 'string') ? tool.features : tier.features)?.map((f: string, i: number) => (
+                                <li key={i} className="text-sm text-muted-foreground flex items-center justify-center gap-2">
+                                  <Check className="w-3.5 h-3.5 text-primary flex-shrink-0" />
+                                  <span>{f}</span>
+                                </li>
+                              ))}
+                            </ul>
+
+                            <button className="w-full mt-auto py-3.5 rounded-xl bg-primary/10 border border-primary/30 text-primary font-bold hover:bg-primary hover:text-primary-foreground shadow-[0_0_15px_rgba(255,179,71,0.05)] transition-all active:scale-[0.98]">
+                              Get Started
+                            </button>
+                          </div>
+                        ))
+                      ) : (
+                        <div className="md:col-span-2 glass-card p-12 text-center">
+                          <div className="w-16 h-16 rounded-full bg-secondary flex items-center justify-center mx-auto mb-4">
+                            <CreditCard className="text-muted-foreground" />
+                          </div>
+                          <p className="text-muted-foreground">Detailed pricing tiers are not available for this tool.</p>
+                        </div>
+                      )}
+                    </div>
+                  </motion.div>
+                )}
+
+                {activeTab === "prompts" && (
+                  <motion.div
+                    key="prompts"
+                    initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+                    className="space-y-6"
+                  >
+                    <div className="flex items-center justify-between mb-2">
+                      <h2 className="font-display text-2xl font-bold flex items-center gap-3">
+                        <Terminal className="w-6 h-6 text-primary" /> Prompts & Use Cases
+                      </h2>
+                    </div>
+                    <div className="grid grid-cols-1 gap-4">
+                      {tool.prompts?.length > 0 ? (
+                        tool.prompts.map((p: any, i: number) => (
+                          <div key={i} className="glass-card p-6 flex items-start gap-4 group hover:bg-primary/5 transition-colors">
+                            <div className="w-10 h-10 rounded-xl bg-secondary flex items-center justify-center flex-shrink-0">
+                              <span className="text-xs font-bold text-muted-foreground">0{i + 1}</span>
+                            </div>
+                            <div className="flex-1">
+                              <p className="text-foreground leading-relaxed italic">"{typeof p === 'string' ? p : (p.text || p.content || JSON.stringify(p))}"</p>
+                              <div className="mt-3 flex items-center gap-2 text-[10px] uppercase tracking-wider text-muted-foreground">
+                                <span className="w-2 h-2 rounded-full bg-primary" /> Popular Prompt
+                              </div>
+                            </div>
+                          </div>
+                        ))
+                      ) : (
+                        <div className="glass-card p-12 text-center">
+                          <div className="w-16 h-16 rounded-full bg-secondary flex items-center justify-center mx-auto mb-4">
+                            <Terminal className="text-muted-foreground" />
+                          </div>
+                          <p className="text-muted-foreground">New prompt examples have not been added yet.</p>
+                        </div>
+                      )}
+                    </div>
+                  </motion.div>
+                )}
+
+                {activeTab === "faqs" && (
+                  <motion.div
+                    key="faqs"
+                    initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+                    className="space-y-6"
+                  >
+                    <h2 className="font-display text-2xl font-bold flex items-center gap-3">
+                      <HelpCircle className="w-6 h-6 text-primary" /> Frequently Asked Questions
+                    </h2>
+                    <div className="space-y-4">
+                      {tool.faqs?.length > 0 ? (
+                        tool.faqs.map((faq: any, i: number) => (
+                          <div key={i} className="py-6 border-b border-white/5 last:border-0 group">
+                            <h3 className="text-lg font-semibold text-foreground mb-3 flex items-start gap-3 group-hover:text-primary transition-colors">
+                              <span className="w-1.5 h-1.5 rounded-full bg-primary mt-2.5 flex-shrink-0" />
+                              {faq.question || (typeof faq === 'string' ? faq : "Question")}
+                            </h3>
+                            {(faq.answer || (typeof faq === 'string' && faq.includes('|'))) && (
+                              <div className="pl-5 text-sm text-muted-foreground leading-relaxed">
+                                {faq.answer || (typeof faq === 'string' ? faq.split('|')[1]?.trim() : "")}
+                              </div>
+                            )}
+                            {(!faq.answer && typeof faq === 'object' && faq.content) && (
+                              <div className="pl-5 text-sm text-muted-foreground leading-relaxed">
+                                {faq.content}
+                              </div>
+                            )}
+                          </div>
+                        ))
+                      ) : (
+                        <div className="glass-card p-12 text-center">
+                          <div className="w-16 h-16 rounded-full bg-secondary flex items-center justify-center mx-auto mb-4">
+                            <HelpCircle className="text-muted-foreground" />
+                          </div>
+                          <p className="text-muted-foreground">No FAQs available for this tool.</p>
+                        </div>
+                      )}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
 
-            {/* Sidebar */}
-            <div className="space-y-6">
-              {/* Pricing */}
-              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="glass-card p-6">
-                <h2 className="font-display text-xl font-semibold text-foreground mb-4">Pricing</h2>
-                <div className="space-y-3">
-                  {tool.pricingTiers?.map((tier: any, index: number) => (
-                    <div key={index} className="p-4 bg-secondary/50 rounded-xl">
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="font-medium text-foreground">{tier.name}</span>
-                        <span className="text-primary font-semibold">{tier.price}</span>
-                      </div>
-                      <ul className="space-y-1">
-                        {tier.features?.map((f: string, i: number) => (
-                          <li key={i} className="text-xs text-muted-foreground flex items-center gap-1.5">
-                            <Check className="w-3 h-3 text-primary" /> {f}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  ))}
+            {/* Sidebar Content (Right Column) */}
+            <div className="space-y-8">
+              {/* Quick Stats */}
+              <div className="glass-card p-6">
+                <h3 className="font-bold mb-4 flex items-center gap-2">
+                  <Star className="w-4 h-4 text-primary" /> Tool Insights
+                </h3>
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-muted-foreground">Live Rating</span>
+                    <span className="font-bold text-foreground">{displayRating} ⭐</span>
+                  </div>
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-muted-foreground">Pricing Model</span>
+                    <span className="font-bold text-primary">{tool.pricing}</span>
+                  </div>
                 </div>
-              </motion.div>
-
-              {/* Pros & Cons */}
-              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }} className="glass-card p-6">
-                <h2 className="font-display text-xl font-semibold text-foreground mb-4">Pros & Cons</h2>
-                <div className="space-y-3 mb-4">
-                  {tool.pros?.map((p: string, i: number) => (
-                    <div key={i} className="flex items-start gap-2 text-sm">
-                      <Check className="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
-                      <span className="text-foreground">{p}</span>
-                    </div>
-                  ))}
-                </div>
-                <div className="space-y-3">
-                  {tool.cons?.map((c: string, i: number) => (
-                    <div key={i} className="flex items-start gap-2 text-sm">
-                      <X className="w-4 h-4 text-destructive flex-shrink-0 mt-0.5" />
-                      <span className="text-foreground">{c}</span>
-                    </div>
-                  ))}
-                </div>
-              </motion.div>
+              </div>
             </div>
           </div>
 

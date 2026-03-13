@@ -7,10 +7,11 @@ import Footer from "@/components/Footer";
 import ToolCard from "@/components/ToolCard";
 import { API_ENDPOINTS, API_BASE_URL } from "@/config/apiConfig";
 
-const pricingFilters = ["All", "Free", "Premium", "Paid"];
+const pricingFilters = ["All", "Free", "Freemium", "Paid"];
 
 const AllTools = () => {
     const [selectedPricing, setSelectedPricing] = useState("All");
+    const [selectedCategory, setSelectedCategory] = useState("All");
     const [searchQuery, setSearchQuery] = useState("");
     const [sortBy, setSortBy] = useState("Popular");
     const [dbTools, setDbTools] = useState<any[]>([]);
@@ -42,9 +43,10 @@ const AllTools = () => {
                                 try { const parsed = JSON.parse(url); if (Array.isArray(parsed)) url = parsed[0]; } catch { }
                             }
                             if (!url) return tool.name ? tool.name.charAt(0) : '?';
-                            return url.startsWith('http')
-                                ? url
-                                : `${API_BASE_URL}/${url.startsWith('/') ? url.slice(1) : url}`;
+                            if (url.startsWith('http')) return url;
+                            const cleanPath = url.startsWith('/') ? url.slice(1) : url;
+                            const finalPath = cleanPath.startsWith('uploads/') ? cleanPath : `uploads/${cleanPath}`;
+                            return `${API_BASE_URL}/${finalPath}`;
                         })(),
                     }));
                 setDbTools(formatted);
@@ -58,6 +60,8 @@ const AllTools = () => {
 
     const getSortedAndFilteredTools = () => {
         let tools = dbTools.filter((tool) => {
+            const matchesCategory =
+                selectedCategory === "All" || tool.category === selectedCategory;
             const matchesPricing =
                 selectedPricing === "All" || tool.pricing === selectedPricing;
             const matchesSearch =
@@ -65,7 +69,7 @@ const AllTools = () => {
                 tool.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
                 tool.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
                 tool.category?.toLowerCase().includes(searchQuery.toLowerCase());
-            return matchesPricing && matchesSearch;
+            return matchesCategory && matchesPricing && matchesSearch;
         });
 
         // Apply sorting
@@ -152,6 +156,36 @@ const AllTools = () => {
                                     </div>
                                 </div>
 
+                                {/* Categories */}
+                                <div className="mb-6">
+                                    <label className="text-sm font-medium text-muted-foreground mb-3 block">
+                                        Categories
+                                    </label>
+                                    <div className="flex flex-col gap-1 max-h-60 overflow-y-auto pr-2 custom-scrollbar">
+                                        <button
+                                            onClick={() => setSelectedCategory("All")}
+                                            className={`px-3 py-2 text-sm rounded-xl text-left transition-all ${selectedCategory === "All"
+                                                ? "bg-primary/10 text-primary font-bold"
+                                                : "text-muted-foreground hover:bg-secondary hover:text-foreground"
+                                                }`}
+                                        >
+                                            All Categories
+                                        </button>
+                                        {Array.from(new Set(dbTools.map(t => t.category).filter(Boolean))).sort().map((cat) => (
+                                            <button
+                                                key={cat}
+                                                onClick={() => setSelectedCategory(cat)}
+                                                className={`px-3 py-2 text-sm rounded-xl text-left transition-all ${selectedCategory === cat
+                                                    ? "bg-primary/10 text-primary font-bold"
+                                                    : "text-muted-foreground hover:bg-secondary hover:text-foreground"
+                                                    }`}
+                                            >
+                                                {cat}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+
                                 {/* Pricing */}
                                 <div className="mb-6">
                                     <label className="text-sm font-medium text-muted-foreground mb-3 block">
@@ -174,9 +208,13 @@ const AllTools = () => {
                                 </div>
 
                                 {/* Active filters summary */}
-                                {(searchQuery || selectedPricing !== "All") && (
+                                {(searchQuery || selectedPricing !== "All" || selectedCategory !== "All") && (
                                     <button
-                                        onClick={() => { setSearchQuery(""); setSelectedPricing("All"); }}
+                                        onClick={() => { 
+                                            setSearchQuery(""); 
+                                            setSelectedPricing("All"); 
+                                            setSelectedCategory("All");
+                                        }}
                                         className="w-full text-xs text-primary hover:underline text-left"
                                     >
                                         Clear all filters

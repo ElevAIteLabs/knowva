@@ -10,7 +10,7 @@ import { API_ENDPOINTS, API_BASE_URL } from "@/config/apiConfig";
 import categoriehomepage from "@/assets/categoriehomepage.jpg";
 import AIToolCategoriesBackground from "@/assets/AIToolCategoriesBackground.jpg";
 
-const pricingFilters = ["All", "Free", "Premium", "Paid"];
+const pricingFilters = ["All", "Free", "Freemium", "Paid"];
 
 const Categories = () => {
   const [selectedCategory, setSelectedCategory] = useState("All");

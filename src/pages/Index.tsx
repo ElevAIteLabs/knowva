@@ -22,18 +22,19 @@ import deployicon from "@/assets/deployicon.png";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { API_ENDPOINTS, API_BASE_URL } from "@/config/apiConfig";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 
 const fadeUp = {
   initial: { opacity: 0, y: 30 },
   whileInView: { opacity: 1, y: 0 },
   viewport: { once: true, margin: "-100px" },
-  transition: { duration: 0.7, ease: [0.22, 1, 0.36, 1] },
+  transition: { duration: 0.7, ease: [0.22, 1, 0.36, 1] as any },
 };
 
 const Index = () => {
   const navigate = useNavigate();
   const [dbTools, setDbTools] = useState<any[]>([]);
+  const [searchQuery, setSearchQuery] = useState("");
   const containerRef = useRef(null);
   const { scrollYProgress } = useScroll({
     target: containerRef,
@@ -61,9 +62,10 @@ const Index = () => {
                 try { const parsed = JSON.parse(url); if (Array.isArray(parsed)) url = parsed[0]; } catch { }
               }
               if (!url) return tool.name ? tool.name.charAt(0) : '?';
-              return url.startsWith('http')
-                ? url
-                : `${API_BASE_URL}/${url.startsWith('/') ? url.slice(1) : url}`;
+              if (url.startsWith('http')) return url;
+              const cleanPath = url.startsWith('/') ? url.slice(1) : url;
+              const finalPath = cleanPath.startsWith('uploads/') ? cleanPath : `uploads/${cleanPath}`;
+              return `${API_BASE_URL}/${finalPath}`;
             })(),
             rating: parseFloat(tool.rating) || 0,
           }));
@@ -74,7 +76,8 @@ const Index = () => {
     }
   };
 
-  const allTrendingTools = dbTools;
+  const allTrendingTools = dbTools.filter(t => parseInt(t.is_trending) === 1);
+  const displayTrending = allTrendingTools.length > 0 ? allTrendingTools : dbTools.slice(0, 8);
   const allRecentTools = dbTools.slice(0, 5);
 
   const checkAuth = (e: React.MouseEvent, targetPath: string) => {
@@ -90,18 +93,36 @@ const Index = () => {
     navigate(targetPath);
     return true;
   };
-
   const handleSearch = () => {
-    const user = localStorage.getItem("user");
-    if (!user) {
-      toast("Authentication required", {
-        description: "Please log in to use the search feature.",
-      });
-      navigate("/login");
-      return;
+    if (searchQuery.trim()) {
+      // Logic: If there's a search query, scroll to the discovery section
+      const section = document.getElementById('all-tools');
+      if (section) {
+        section.scrollIntoView({ behavior: 'smooth' });
+      }
     }
-    toast.info("Search feature gated successfully!");
   };
+
+  const discoverTools = useMemo(() => {
+    let tools = [...dbTools];
+    
+    // Filter if search query exists
+    if (searchQuery.trim()) {
+      tools = tools.filter(tool =>
+        (tool.name?.toLowerCase() || "").includes(searchQuery.toLowerCase()) ||
+        (tool.description?.toLowerCase() || "").includes(searchQuery.toLowerCase()) ||
+        (tool.category?.toLowerCase() || "").includes(searchQuery.toLowerCase())
+      );
+    }
+
+    // Sort by reviews_count desc, then rating desc
+    return tools.sort((a, b) => {
+      const countA = parseInt(a.reviews_count) || 0;
+      const countB = parseInt(b.reviews_count) || 0;
+      if (countB !== countA) return countB - countA;
+      return b.rating - a.rating; // Tie-breaker by rating
+    }).slice(0, 12);
+  }, [dbTools, searchQuery]);
 
   return (
     <div className="min-h-screen bg-background text-foreground selection:bg-primary/30" ref={containerRef}>
@@ -151,7 +172,7 @@ const Index = () => {
           <div className="absolute bottom-1/4 right-1/4 w-[30vw] h-[30vw] bg-orange-600/20 rounded-full blur-[100px] mix-blend-screen opacity-50 dark:opacity-30" />
         </div>
 
-        <motion.div 
+        <motion.div
           style={{ y: yElement, opacity: opacityElement }}
           className="relative z-10 section-container max-w-7xl mx-auto text-center px-6 mt-16"
         >
@@ -195,13 +216,16 @@ const Index = () => {
           >
             {/* Search Glow effect behind */}
             <div className="absolute -inset-1 bg-gradient-to-r from-primary to-orange-600 rounded-2xl blur opacity-20 group-hover:opacity-40 transition duration-500"></div>
-            
+
             <div className="relative flex items-center bg-card/80 backdrop-blur-xl border border-border rounded-2xl p-2 shadow-2xl transition-all duration-300 focus-within:border-primary/50 focus-within:bg-card">
               <Search className="w-6 h-6 text-muted-foreground ml-4" />
               <input
                 type="text"
                 placeholder="Search AI tools (e.g., ChatGPT, Midjourney)..."
                 className="flex-1 bg-transparent border-none outline-none text-foreground placeholder:text-muted-foreground py-3 px-4 text-base md:text-lg"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
               />
               <button
                 onClick={handleSearch}
@@ -210,7 +234,7 @@ const Index = () => {
                 Search <ArrowRight className="w-4 h-4" />
               </button>
             </div>
-            
+
             <div className="flex flex-wrap items-center justify-center gap-2 mt-6">
               <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Fast Search:</span>
               {["ChatGPT", "Midjourney", "Cursor", "Claude"].map((term) => (
@@ -245,7 +269,7 @@ const Index = () => {
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-8 mb-20">
             {[
-              { number: "2,500+", label: "Curated AI Tools", icon: <Layers className="text-primary w-6 h-6 mb-3" /> },
+              { number: `${dbTools.length > 0 ? dbTools.length.toLocaleString() + "+" : "2,500+"}`, label: "Curated AI Tools", icon: <Layers className="text-primary w-6 h-6 mb-3" /> },
               { number: "50K+", label: "Active Builders", icon: <Activity className="text-primary w-6 h-6 mb-3" /> },
               { number: "98%", label: "Satisfaction", icon: <ShieldCheck className="text-primary w-6 h-6 mb-3" /> },
               { number: "24/7", label: "Expert Support", icon: <Globe className="text-primary w-6 h-6 mb-3" /> }
@@ -274,8 +298,8 @@ const Index = () => {
       {/* ────────────────────────────────────────────────────────────────────────
           CATEGORIES MARQUEE SECTION
       ──────────────────────────────────────────────────────────────────────── */}
-      <section className="py-24 relative overflow-hidden bg-secondary/20">
-        <div className="section-container max-w-7xl z-10 mb-12">
+      <section className="pt-16 pb-24 relative overflow-hidden bg-secondary/20">
+        <div className="section-container max-w-7xl z-10 mb-20">
           <motion.div className="text-center" {...fadeUp}>
             <h2 className="font-display text-3xl md:text-4xl font-bold text-foreground mb-4">
               Explore by Category
@@ -290,51 +314,50 @@ const Index = () => {
         <div className="relative w-full overflow-hidden flex flex-col gap-6">
           <div className="absolute left-0 top-0 bottom-0 w-32 bg-gradient-to-r from-background to-transparent z-10" />
           <div className="absolute right-0 top-0 bottom-0 w-32 bg-gradient-to-l from-background to-transparent z-10" />
-          
-          <div className="flex gap-4 animate-scroll whitespace-nowrap px-4 hover:[animation-play-state:paused] cursor-pointer w-max">
-            {categories.map((cat, i) => {
-              const count = dbTools.filter(t => t.category?.toLowerCase() === cat.name.toLowerCase()).length;
-              if (count === 0 && i > 8) return null; // Show at least some even if zero for visual flair
-              return (
-                <button key={`cat1-${i}`} onClick={(e) => checkAuth(e, "/categories")} className="group outline-none">
-                  <div className="flex items-center gap-4 px-6 py-5 rounded-2xl bg-card border border-border hover:border-primary/50 hover:shadow-[0_0_20px_rgba(255,179,71,0.1)] transition-all duration-300 min-w-[200px]">
-                    <div className="text-2xl w-12 h-12 rounded-full bg-secondary flex items-center justify-center group-hover:scale-110 group-hover:bg-primary/20 transition-all duration-300">
-                      {cat.icon}
+
+          <div className="flex gap-8 animate-scroll whitespace-nowrap px-4 hover:[animation-play-state:paused] cursor-pointer w-max">
+            {(() => {
+              // Build dynamic categories list
+              const dbCategories = Array.from(new Set(dbTools.map(t => t.category).filter(Boolean)));
+              const combinedCategories = [...categories];
+
+              // Add DB categories not in static list
+              dbCategories.forEach(catName => {
+                if (!combinedCategories.find(c => c.name.toLowerCase() === catName.toLowerCase())) {
+                  combinedCategories.push({ name: catName, icon: "✨", count: 0 });
+                }
+              });
+
+              // Filter to show only if count > 0 OR if it's one of the top predefined ones
+              const visibleCategories = combinedCategories.filter(cat => {
+                const count = dbTools.filter(t => t.category?.toLowerCase() === cat.name.toLowerCase()).length;
+                return count > 0 || (categories.some(pc => pc.name === cat.name) && combinedCategories.indexOf(cat) < 9);
+              });
+
+              // Double the list for seamless loop
+              const marqueeItems = [...visibleCategories, ...visibleCategories];
+
+              return marqueeItems.map((cat, i) => {
+                const count = dbTools.filter(t => t.category?.toLowerCase() === cat.name.toLowerCase()).length;
+                return (
+                  <button key={`cat-${cat.name}-${i}`} onClick={(e) => checkAuth(e, `/category/${cat.name.toLowerCase().replace(/\s+/g, '-')}`)} className="group outline-none">
+                    <div className="flex items-center gap-6 px-8 py-7 rounded-[2rem] bg-card border border-border hover:border-primary/50 hover:shadow-[0_0_30px_rgba(255,179,71,0.15)] transition-all duration-300 min-w-[280px]">
+                      <div className="text-3xl w-16 h-16 rounded-2xl bg-secondary flex items-center justify-center group-hover:scale-110 group-hover:bg-primary/20 transition-all duration-300">
+                        {cat.icon}
+                      </div>
+                      <div className="text-left">
+                        <h3 className="text-foreground font-bold text-lg group-hover:text-primary transition-colors">
+                          {cat.name}
+                        </h3>
+                        <span className="text-muted-foreground text-sm font-medium">
+                          {count} tools available
+                        </span>
+                      </div>
                     </div>
-                    <div className="text-left">
-                      <h3 className="text-foreground font-bold text-base group-hover:text-primary transition-colors">
-                        {cat.name}
-                      </h3>
-                      <span className="text-muted-foreground text-xs font-medium">
-                        {count || Math.floor(Math.random() * 50) + 10} tools available
-                      </span>
-                    </div>
-                  </div>
-                </button>
-              );
-            })}
-             {/* Duplicate for seamless infinite loop */}
-             {categories.map((cat, i) => {
-              const count = dbTools.filter(t => t.category?.toLowerCase() === cat.name.toLowerCase()).length;
-              if (count === 0 && i > 8) return null;
-              return (
-                <button key={`cat2-${i}`} onClick={(e) => checkAuth(e, "/categories")} className="group outline-none">
-                  <div className="flex items-center gap-4 px-6 py-5 rounded-2xl bg-card border border-border hover:border-primary/50 hover:shadow-[0_0_20px_rgba(255,179,71,0.1)] transition-all duration-300 min-w-[200px]">
-                    <div className="text-2xl w-12 h-12 rounded-full bg-secondary flex items-center justify-center group-hover:scale-110 group-hover:bg-primary/20 transition-all duration-300">
-                      {cat.icon}
-                    </div>
-                    <div className="text-left">
-                      <h3 className="text-foreground font-bold text-base group-hover:text-primary transition-colors">
-                        {cat.name}
-                      </h3>
-                      <span className="text-muted-foreground text-xs font-medium">
-                        {count || Math.floor(Math.random() * 50) + 10} tools available
-                      </span>
-                    </div>
-                  </div>
-                </button>
-              );
-            })}
+                  </button>
+                );
+              });
+            })()}
           </div>
         </div>
       </section>
@@ -345,9 +368,9 @@ const Index = () => {
       <section className="py-32 bg-background relative border-y border-border">
         <div className="section-container max-w-7xl">
           <motion.div {...fadeUp} className="text-center mb-20">
-             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-secondary text-sm font-semibold mb-6">
-                <Fast className="w-4 h-4 text-primary" /> Simplified Process
-             </div>
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-secondary text-sm font-semibold mb-6">
+              <Fast className="w-4 h-4 text-primary" /> Simplified Process
+            </div>
             <h2 className="font-display text-4xl md:text-6xl font-black text-foreground mb-6 tracking-tight">
               Speed Up Your Workflow.
             </h2>
@@ -359,7 +382,7 @@ const Index = () => {
           <div className="grid md:grid-cols-3 gap-8 relative">
             {/* Connecting line for desktop */}
             <div className="hidden md:block absolute top-[60px] left-[15%] right-[15%] h-[2px] bg-gradient-to-r from-transparent via-border to-transparent z-0" />
-            
+
             {[
               {
                 step: "01",
@@ -407,31 +430,115 @@ const Index = () => {
       </section>
 
       {/* ────────────────────────────────────────────────────────────────────────
-          TRENDING TOOLS (Premium Grid)
+          FEATURED TRENDING SPOTLIGHT (Unique Animation)
       ──────────────────────────────────────────────────────────────────────── */}
-      <section className="relative py-32 bg-secondary/10">
-        <div className="relative section-container max-w-7xl z-10">
-          <motion.div {...fadeUp} className="flex flex-col md:flex-row md:items-end justify-between mb-16 gap-6">
-            <div>
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-sm font-semibold mb-4">
-                <TrendingUp className="w-4 h-4" /> Trending Globally
+      {allTrendingTools.length > 0 && (
+        <section className="py-24 relative overflow-hidden bg-background">
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[300px] bg-primary/10 blur-[120px] rounded-full pointer-events-none" />
+
+          <div className="section-container max-w-7xl relative z-10">
+            <motion.div {...fadeUp} className="text-center mb-16">
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 text-primary mb-6 animate-pulse">
+                <Sparkles size={16} /> <span className="text-xs font-black uppercase tracking-[0.2em]">Weekly Spotlight</span>
               </div>
-              <h2 className="font-display text-4xl md:text-5xl font-black text-foreground tracking-tight">
-                Top AI Innovators
+              <h2 className="text-4xl md:text-5xl font-bold text-foreground mb-4 tracking-tight">
+                Trending This Week
               </h2>
+              <p className="text-muted-foreground text-base max-w-xl mx-auto">
+                Our handpicked selection of top-performing AI tools for this week.
+              </p>
+            </motion.div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              {allTrendingTools.slice(0, 4).map((tool, i) => (
+                <motion.div
+                  key={`spotlight-${tool.id}`}
+                  initial={{ opacity: 0, scale: 0.9, y: 30 }}
+                  whileInView={{ opacity: 1, scale: 1, y: 0 }}
+                  whileHover={{ y: -10, scale: 1.02 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.6, delay: i * 0.2 }}
+                  className="relative group cursor-pointer"
+                  onClick={(e) => checkAuth(e, `/tool/${tool.id}`)}
+                >
+                  <div className="absolute -inset-1 bg-gradient-to-r from-primary via-orange-500 to-primary rounded-[40px] blur opacity-20 transition duration-1000" />
+                  <div className="relative bg-card border border-border rounded-2xl p-6 h-full flex flex-col md:flex-row gap-6 items-center overflow-hidden hover:shadow-lg transition-shadow">
+                    <div className="w-20 h-20 rounded-xl bg-secondary border border-border flex items-center justify-center overflow-hidden flex-shrink-0">
+                      {tool.icon && (typeof tool.icon === 'string' && (tool.icon.startsWith('http') || tool.icon.includes('.') || tool.icon.includes('/'))) ? (
+                        <img
+                          src={tool.icon}
+                          alt={tool.name}
+                          className="w-12 h-12 object-contain"
+                          onError={(e) => {
+                            const target = e.target as HTMLImageElement;
+                            target.style.display = 'none';
+                            if (target.parentElement) {
+                              target.parentElement.innerHTML = `<span class="text-foreground text-2xl font-black font-display">${tool.name.charAt(0)}</span>`;
+                            }
+                          }}
+                        />
+                      ) : (
+                        <span className="text-foreground text-2xl font-black font-display">
+                          {tool.icon?.length < 5 ? tool.icon : (tool.name ? tool.name.charAt(0) : '?')}
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="flex-1 text-center md:text-left">
+                      <h3 className="text-xl font-bold text-foreground mb-2">
+                        {tool.name}
+                      </h3>
+                      <p className="text-muted-foreground text-sm line-clamp-2 mb-4">
+                        {tool.description}
+                      </p>
+                      <div className="flex items-center justify-center md:justify-start gap-4">
+                        <div className="flex items-center gap-1">
+                          <Star size={14} className="text-yellow-500 fill-yellow-500" />
+                          <span className="text-sm font-bold">{tool.rating}</span>
+                        </div>
+                        <span className="text-xs text-muted-foreground px-2 py-0.5 rounded-full bg-secondary">
+                          {tool.pricing}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* ────────────────────────────────────────────────────────────────────────
+          ALL AI TOOLS (Premium Grid)
+      ──────────────────────────────────────────────────────────────────────── */}
+      <section id="all-tools" className="relative py-24 bg-background">
+        <div className="relative section-container max-w-7xl z-10">
+          <motion.div {...fadeUp} className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-6">
+            <div>
+              <h2 className="font-display text-4xl font-bold text-foreground tracking-tight">
+                Discover AI Tools
+              </h2>
+              <p className="text-muted-foreground mt-2">Explore our complete collection of powerful AI tools.</p>
             </div>
             <motion.button
               onClick={(e) => checkAuth(e, "/all-tools")}
-              className="flex items-center justify-center gap-2 px-6 py-3 bg-card border border-border text-foreground font-semibold rounded-xl hover:bg-foreground hover:text-background transition-all duration-300 w-full md:w-auto"
+              className="flex items-center justify-center gap-2 px-6 py-3 bg-secondary text-foreground font-semibold rounded-xl hover:bg-primary hover:text-black transition-all duration-300 w-full md:w-auto"
             >
-              Explore Collection <ChevronRight className="w-4 h-4" />
+              View Full Collection <ChevronRight className="w-4 h-4" />
             </motion.button>
           </motion.div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {allTrendingTools.slice(0, 8).map((tool, i) => (
-              <ToolCard key={`${tool.name}-${i}`} {...tool} delay={i * 0.05} />
-            ))}
+            {discoverTools.length > 0 ? (
+              discoverTools.map((tool, i) => (
+                <ToolCard key={`${tool.name}-${i}`} {...tool} delay={i * 0.05} />
+              ))
+            ) : (
+              <div className="col-span-full py-20 text-center">
+                <p className="text-muted-foreground text-lg">No tools found matching "{searchQuery}"</p>
+              </div>
+            )}
           </div>
         </div>
       </section>
@@ -440,11 +547,11 @@ const Index = () => {
           RECENTLY ADDED 3D CAROUSEL SECTION
       ──────────────────────────────────────────────────────────────────────── */}
       <section className="relative py-32 overflow-hidden bg-background">
-         {/* Deep dark gradient overlay specific for this 3D section */}
+        {/* Deep dark gradient overlay specific for this 3D section */}
         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-secondary/20 to-transparent pointer-events-none" />
 
-        <div className="relative section-container max-w-7xl z-10">
-          <motion.div {...fadeUp} className="text-center mb-16">
+        <div className="relative w-full z-10 px-0">
+          <motion.div {...fadeUp} className="section-container max-w-7xl mx-auto text-center mb-16 px-6">
             <h2 className="font-display text-4xl md:text-5xl font-black text-foreground mb-4">
               Fresh Off The Press
             </h2>
@@ -452,8 +559,8 @@ const Index = () => {
               Interact with the latest groundbreaking AI tools added to the platform.
             </p>
           </motion.div>
-          {/* 3D Carousel */}
-          <div className="px-4">
+          {/* 3D Carousel (Full Width) */}
+          <div className="w-full">
             <Carousel3D items={allRecentTools} />
           </div>
         </div>
@@ -466,12 +573,12 @@ const Index = () => {
 
       <section className="relative py-32 overflow-hidden bg-foreground text-background">
         <div className="absolute inset-0 opacity-10" style={{ backgroundImage: `url(${stayahead})`, backgroundSize: 'cover', backgroundPosition: 'center', filter: 'grayscale(100%)' }} />
-        
+
         <div className="relative section-container max-w-4xl z-10 text-center">
           <motion.div {...fadeUp}>
             <div className="w-20 h-20 bg-background rounded-2xl flex items-center justify-center mx-auto mb-8 shadow-2xl rotate-3">
-               <Mail className="w-10 h-10 text-foreground" />
-             </div>
+              <Mail className="w-10 h-10 text-foreground" />
+            </div>
             <h2 className="font-display text-4xl md:text-6xl font-black mb-6 tracking-tight">
               Don't Fall Behind.
             </h2>

@@ -8,7 +8,7 @@ import ToolCard from "@/components/ToolCard";
 import { categories } from "@/data/mockData";
 import { API_ENDPOINTS, API_BASE_URL } from "@/config/apiConfig";
 
-const pricingFilters = ["All", "Free", "Premium", "Paid"];
+const pricingFilters = ["All", "Free", "Freemium", "Paid"];
 
 const CategoryPage = () => {
   const { categoryName } = useParams();
@@ -44,9 +44,10 @@ const CategoryPage = () => {
                 try { const parsed = JSON.parse(url); if (Array.isArray(parsed)) url = parsed[0]; } catch { }
               }
               if (!url) return tool.name ? tool.name.charAt(0) : '?';
-              return url.startsWith('http')
-                ? url
-                : `${API_BASE_URL}/${url.startsWith('/') ? url.slice(1) : url}`;
+              if (url.startsWith('http')) return url;
+              const cleanPath = url.startsWith('/') ? url.slice(1) : url;
+              const finalPath = cleanPath.startsWith('uploads/') ? cleanPath : `uploads/${cleanPath}`;
+              return `${API_BASE_URL}/${finalPath}`;
             })(),
           }));
         setDbTools(formatted);
@@ -61,11 +62,11 @@ const CategoryPage = () => {
   // Find the category data
   const category = categories.find(
     (cat) => cat.name.toLowerCase().replace(/\s+/g, "-") === categoryName
-  ) || (categoryName ? {
-    name: categoryName.charAt(0).toUpperCase() + categoryName.slice(1).replace(/-/g, ' '),
+  ) || {
+    name: categoryName ? categoryName.charAt(0).toUpperCase() + categoryName.slice(1).replace(/-/g, ' ') : "Tools",
     icon: "✨",
-    count: 0
-  } : null);
+    count: dbTools.filter(t => t.category?.toLowerCase().replace(/\s+/g, "-") === categoryName).length
+  };
 
   // Only use real DB tools — no mock data
   const allTools = dbTools;

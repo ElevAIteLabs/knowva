@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { Save, CheckCircle2, User, Mail, Phone, Lock, ShieldCheck } from "lucide-react";
+import { Save, CheckCircle2, User, Mail, Phone, Lock, ShieldCheck, Bookmark, Settings, LogOut, Loader2, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
     Form,
@@ -19,6 +19,7 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { API_ENDPOINTS } from "@/config/apiConfig";
 import { motion, AnimatePresence } from "framer-motion";
+import ToolCard from "@/components/ToolCard";
 
 const profileSchema = z.object({
     fullName: z.string().min(2, { message: "Name must be at least 2 characters." }),
@@ -34,6 +35,9 @@ const Profile = () => {
     const [userId, setUserId] = useState<number | null>(null);
     const [savedBanner, setSavedBanner] = useState(false);
     const [originalValues, setOriginalValues] = useState<Partial<ProfileFormValues>>({});
+    const [activeTab, setActiveTab] = useState<"settings" | "saved">("settings");
+    const [savedTools, setSavedTools] = useState<any[]>([]);
+    const [isToolsLoading, setIsToolsLoading] = useState(false);
     const navigate = useNavigate();
 
     const form = useForm<ProfileFormValues>({
@@ -67,7 +71,36 @@ const Profile = () => {
         };
         form.reset(vals);
         setOriginalValues(vals);
-    }, [navigate, form]);
+        
+        if (activeTab === "saved") {
+            fetchSavedTools(user.id);
+        }
+    }, [navigate, form, activeTab]);
+
+    const fetchSavedTools = async (uid: number) => {
+        setIsToolsLoading(true);
+        try {
+            const response = await fetch(`${API_ENDPOINTS.SAVED_TOOLS}?user_id=${uid}`);
+            const result = await response.json();
+            if (result.status === "success") {
+                setSavedTools(result.data.map((t: any) => ({
+                    ...t,
+                    rating: parseFloat(t.rating) || 4.5,
+                    icon: (() => {
+                        let url = t.icon_url || "";
+                        if (url.startsWith('[') && url.endsWith(']')) {
+                          try { const parsed = JSON.parse(url); if (Array.isArray(parsed)) url = parsed[0]; } catch { }
+                        }
+                        return url;
+                    })()
+                })));
+            }
+        } catch (e) {
+            toast.error("Failed to load saved tools");
+        } finally {
+            setIsToolsLoading(false);
+        }
+    };
 
     const onSubmit = async (data: ProfileFormValues) => {
         if (!userId) return;
@@ -122,166 +155,262 @@ const Profile = () => {
         : "?";
 
     return (
-        <div className="min-h-screen flex flex-col bg-[#050505] text-white font-sans">
+        <div className="min-h-screen flex flex-col bg-[#F8FAFC] text-slate-900 font-sans">
             <Navbar />
 
-            <main className="flex-grow pt-28 pb-20 px-6">
-                <div className="max-w-2xl mx-auto">
+            <main className="flex-grow pt-32 pb-20 px-6">
+                <div className="max-w-6xl mx-auto">
 
                     {/* ── Header ── */}
-                    <div className="flex items-center gap-5 mb-10">
-                        <div className="w-16 h-16 rounded-full bg-gradient-to-br from-primary/40 to-primary/10 border border-primary/30 flex items-center justify-center text-xl font-bold text-primary select-none">
-                            {initials}
+                    <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
+                        <div className="flex items-center gap-6">
+                            <div className="w-20 h-20 rounded-3xl bg-white border border-slate-200 flex items-center justify-center text-3xl font-black text-primary select-none shadow-sm capitalize">
+                                {initials}
+                            </div>
+                            <div>
+                                <h1 className="text-4xl font-black tracking-tight mb-1 text-slate-900">
+                                    Hey, {watchedValues.fullName.split(" ")[0] || "Founder"}!
+                                </h1>
+                                <p className="text-slate-500 text-sm flex items-center gap-2">
+                                    <Sparkles size={14} className="text-primary" />
+                                    Account & Personal Discovery Hub
+                                </p>
+                            </div>
                         </div>
-                        <div>
-                            <h1 className="text-3xl font-bold tracking-tight">Profile Settings</h1>
-                            <p className="text-white/40 text-sm mt-0.5">
-                                Changes are saved directly to the database.
-                            </p>
+
+                        <div className="flex bg-slate-200/50 p-1 rounded-2xl border border-slate-200 backdrop-blur-md">
+                            <button 
+                                onClick={() => setActiveTab("settings")}
+                                className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold transition-all ${activeTab === "settings" ? "bg-white text-primary shadow-sm" : "text-slate-500 hover:text-slate-900"}`}
+                            >
+                                <Settings size={16} /> Settings
+                            </button>
+                            <button 
+                                onClick={() => setActiveTab("saved")}
+                                className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold transition-all ${activeTab === "saved" ? "bg-white text-primary shadow-sm" : "text-slate-500 hover:text-slate-900"}`}
+                            >
+                                <Bookmark size={16} /> Saved Tools
+                            </button>
                         </div>
                     </div>
 
-                    {/* ── Saved Banner ── */}
-                    <AnimatePresence>
-                        {savedBanner && (
+                    <AnimatePresence mode="wait" initial={false}>
+                        {activeTab === "settings" ? (
                             <motion.div
-                                initial={{ opacity: 0, y: -10 }}
+                                key="settings"
+                                initial={{ opacity: 0, y: 10 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 exit={{ opacity: 0, y: -10 }}
-                                className="mb-6 flex items-center gap-3 px-5 py-3.5 bg-green-500/10 border border-green-500/25 rounded-2xl text-green-400 text-sm font-medium"
+                                transition={{ duration: 0.4, ease: "easeOut" }}
+                                className="transform-gpu"
                             >
-                                <CheckCircle2 size={18} className="flex-shrink-0" />
-                                Your profile has been updated in the database successfully!
+                                {/* ── Saved Banner ── */}
+                                <AnimatePresence>
+                                    {savedBanner && (
+                                        <motion.div
+                                            initial={{ opacity: 0, y: -10 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            exit={{ opacity: 0, y: -10 }}
+                                            className="mb-8 flex items-center gap-3 px-6 py-4 bg-green-50 border border-green-100 rounded-2xl text-green-700 text-sm font-medium shadow-sm"
+                                        >
+                                            <CheckCircle2 size={18} className="flex-shrink-0 text-green-500" />
+                                            Success! Your profile settings have been synchronized.
+                                        </motion.div>
+                                    )}
+                                </AnimatePresence>
+
+                                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                                    {/* Form Column */}
+                                    <div className="lg:col-span-2">
+                                        <div className="bg-white border border-slate-200 rounded-[32px] p-8 md:p-10 shadow-sm">
+                                            <h2 className="text-xl font-bold mb-8 flex items-center gap-3 text-slate-800">
+                                                <User size={20} className="text-primary" /> Personal Information
+                                            </h2>
+                                            <Form {...form}>
+                                                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+                                                    <FormField
+                                                        control={form.control}
+                                                        name="fullName"
+                                                        render={({ field }) => (
+                                                            <FormItem className="space-y-2">
+                                                                <FormLabel className="text-xs uppercase tracking-[0.2em] text-slate-400 font-black">Full Name</FormLabel>
+                                                                <FormControl>
+                                                                    <Input
+                                                                        placeholder="Display Name"
+                                                                        className="bg-slate-50 border-slate-200 h-14 px-5 focus:border-primary/50 transition-all rounded-2xl font-bold text-lg text-slate-900"
+                                                                        {...field}
+                                                                    />
+                                                                </FormControl>
+                                                                <FormMessage className="text-xs text-orange-600" />
+                                                            </FormItem>
+                                                        )}
+                                                    />
+
+                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                                        <FormField
+                                                            control={form.control}
+                                                            name="email"
+                                                            render={({ field }) => (
+                                                                <FormItem className="space-y-2">
+                                                                    <FormLabel className="text-xs uppercase tracking-[0.2em] text-slate-400 font-black">Email Address</FormLabel>
+                                                                    <FormControl>
+                                                                        <Input
+                                                                            className="bg-slate-50 border-slate-200 h-14 px-5 focus:border-primary/50 transition-all rounded-2xl font-bold text-slate-900"
+                                                                            {...field}
+                                                                        />
+                                                                    </FormControl>
+                                                                    <FormMessage />
+                                                                </FormItem>
+                                                            )}
+                                                        />
+                                                        <FormField
+                                                            control={form.control}
+                                                            name="mobile"
+                                                            render={({ field }) => (
+                                                                <FormItem className="space-y-2">
+                                                                    <FormLabel className="text-xs uppercase tracking-[0.2em] text-slate-400 font-black">Mobile Number</FormLabel>
+                                                                    <FormControl>
+                                                                        <Input
+                                                                            className="bg-slate-50 border-slate-200 h-14 px-5 focus:border-primary/50 transition-all rounded-2xl font-bold text-slate-900"
+                                                                            {...field}
+                                                                        />
+                                                                    </FormControl>
+                                                                    <FormMessage />
+                                                                </FormItem>
+                                                            )}
+                                                        />
+                                                    </div>
+
+                                                    <FormField
+                                                        control={form.control}
+                                                        name="password"
+                                                        render={({ field }) => (
+                                                            <FormItem className="space-y-2">
+                                                                <FormLabel className="text-xs uppercase tracking-[0.2em] text-slate-400 font-black">Security Pin / Password</FormLabel>
+                                                                <FormControl>
+                                                                    <Input
+                                                                        type="password"
+                                                                        placeholder="••••••••"
+                                                                        className="bg-slate-50 border-slate-200 h-14 px-5 focus:border-primary/50 transition-all rounded-2xl font-bold text-slate-900"
+                                                                        {...field}
+                                                                    />
+                                                                </FormControl>
+                                                                <p className="text-[10px] text-slate-400 mt-1 italic">Leave blank if you don't wish to rotate your password.</p>
+                                                            </FormItem>
+                                                        )}
+                                                    />
+
+                                                    <div className="pt-8 border-t border-slate-100 flex items-center justify-between gap-4">
+                                                        <Button
+                                                            type="submit"
+                                                            disabled={isLoading || !isDirty}
+                                                            className="h-14 px-10 bg-primary text-black hover:bg-primary/90 font-black rounded-2xl shadow-md transition-all disabled:opacity-30 flex items-center gap-3"
+                                                        >
+                                                            {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save size={20} />}
+                                                            Save Profile
+                                                        </Button>
+                                                        
+                                                        <Button 
+                                                            variant="ghost" 
+                                                            onClick={() => {
+                                                                localStorage.removeItem("user");
+                                                                navigate("/login");
+                                                            }}
+                                                            className="text-red-500 hover:text-red-600 hover:bg-red-50 h-14 px-6 rounded-2xl font-bold"
+                                                        >
+                                                            <LogOut size={18} className="mr-2" /> Log Out
+                                                        </Button>
+                                                    </div>
+                                                </form>
+                                            </Form>
+                                        </div>
+                                    </div>
+
+                                    {/* Sidebar Stats */}
+                                    <div className="space-y-6">
+                                        <div className="bg-white border border-slate-200 rounded-[32px] p-8 shadow-sm">
+                                            <h3 className="text-sm font-black uppercase tracking-widest text-primary mb-6">Discovery Stats</h3>
+                                            <div className="space-y-6">
+                                                <div className="flex justify-between items-center group cursor-pointer" onClick={() => setActiveTab("saved")}>
+                                                    <span className="text-slate-500 font-bold text-sm">Saved Tools</span>
+                                                    <span className="text-2xl font-black text-slate-900 group-hover:scale-110 transition-transform group-hover:text-primary">
+                                                        {savedTools.length || 0}
+                                                    </span>
+                                                </div>
+                                                <div className="flex justify-between items-center">
+                                                    <span className="text-slate-500 font-bold text-sm">Member Since</span>
+                                                    <span className="text-sm font-bold text-slate-800">March 2026</span>
+                                                </div>
+                                                <div className="flex justify-between items-center">
+                                                    <span className="text-slate-500 font-bold text-sm">Account Status</span>
+                                                    <span className="text-[10px] uppercase font-black px-2 py-1 bg-green-100 text-green-700 rounded-md border border-green-200">Active</span>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div className="bg-gradient-to-br from-primary/10 to-transparent border border-primary/20 rounded-[32px] p-8 text-center shadow-sm">
+                                            <Sparkles className="w-10 h-10 text-primary mx-auto mb-4 animate-pulse" />
+                                            <h4 className="font-black mb-2 text-slate-800">Pro Access</h4>
+                                            <p className="text-xs text-slate-500 leading-relaxed mb-6">Unlock deep comparison insights and developer API access.</p>
+                                            <Button className="w-full bg-slate-900 text-white font-black rounded-xl h-10 text-xs shadow-md">Upgrade Now</Button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </motion.div>
+                        ) : (
+                            <motion.div
+                                key="saved"
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, y: -10 }}
+                                transition={{ duration: 0.4, ease: "easeOut" }}
+                                className="space-y-8 transform-gpu"
+                            >
+                                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                                    <div>
+                                        <h2 className="text-2xl font-black mb-1 flex items-center gap-3 text-slate-900">
+                                            <Bookmark className="text-primary" /> Saved Inventory
+                                        </h2>
+                                        <p className="text-slate-500 text-sm">Access your curated collection of AI architecture & tools.</p>
+                                    </div>
+                                    {savedTools.length > 0 && (
+                                        <div className="text-xs font-bold text-primary bg-primary/10 px-4 py-2 rounded-full border border-primary/20">
+                                            {savedTools.length} Tools Bookmarked
+                                        </div>
+                                    )}
+                                </div>
+
+                                {isToolsLoading ? (
+                                    <div className="flex flex-col items-center justify-center py-32">
+                                        <Loader2 className="w-12 h-12 text-primary animate-spin mb-4" />
+                                        <p className="font-bold tracking-widest uppercase text-xs text-slate-400">Loading Knowledge Base...</p>
+                                    </div>
+                                ) : savedTools.length > 0 ? (
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                                        {savedTools.map((tool, idx) => (
+                                            <ToolCard key={tool.id || idx} {...tool} delay={idx * 0.05} />
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <div className="bg-white border border-slate-200 rounded-[40px] py-32 flex flex-col items-center justify-center text-center px-6 shadow-sm">
+                                        <div className="w-20 h-20 rounded-full bg-slate-100 flex items-center justify-center mb-6">
+                                            <Bookmark size={32} className="text-slate-300" />
+                                        </div>
+                                        <h3 className="text-xl font-bold mb-3 text-slate-800">Your discovery hub is empty</h3>
+                                        <p className="text-slate-500 text-sm max-w-sm leading-relaxed mb-8">
+                                            Bookmark your favorite AI tools while browsing to see them here and build your custom AI stack.
+                                        </p>
+                                        <Button 
+                                            onClick={() => navigate("/")}
+                                            className="bg-slate-900 text-white font-black px-10 py-6 rounded-2xl hover:scale-105 transition-all shadow-xl"
+                                        >
+                                            Start Exploring
+                                        </Button>
+                                    </div>
+                                )}
                             </motion.div>
                         )}
                     </AnimatePresence>
-
-                    {/* ── Form Card ── */}
-                    <div className="bg-white/5 border border-white/10 rounded-3xl p-8 backdrop-blur-md">
-                        <Form {...form}>
-                            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-
-                                {/* Full Name */}
-                                <FormField
-                                    control={form.control}
-                                    name="fullName"
-                                    render={({ field }) => (
-                                        <FormItem className="space-y-1.5">
-                                            <FormLabel className="text-xs uppercase tracking-wider text-white/40 font-bold flex items-center gap-1.5">
-                                                <User size={12} /> Full Name
-                                            </FormLabel>
-                                            <FormControl>
-                                                <Input
-                                                    placeholder="John Doe"
-                                                    className="bg-[#0A0A0A] border-white/10 h-12 focus:ring-1 focus:ring-primary/50 transition-all rounded-xl font-medium"
-                                                    {...field}
-                                                />
-                                            </FormControl>
-                                            <FormMessage className="text-xs text-orange-500" />
-                                        </FormItem>
-                                    )}
-                                />
-
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    {/* Email */}
-                                    <FormField
-                                        control={form.control}
-                                        name="email"
-                                        render={({ field }) => (
-                                            <FormItem className="space-y-1.5">
-                                                <FormLabel className="text-xs uppercase tracking-wider text-white/40 font-bold flex items-center gap-1.5">
-                                                    <Mail size={12} /> Email Address
-                                                </FormLabel>
-                                                <FormControl>
-                                                    <Input
-                                                        placeholder="name@example.com"
-                                                        className="bg-[#0A0A0A] border-white/10 h-12 focus:ring-1 focus:ring-primary/50 transition-all rounded-xl font-medium"
-                                                        {...field}
-                                                    />
-                                                </FormControl>
-                                                <FormMessage className="text-xs text-orange-500" />
-                                            </FormItem>
-                                        )}
-                                    />
-
-                                    {/* Mobile */}
-                                    <FormField
-                                        control={form.control}
-                                        name="mobile"
-                                        render={({ field }) => (
-                                            <FormItem className="space-y-1.5">
-                                                <FormLabel className="text-xs uppercase tracking-wider text-white/40 font-bold flex items-center gap-1.5">
-                                                    <Phone size={12} /> Mobile Number
-                                                </FormLabel>
-                                                <FormControl>
-                                                    <Input
-                                                        placeholder="Enter your phone number"
-                                                        className="bg-[#0A0A0A] border-white/10 h-12 focus:ring-1 focus:ring-primary/50 transition-all rounded-xl font-medium"
-                                                        {...field}
-                                                    />
-                                                </FormControl>
-                                                <FormMessage className="text-xs text-orange-500" />
-                                            </FormItem>
-                                        )}
-                                    />
-                                </div>
-
-                                {/* Password */}
-                                <FormField
-                                    control={form.control}
-                                    name="password"
-                                    render={({ field }) => (
-                                        <FormItem className="space-y-1.5">
-                                            <FormLabel className="text-xs uppercase tracking-wider text-white/40 font-bold flex items-center gap-1.5">
-                                                <Lock size={12} /> New Password
-                                                <span className="text-white/25 font-normal normal-case tracking-normal">(optional)</span>
-                                            </FormLabel>
-                                            <FormControl>
-                                                <Input
-                                                    type="password"
-                                                    placeholder="Leave blank to keep current password"
-                                                    className="bg-[#0A0A0A] border-white/10 h-12 focus:ring-1 focus:ring-primary/50 transition-all rounded-xl font-medium"
-                                                    {...field}
-                                                />
-                                            </FormControl>
-                                            <FormMessage className="text-xs text-orange-500" />
-                                        </FormItem>
-                                    )}
-                                />
-
-                                {/* Save Button */}
-                                <div className="pt-6 border-t border-white/10 flex items-center gap-4">
-                                    <Button
-                                        type="submit"
-                                        disabled={isLoading || !isDirty}
-                                        className="h-12 px-8 bg-white text-black hover:bg-white/90 font-bold rounded-xl shadow-[0_0_30px_rgba(255,255,255,0.1)] transition-all disabled:opacity-40 disabled:cursor-not-allowed"
-                                    >
-                                        {isLoading ? (
-                                            <>
-                                                <div className="w-4 h-4 mr-2 border-2 border-black/30 border-t-black rounded-full animate-spin" />
-                                                Saving...
-                                            </>
-                                        ) : (
-                                            <>
-                                                <Save size={17} className="mr-2" />
-                                                Save Changes
-                                            </>
-                                        )}
-                                    </Button>
-                                    {isDirty && !isLoading && (
-                                        <span className="text-xs text-[#FFB347]/80 animate-pulse">
-                                            You have unsaved changes
-                                        </span>
-                                    )}
-                                    {!isDirty && !isLoading && (
-                                        <span className="text-xs text-white/25 flex items-center gap-1.5">
-                                            <ShieldCheck size={13} /> No unsaved changes
-                                        </span>
-                                    )}
-                                </div>
-                            </form>
-                        </Form>
-                    </div>
                 </div>
             </main>
 
