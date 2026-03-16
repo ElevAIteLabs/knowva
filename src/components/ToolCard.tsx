@@ -129,16 +129,15 @@ const ToolCard = ({ id, name, description, category, rating, pricing, icon, dela
       className="h-full"
     >
       <button onClick={handleClick} className="block w-full text-left group h-full focus:outline-none">
-        <div className="flex flex-col h-full bg-card text-card-foreground border border-border rounded-3xl p-6 transition-all duration-500 hover:-translate-y-2 hover:shadow-[0_20px_40px_rgba(255,179,71,0.08)] hover:border-primary/40 relative overflow-hidden backdrop-blur-sm z-10">
+        <div className="flex flex-col h-full bg-card text-card-foreground border border-border rounded-3xl p-6 transition-all duration-500 hover:-translate-y-2 hover:border-primary/40 relative overflow-hidden backdrop-blur-sm z-10">
 
-          {/* Subtle Background Glow Animation on Hover */}
-          <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 rounded-full blur-3xl -mr-10 -mt-10 transition-opacity duration-500 opacity-0 group-hover:opacity-100 pointer-events-none z-[-1]"></div>
+
 
           {/* Bookmark Button */}
           <button
             onClick={handleSave}
             className={`absolute top-16 right-5 z-[20] p-2.5 rounded-xl transition-all duration-300 backdrop-blur-md border ${isSaved
-              ? "bg-primary text-primary-foreground border-primary shadow-[0_0_15px_rgba(255,179,71,0.3)]"
+              ? "bg-primary text-primary-foreground border-primary"
               : "bg-background/40 text-muted-foreground border-white/10 hover:border-primary/50 hover:text-primary"
               }`}
             disabled={isSaving}
@@ -148,13 +147,13 @@ const ToolCard = ({ id, name, description, category, rating, pricing, icon, dela
 
           <div className="flex items-start justify-between mb-6 relative">
             <div className="w-fit">
-              <div className="w-14 h-14 rounded-2xl bg-secondary/80 border border-border flex items-center justify-center p-3 shadow-sm group-hover:scale-110 group-hover:bg-primary/10 transition-all duration-500 overflow-hidden text-foreground">
+              <div className="w-14 h-14 rounded-2xl bg-secondary/80 border border-border flex items-center justify-center p-3 group-hover:scale-110 group-hover:bg-primary/10 transition-all duration-500 overflow-hidden text-foreground">
                 <div className="flex items-center justify-center w-full h-full">
                   {icon && (typeof icon === 'string' && (icon.replace(/^['"\[]|['"\]]$/g, '').trim().startsWith('http') || icon.includes('.') || icon.includes('/'))) ? (
                     <img
                       src={safeGetIcon(icon) || ''}
                       alt={name}
-                      className="w-full h-full object-contain drop-shadow"
+                      className="w-full h-full object-contain"
                       onError={(e) => {
                         const target = e.target as HTMLImageElement;
                         target.style.display = 'none';

@@ -33,7 +33,7 @@ const fadeUp = {
 
 const Index = () => {
   const navigate = useNavigate();
-   const [dbTools, setDbTools] = useState<any[]>([]);
+  const [dbTools, setDbTools] = useState<any[]>([]);
   const [trendingTools, setTrendingTools] = useState<any[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const containerRef = useRef(null);
@@ -127,7 +127,7 @@ const Index = () => {
 
   const discoverTools = useMemo(() => {
     let tools = [...dbTools];
-    
+
     // Filter if search query exists
     if (searchQuery.trim()) {
       tools = tools.filter(tool =>
@@ -170,25 +170,22 @@ const Index = () => {
           -webkit-background-clip: text;
           -webkit-text-fill-color: transparent;
         }
-        .glow-effect {
-          box-shadow: 0 0 40px -10px rgba(255, 179, 71, 0.4);
-        }
       `}</style>
       <Navbar />
 
       {/* ────────────────────────────────────────────────────────────────────────
           HERO SECTION (Ultra Premium)
       ──────────────────────────────────────────────────────────────────────── */}
-      <section className="relative w-full min-h-[95vh] flex items-center justify-center overflow-hidden pt-20">
+      <section className="relative w-full min-h-[95vh] flex items-center justify-center overflow-hidden pt-32">
         <div className="absolute inset-0 z-0">
           <video
             src={herosection}
             autoPlay
             muted
             loop
-            className="w-full h-full object-cover dark:opacity-40 opacity-20 transition-opacity duration-1000"
+            className="w-full h-full object-cover dark:opacity-70 opacity-50 transition-opacity duration-1000"
           />
-          <div className="absolute inset-0 bg-gradient-to-b from-background/40 via-background/80 to-background dark:from-background/60 dark:via-background/90 dark:to-background backdrop-blur-[2px]" />
+          <div className="absolute inset-0 bg-gradient-to-b from-background/10 via-background/30 to-background dark:from-background/20 dark:via-background/40 dark:to-background backdrop-blur-none" />
           {/* Subtle Ambient Light Orbs */}
           <div className="absolute top-1/4 left-1/4 w-[40vw] h-[40vw] bg-primary/20 rounded-full blur-[120px] mix-blend-screen opacity-50 dark:opacity-30" />
           <div className="absolute bottom-1/4 right-1/4 w-[30vw] h-[30vw] bg-orange-600/20 rounded-full blur-[100px] mix-blend-screen opacity-50 dark:opacity-30" />
@@ -216,7 +213,7 @@ const Index = () => {
           >
             Find The Perfect AI.
             <br />
-            <span className="gradient-text glow-effect drop-shadow-sm">
+            <span className="gradient-text">
               Ship Faster.
             </span>
           </motion.h1>
@@ -239,7 +236,7 @@ const Index = () => {
             {/* Search Glow effect behind */}
             <div className="absolute -inset-1 bg-gradient-to-r from-primary to-orange-600 rounded-2xl blur opacity-20 group-hover:opacity-40 transition duration-500"></div>
 
-            <div className="relative flex items-center bg-card/80 backdrop-blur-xl border border-border rounded-2xl p-2 shadow-2xl transition-all duration-300 focus-within:border-primary/50 focus-within:bg-card">
+            <div className="relative flex items-center bg-card/80 backdrop-blur-xl border border-border rounded-2xl p-2 transition-all duration-300 focus-within:border-primary/50 focus-within:bg-card">
               <Search className="w-6 h-6 text-muted-foreground ml-4" />
               <input
                 type="text"
@@ -251,7 +248,7 @@ const Index = () => {
               />
               <button
                 onClick={handleSearch}
-                className="px-6 md:px-8 py-3 bg-foreground text-background font-semibold rounded-xl ml-2 hover:scale-[1.02] transition-transform duration-300 shadow-md flex items-center gap-2"
+                 className="px-6 md:px-8 py-3 bg-foreground text-background font-semibold rounded-xl ml-2 hover:scale-[1.02] transition-transform duration-300 flex items-center gap-2"
               >
                 Search <ArrowRight className="w-4 h-4" />
               </button>
@@ -431,11 +428,11 @@ const Index = () => {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.5, delay: i * 0.15 }}
-                className="relative z-10 flex flex-col items-center text-center p-8 rounded-3xl bg-card border border-border shadow-sm hover:shadow-xl hover:-translate-y-2 transition-all duration-300 group"
+                className="relative z-10 flex flex-col items-center text-center p-8 rounded-3xl bg-card border border-border hover:-translate-y-2 transition-all duration-300 group"
               >
                 <div className="w-24 h-24 rounded-full bg-secondary border-4 border-background flex items-center justify-center mb-8 relative group-hover:scale-110 transition-transform duration-500">
                   {item.icon}
-                  <div className="absolute -top-2 -right-2 w-8 h-8 bg-foreground rounded-full flex items-center justify-center text-background text-sm font-bold shadow-lg">
+                  <div className="absolute -top-2 -right-2 w-8 h-8 bg-foreground rounded-full flex items-center justify-center text-background text-sm font-bold">
                     {item.step}
                   </div>
                 </div>
@@ -484,7 +481,7 @@ const Index = () => {
                   onClick={(e) => checkAuth(e, `/tool/${tool.id}`)}
                 >
                   <div className="absolute -inset-1 bg-gradient-to-r from-primary via-orange-500 to-primary rounded-[40px] blur opacity-20 transition duration-1000" />
-                  <div className="relative bg-card border border-border rounded-2xl p-6 h-full flex flex-col md:flex-row gap-6 items-center overflow-hidden hover:shadow-lg transition-shadow">
+                  <div className="relative bg-card border border-border rounded-2xl p-6 h-full flex flex-col md:flex-row gap-6 items-center overflow-hidden transition-shadow">
                     <div className="w-20 h-20 rounded-xl bg-secondary border border-border flex items-center justify-center overflow-hidden flex-shrink-0">
                       {tool.icon && (typeof tool.icon === 'string' && (tool.icon.startsWith('http') || tool.icon.includes('.') || tool.icon.includes('/'))) ? (
                         <img
@@ -598,7 +595,7 @@ const Index = () => {
 
         <div className="relative section-container max-w-4xl z-10 text-center">
           <motion.div {...fadeUp}>
-            <div className="w-20 h-20 bg-background rounded-2xl flex items-center justify-center mx-auto mb-8 shadow-2xl rotate-3">
+            <div className="w-20 h-20 bg-background rounded-2xl flex items-center justify-center mx-auto mb-8 rotate-3">
               <Mail className="w-10 h-10 text-foreground" />
             </div>
             <h2 className="font-display text-4xl md:text-6xl font-black mb-6 tracking-tight">
@@ -616,7 +613,7 @@ const Index = () => {
               <motion.button
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
-                className="px-8 py-4 bg-primary text-primary-foreground font-bold rounded-xl transition-all shadow-lg hover:shadow-primary/50 text-lg"
+                className="px-8 py-4 bg-primary text-primary-foreground font-bold rounded-xl transition-all text-lg"
               >
                 Join Newsletter
               </motion.button>

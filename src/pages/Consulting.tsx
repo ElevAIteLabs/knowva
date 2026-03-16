@@ -16,7 +16,7 @@ const Consulting = () => {
       >
         <div className="bg-black/60 min-h-screen py-20">
           <Navbar />
-          <div className="pt-24 pb-20">
+          <div className="pt-40 pb-20">
             <div className="section-container">
               <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-14">
                 <h1 className="font-display text-3xl md:text-4xl font-bold text-white mb-3">

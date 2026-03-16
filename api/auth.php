@@ -32,10 +32,13 @@ try {
 
 // --- AUTO-CREATE/UPDATE TABLES ---
 try {
-    // Add role column if it doesn't exist
-    $conn->exec("ALTER TABLE users ADD COLUMN IF NOT EXISTS role VARCHAR(50) DEFAULT 'user'");
+    // Check if role column exists
+    $stmt = $conn->query("SHOW COLUMNS FROM users LIKE 'role'");
+    if (!$stmt->fetch()) {
+        $conn->exec("ALTER TABLE users ADD COLUMN role VARCHAR(50) DEFAULT 'user'");
+    }
 } catch (Exception $e) {
-    // Ignore error if column exists or MySQL version doesn't support IF NOT EXISTS in ALTER
+    // Ignore error
 }
 
 // --- MAIN LOGIC ---
@@ -117,7 +120,51 @@ else if ($action === 'signup') {
     }
 }
 
-// --- UPDATE PROFILE ACTION ---
+// --- GOOGLE SYNC ACTION ---
+else if ($action === 'google_sync') {
+    if (!isset($data->email) || !isset($data->fullName)) {
+        echo json_encode(["status" => "error", "message" => "Email and name required."]);
+        exit();
+    }
+
+    $email = filter_var($data->email, FILTER_SANITIZE_EMAIL);
+    $fullName = strip_tags($data->fullName);
+    $role = 'user';
+
+    try {
+        $stmt = $conn->prepare("SELECT id, fullName, email, mobile, role FROM users WHERE email = ?");
+        $stmt->execute([$email]);
+        $user = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if ($user) {
+            // User exists, return them
+            echo json_encode([
+                "status" => "success",
+                "message" => "Google sync successful",
+                "user" => $user
+            ]);
+        } else {
+            // Create new user for this Google account
+            $dummyPass = password_hash(bin2hex(random_bytes(16)), PASSWORD_BCRYPT);
+            $stmt = $conn->prepare("INSERT INTO users (fullName, email, password, role, mobile) VALUES (?, ?, ?, ?, '')");
+            $stmt->execute([$fullName, $email, $dummyPass, $role]);
+            
+            $newId = $conn->lastInsertId();
+            $stmt = $conn->prepare("SELECT id, fullName, email, mobile, role FROM users WHERE id = ?");
+            $stmt->execute([$newId]);
+            $newUser = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            echo json_encode([
+                "status" => "success",
+                "message" => "New user created via Google",
+                "user" => $newUser
+            ]);
+        }
+    } catch (Exception $e) {
+        echo json_encode(["status" => "error", "message" => "Sync error: " . $e->getMessage()]);
+    }
+}
+
 else if ($action === 'update_profile') {
     if (!isset($data->id) || !isset($data->fullName) || !isset($data->email) || !isset($data->mobile)) {
         echo json_encode(["status" => "error", "message" => "Missing required fields."]);

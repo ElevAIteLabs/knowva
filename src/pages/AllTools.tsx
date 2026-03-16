@@ -89,7 +89,7 @@ const AllTools = () => {
     return (
         <div className="min-h-screen bg-background">
             <Navbar />
-            <div className="pt-24 pb-20">
+            <div className="pt-40 pb-20">
                 <div className="section-container">
                     {/* Header */}
                     <motion.div

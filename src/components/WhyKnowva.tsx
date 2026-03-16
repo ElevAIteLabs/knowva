@@ -136,7 +136,7 @@ const ParallaxCard = ({
       style={{ perspective: "1000px" }}
     >
       <motion.div
-        className="relative h-full rounded-3xl overflow-hidden border border-border bg-card shadow-sm"
+        className="relative h-full rounded-3xl overflow-hidden border border-border bg-card"
         animate={{
           rotateY: mouse.x * 6,
           rotateX: -mouse.y * 4,
@@ -145,16 +145,7 @@ const ParallaxCard = ({
         transition={{ type: "spring", stiffness: 300, damping: 20 }}
         style={{ transformStyle: "preserve-3d" }}
       >
-        {/* Glow on hover */}
-        <motion.div
-          className="absolute inset-0 rounded-3xl pointer-events-none z-0"
-          animate={{
-            boxShadow: hovered
-              ? "inset 0 0 40px rgba(255, 179, 71, 0.05)"
-              : "inset 0 0 0px transparent",
-          }}
-          transition={{ duration: 0.4 }}
-        />
+
 
         {/* Floating icons — foreground parallax */}
         {card.floatingIcons.map((icon, i) => (
@@ -194,7 +185,7 @@ const ParallaxCard = ({
           </span>
 
           {/* Icon */}
-          <div className="w-12 h-12 rounded-2xl bg-secondary border border-border flex items-center justify-center text-primary mb-5 shadow-sm">
+          <div className="w-12 h-12 rounded-2xl bg-secondary border border-border flex items-center justify-center text-primary mb-5">
             {card.icon}
           </div>
 
@@ -243,7 +234,7 @@ const WhyKnowva = () => {
             Enterprise Infrastructure
           </div>
           <h2 className="font-display text-4xl md:text-6xl font-black text-foreground mb-6 tracking-tight">
-            The Intelligent <span className="gradient-text glow-effect drop-shadow-sm">Discovery Hub</span>
+            The Intelligent <span className="gradient-text">Discovery Hub</span>
           </h2>
           <p className="text-muted-foreground text-xl max-w-2xl mx-auto font-light">
             Everything you need to find, compare, and trust the right AI tools—built into a single platform.

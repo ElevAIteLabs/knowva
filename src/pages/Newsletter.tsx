@@ -22,7 +22,7 @@ const Newsletter = () => {
            backgroundRepeat: 'no-repeat'
          }}>
       <Navbar />
-      <div className="pt-24 pb-20">
+      <div className="pt-40 pb-20">
         <div className="section-container">
           {/* Subscribe Box */}
           <motion.div

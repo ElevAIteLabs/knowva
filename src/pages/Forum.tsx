@@ -3,7 +3,8 @@ import { Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   MessageSquare, Plus, Pin, Lock, ShieldCheck, User, Clock, 
-  Search, Send, X, Loader2, Sparkles, Filter, ChevronRight, Hash, Triangle, Trash2, Pencil 
+  Search, Send, X, Loader2, Sparkles, Filter, ChevronRight, Hash, Triangle, Trash2, Pencil,
+  ArrowUp, ArrowDown
 } from "lucide-react";
 import { API_ENDPOINTS } from "@/config/apiConfig";
 import Navbar from "@/components/Navbar";
@@ -23,6 +24,7 @@ const Forum = () => {
     const [newTitle, setNewTitle] = useState("");
     const [newCategory, setNewCategory] = useState("General");
     const [newContent, setNewContent] = useState("");
+    const [newHashtags, setNewHashtags] = useState("");
 
     const currentUser = (() => {
         try { return JSON.parse(localStorage.getItem("user") || "null"); } catch { return null; }
@@ -66,7 +68,8 @@ const Forum = () => {
                     user_name: currentUser.fullName,
                     title: newTitle.trim(),
                     category: newCategory,
-                    content: newContent.trim()
+                    content: newContent.trim(),
+                    hashtags: newHashtags.trim()
                 }),
             });
             const result = await res.json();
@@ -75,24 +78,18 @@ const Forum = () => {
                 setShowNewThreadModal(false);
                 setNewTitle("");
                 setNewContent("");
+                setNewHashtags("");
                 fetchThreads();
             } else { toast.error(result.message); }
         } catch { toast.error("Post failed"); }
         finally { setIsPosting(false); }
     };
 
-    const handleUpvote = async (e: React.MouseEvent, threadId: number) => {
+    const handleVote = async (e: React.MouseEvent, threadId: number, type: 'upvote' | 'downvote') => {
         e.preventDefault();
         e.stopPropagation();
         if (!currentUser) { navigate("/login"); return; }
         
-        // Find if already voted locally to prevent extra hit
-        const thread = threads.find(t => t.id === threadId);
-        if (thread?.has_voted) {
-            toast.info("You've already contributed your vote to this thinking.");
-            return;
-        }
-
         try {
             const res = await fetch(API_ENDPOINTS.UPVOTES, {
                 method: "POST",
@@ -100,24 +97,24 @@ const Forum = () => {
                 body: JSON.stringify({
                     user_id: currentUser.id,
                     target_id: threadId.toString(),
-                    target_type: 'thread'
+                    target_type: 'thread',
+                    action_type: type
                 }),
             });
             const result = await res.json();
             if (result.status === "success") {
-                if (result.action === 'already_voted') {
-                    toast.info("You've already voted!");
-                } else {
-                    toast.success("Vote recorded in the collective mind!");
-                }
+                toast.success(result.action === 'added' ? "Vote recorded!" : (result.action === 'removed' ? "Vote removed" : "Vote updated"));
+                
                 // Optimistic update
                 setThreads(prev => prev.map(t => 
                     t.id === threadId 
-                        ? { ...t, upvotes_count: result.new_count, has_voted: 1 } 
+                        ? { ...t, upvotes_count: result.new_count, user_vote: result.user_vote } 
                         : t
                 ));
             }
-        } catch {}
+        } catch {
+            toast.error("Vote failed");
+        }
     };
 
     const handleDeleteThread = async (e: React.MouseEvent, threadId: number) => {
@@ -169,7 +166,8 @@ const Forum = () => {
 
     const filteredThreads = threads.filter(t => 
         t.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
-        t.content.toLowerCase().includes(searchQuery.toLowerCase())
+        t.content.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (t.hashtags && t.hashtags.toLowerCase().includes(searchQuery.toLowerCase()))
     );
 
     const formatDate = (dateStr: string) => {
@@ -180,10 +178,10 @@ const Forum = () => {
     };
 
     return (
-        <div className="min-h-screen flex flex-col bg-[#F8FAFC] text-slate-900 font-sans">
+        <div className="min-h-screen flex flex-col bg-[#F8FAFC] dark:bg-black text-slate-900 dark:text-white font-sans transition-colors duration-300">
             <Navbar />
 
-            <main className="flex-grow pt-32 pb-20 px-6">
+            <main className="flex-grow pt-40 pb-20 px-6">
                 <div className="max-w-6xl mx-auto">
                     
                     {/* Header Section */}
@@ -196,7 +194,7 @@ const Forum = () => {
                             >
                                 <Sparkles size={12} /> Community Hub
                             </motion.div>
-                            <h1 className="text-4xl md:text-5xl font-black tracking-tight text-slate-900">
+                            <h1 className="text-4xl md:text-5xl font-black tracking-tight text-slate-900 dark:text-white">
                                 Collective <span className="text-primary">Intelligence</span>
                             </h1>
                             <p className="text-slate-500 max-w-lg">
@@ -206,7 +204,7 @@ const Forum = () => {
 
                         <Button 
                             onClick={() => currentUser ? setShowNewThreadModal(true) : navigate("/login")}
-                            className="bg-primary text-black hover:bg-primary/90 font-black rounded-2xl h-14 px-8 shadow-xl shadow-primary/10 transition-all hover:scale-105"
+                            className="bg-primary text-black hover:bg-primary/90 font-black rounded-2xl h-14 px-8 transition-all hover:scale-105"
                         >
                             <Plus size={20} className="mr-2" /> Start Discussion
                         </Button>
@@ -225,7 +223,7 @@ const Forum = () => {
                                         placeholder="Search discussions..."
                                         value={searchQuery}
                                         onChange={(e) => setSearchQuery(e.target.value)}
-                                        className="w-full h-14 pl-12 pr-4 bg-white border border-slate-200 rounded-xl focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all font-medium text-slate-700 shadow-sm"
+                                        className="w-full h-14 pl-12 pr-4 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-white/10 rounded-xl focus:outline-none focus:border-primary transition-all font-medium text-slate-700 dark:text-white"
                                     />
                                 </div>
                                 <div className="flex gap-2 overflow-x-auto no-scrollbar">
@@ -235,8 +233,8 @@ const Forum = () => {
                                             onClick={() => setSelectedCategory(cat)}
                                             className={`h-14 px-6 rounded-xl font-bold text-xs uppercase tracking-wider transition-all whitespace-nowrap ${
                                                 selectedCategory === cat 
-                                                ? "bg-primary text-black shadow-md border-b-2 border-black/10" 
-                                                : "bg-white text-slate-500 border border-slate-200 hover:border-slate-300 hover:bg-slate-50"
+                                                ? "bg-primary text-black border-b-2 border-black/10" 
+                                                : "bg-white dark:bg-zinc-900 text-slate-500 dark:text-white/60 border border-slate-200 dark:border-white/10 hover:border-slate-300 dark:hover:border-white/20 hover:bg-slate-50 dark:hover:bg-zinc-800"
                                             }`}
                                         >
                                             {cat}
@@ -253,7 +251,7 @@ const Forum = () => {
                                         <p className="text-xs font-black uppercase tracking-widest text-slate-400">Syncing Knowledge...</p>
                                     </div>
                                 ) : filteredThreads.length === 0 ? (
-                                    <div className="bg-white border border-slate-200 rounded-[32px] p-20 text-center shadow-sm">
+                                    <div className="bg-white dark:bg-zinc-900 border border-slate-200 dark:border-white/10 rounded-[32px] p-20 text-center">
                                         <MessageSquare size={48} className="mx-auto text-slate-200 mb-6" />
                                         <h3 className="text-xl font-bold text-slate-800 mb-2">No discussions found</h3>
                                         <p className="text-slate-500 text-sm">Be the first to start a conversation in this category!</p>
@@ -265,7 +263,7 @@ const Forum = () => {
                                             initial={{ opacity: 0, y: 20 }}
                                             animate={{ opacity: 1, y: 0 }}
                                             transition={{ delay: idx * 0.05 }}
-                                            className={`group block bg-white border rounded-[32px] p-6 transition-all hover:shadow-xl hover:border-primary/30 relative overflow-hidden ${thread.is_pinned ? "border-primary/50 shadow-lg shadow-primary/5" : "border-slate-200 cursor-pointer"}`}
+                                            className={`group block bg-white dark:bg-zinc-900 border rounded-[32px] p-6 transition-all hover:border-primary/30 relative overflow-hidden ${thread.is_pinned ? "border-primary/50" : "border-slate-200 dark:border-white/10 cursor-pointer"}`}
                                             onClick={() => navigate(`/community/${thread.id}`)}
                                         >
                                             {!!thread.is_pinned && (
@@ -277,25 +275,34 @@ const Forum = () => {
                                             <div className="flex flex-col md:flex-row gap-6">
                                                 <div className="flex-grow space-y-4">
                                                     <div className="flex items-center gap-3">
-                                                        <span className="px-3 py-1 bg-slate-100 text-slate-600 rounded-lg text-[10px] font-black uppercase tracking-widest">
+                                                        <span className="px-3 py-1 bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-white/60 rounded-lg text-[10px] font-black uppercase tracking-widest">
                                                             {thread.category}
                                                         </span>
                                                         <div className="flex items-center gap-1.5 text-slate-400 text-xs font-bold">
                                                             <Clock size={14} /> {formatDate(thread.created_at)}
                                                         </div>
-                                                        <div className="flex items-center gap-1.5 text-slate-400 text-xs font-bold border-l pl-3 border-slate-100">
-                                                            <Triangle size={14} className="text-primary" /> {thread.upvotes_count || 0}
+                                                        <div className="flex items-center gap-1.5 text-slate-400 text-xs font-bold border-l dark:border-white/10 pl-3 border-slate-100">
+                                                            <ArrowUp size={14} className={thread.user_vote == 1 ? "text-orange-500" : "text-primary"} /> {thread.upvotes_count || 0}
                                                         </div>
                                                     </div>
 
                                                     <div>
-                                                        <h2 className="text-xl font-bold text-slate-900 group-hover:text-primary transition-colors flex items-center gap-2">
+                                                        <h2 className="text-xl font-bold text-slate-900 dark:text-white group-hover:text-primary transition-colors flex items-center gap-2">
                                                             {thread.title}
                                                             {!!thread.is_locked && <Lock size={16} className="text-slate-400" />}
                                                         </h2>
                                                         <p className="text-slate-500 text-sm line-clamp-2 mt-2 leading-relaxed">
                                                             {thread.content}
                                                         </p>
+                                                        {thread.hashtags && (
+                                                            <div className="flex flex-wrap gap-2 mt-3">
+                                                                {thread.hashtags.split(' ').map((tag: string, i: number) => (
+                                                                    <span key={i} className="text-[11px] font-bold text-primary bg-primary/5 px-2 py-0.5 rounded-md">
+                                                                        {tag.startsWith('#') ? tag : `#${tag}`}
+                                                                    </span>
+                                                                ))}
+                                                            </div>
+                                                        )}
                                                     </div>
 
                                                     <div className="flex items-center justify-between pt-4 border-t border-slate-50">
@@ -303,33 +310,33 @@ const Forum = () => {
                                                             <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center text-xs font-black text-primary border border-primary/20">
                                                                 {thread.user_name.charAt(0).toUpperCase()}
                                                             </div>
-                                                            <div className="text-sm font-bold text-slate-700">
+                                                            <div className="text-sm font-bold text-slate-700 dark:text-white/80">
                                                                 {thread.user_name}
-                                                                <span className="block text-[10px] font-medium text-slate-400 uppercase tracking-widest">Thought Leader</span>
+                                                                <span className="block text-[10px] font-medium text-slate-400 dark:text-white/40 uppercase tracking-widest">Thought Leader</span>
                                                             </div>
                                                         </div>
 
                                                         <div className="flex items-center gap-2">
                                                             {/* Admin Controls */}
                                                             {currentUser?.role === 'admin' && (
-                                                                <div className="flex gap-1 border-r pr-2 border-slate-100">
+                                                                <div className="flex gap-1 border-r pr-2 border-slate-100 dark:border-white/10">
                                                                     <button 
                                                                         onClick={(e) => handleModeration(e, thread.id, 'pin', thread.is_pinned == 1)}
-                                                                        className={`p-2 rounded-xl transition-all ${thread.is_pinned == 1 ? "bg-primary text-black" : "bg-slate-100 text-slate-400 hover:bg-primary/20 hover:text-primary"}`}
+                                                                        className={`p-2 rounded-xl transition-all ${thread.is_pinned == 1 ? "bg-primary text-black" : "bg-slate-100 dark:bg-white/5 text-slate-400 dark:text-white/40 hover:bg-primary/20 hover:text-primary"}`}
                                                                         title="Pin Discussion"
                                                                     >
                                                                         <Pin size={16} />
                                                                     </button>
                                                                     <button 
                                                                         onClick={(e) => handleModeration(e, thread.id, 'lock', thread.is_locked == 1)}
-                                                                        className={`p-2 rounded-xl transition-all ${thread.is_locked == 1 ? "bg-slate-900 text-white" : "bg-slate-100 text-slate-400 hover:bg-slate-900 hover:text-white"}`}
+                                                                        className={`p-2 rounded-xl transition-all ${thread.is_locked == 1 ? "bg-slate-900 dark:bg-zinc-800 text-white" : "bg-slate-100 dark:bg-white/5 text-slate-400 dark:text-white/40 hover:bg-slate-900 dark:hover:bg-zinc-700 hover:text-white"}`}
                                                                         title="Lock Discussion"
                                                                     >
                                                                         <Lock size={16} />
                                                                     </button>
                                                                     <button 
                                                                         onClick={(e) => handleDeleteThread(e, thread.id)}
-                                                                        className="p-2 rounded-xl bg-slate-100 text-slate-400 hover:bg-red-500 hover:text-white transition-all"
+                                                                        className="p-2 rounded-xl bg-slate-100 dark:bg-white/5 text-slate-400 dark:text-white/40 hover:bg-red-500 hover:text-white transition-all"
                                                                         title="Delete Discussion"
                                                                     >
                                                                         <Trash2 size={16} />
@@ -339,17 +346,17 @@ const Forum = () => {
 
                                                             {/* Author Only Edit/Delete */}
                                                             {currentUser?.id == thread.user_id && currentUser?.role !== 'admin' && (
-                                                                <div className="flex gap-1 border-r pr-2 border-slate-100">
+                                                                <div className="flex gap-1 border-r pr-2 border-slate-100 dark:border-white/10">
                                                                      <button 
                                                                         onClick={(e) => { e.stopPropagation(); navigate(`/community/${thread.id}?edit=true`); }}
-                                                                        className="p-2 rounded-xl bg-slate-100 text-slate-400 hover:bg-primary/20 hover:text-primary transition-all"
+                                                                        className="p-2 rounded-xl bg-slate-100 dark:bg-white/5 text-slate-400 dark:text-white/40 hover:bg-primary/20 hover:text-primary transition-all"
                                                                         title="Edit My Discussion"
                                                                     >
                                                                         <Pencil size={16} />
                                                                     </button>
                                                                     <button 
                                                                         onClick={(e) => handleDeleteThread(e, thread.id)}
-                                                                        className="p-2 rounded-xl bg-slate-100 text-slate-400 hover:bg-red-500 hover:text-white transition-all"
+                                                                        className="p-2 rounded-xl bg-slate-100 dark:bg-white/5 text-slate-400 dark:text-white/40 hover:bg-red-500 hover:text-white transition-all"
                                                                         title="Delete My Discussion"
                                                                     >
                                                                         <Trash2 size={16} />
@@ -358,18 +365,25 @@ const Forum = () => {
                                                             )}
 
                                                             <div className="flex gap-3">
+                                                             <div className="flex bg-slate-100/50 dark:bg-white/5 rounded-xl overflow-hidden border border-slate-200/50 dark:border-white/10">
                                                                 <button 
-                                                                    disabled={thread.has_voted == 1}
-                                                                    onClick={(e) => handleUpvote(e, thread.id)}
-                                                                    className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-black transition-all border ${
-                                                                        thread.has_voted == 1 
-                                                                        ? "bg-primary/20 text-primary border-primary/20 cursor-not-allowed" 
-                                                                        : "bg-slate-50 hover:bg-primary/10 text-slate-400 hover:text-primary border-transparent hover:border-primary/20"
-                                                                    }`}
+                                                                    onClick={(e) => handleVote(e, thread.id, 'upvote')}
+                                                                    className={`p-2 transition-all ${thread.user_vote == 1 ? "text-orange-500 bg-orange-50 dark:bg-orange-500/10" : "text-slate-400 dark:text-white/30 hover:text-orange-500 hover:bg-slate-100 dark:hover:bg-white/5"}`}
+                                                                    title="Upvote"
                                                                 >
-                                                                    <Triangle size={14} className={thread.has_voted == 1 ? "fill-current" : ""} /> 
-                                                                    {thread.upvotes_count || 0}
+                                                                    <ArrowUp size={18} strokeWidth={3} />
                                                                 </button>
+                                                                <div className={`flex items-center px-1 text-xs font-black min-w-[20px] justify-center ${thread.user_vote == 1 ? "text-orange-600 dark:text-orange-400" : (thread.user_vote == -1 ? "text-blue-600 dark:text-blue-400" : "text-slate-600 dark:text-white/60")}`}>
+                                                                    {thread.upvotes_count || 0}
+                                                                </div>
+                                                                <button 
+                                                                    onClick={(e) => handleVote(e, thread.id, 'downvote')}
+                                                                    className={`p-2 transition-all ${thread.user_vote == -1 ? "text-blue-500 bg-blue-50 dark:bg-blue-500/10" : "text-slate-400 dark:text-white/30 hover:text-blue-500 hover:bg-slate-100 dark:hover:bg-white/5"}`}
+                                                                    title="Downvote"
+                                                                >
+                                                                    <ArrowDown size={18} strokeWidth={3} />
+                                                                </button>
+                                                            </div>
                                                                 <Button variant="ghost" className="text-primary font-black text-xs hover:bg-primary/5 uppercase tracking-widest px-0">
                                                                     Read Thread <ChevronRight size={14} className="ml-1" />
                                                                 </Button>
@@ -386,15 +400,15 @@ const Forum = () => {
 
                         {/* Sidebar */}
                         <div className="space-y-8">
-                            <div className="bg-white border border-slate-200 rounded-[32px] p-8 shadow-sm">
+                            <div className="bg-white dark:bg-zinc-900 border border-slate-200 dark:border-white/10 rounded-[32px] p-8 shadow-sm">
                                 <h3 className="text-xs font-black uppercase tracking-widest text-primary mb-6 flex items-center gap-2">
                                     <Hash size={14} /> Popular Topics
                                 </h3>
                                 <div className="space-y-4">
                                     {["SaaS Builders", "AI Art", "LLM Fine-tuning", "Automation"].map(tag => (
                                         <div key={tag} className="flex items-center justify-between group cursor-pointer hover:translate-x-1 transition-transform">
-                                            <span className="text-slate-600 font-bold text-sm">#{tag}</span>
-                                            <span className="text-[10px] font-black px-2 py-1 bg-slate-50 rounded-lg text-slate-400 group-hover:bg-primary/10 group-hover:text-primary transition-colors">Trending</span>
+                                            <span className="text-slate-600 dark:text-white/60 font-bold text-sm">#{tag}</span>
+                                            <span className="text-[10px] font-black px-2 py-1 bg-slate-50 dark:bg-white/5 rounded-lg text-slate-400 group-hover:bg-primary/10 group-hover:text-primary transition-colors">Trending</span>
                                         </div>
                                     ))}
                                 </div>
@@ -422,11 +436,11 @@ const Forum = () => {
                             initial={{ opacity: 0, scale: 0.95, y: 20 }}
                             animate={{ opacity: 1, scale: 1, y: 0 }}
                             exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                            className="bg-white rounded-[40px] w-full max-w-2xl shadow-2xl overflow-hidden border border-slate-200"
+                            className="bg-white dark:bg-zinc-900 rounded-[40px] w-full max-w-2xl shadow-2xl overflow-hidden border border-slate-200 dark:border-white/10"
                         >
-                            <div className="p-8 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+                            <div className="p-8 border-b border-slate-100 dark:border-white/5 flex items-center justify-between bg-slate-50/50 dark:bg-white/5">
                                 <div>
-                                    <h2 className="text-2xl font-black text-slate-900">Start Discussion</h2>
+                                    <h2 className="text-2xl font-black text-slate-900 dark:text-white">Start Discussion</h2>
                                     <p className="text-xs text-slate-500 font-bold uppercase tracking-wider mt-1">Join the Collective Mind</p>
                                 </div>
                                 <button onClick={() => setShowNewThreadModal(false)} className="p-2 hover:bg-slate-200 rounded-xl transition-all">
@@ -442,7 +456,7 @@ const Forum = () => {
                                         placeholder="What's on your mind?"
                                         value={newTitle}
                                         onChange={(e) => setNewTitle(e.target.value)}
-                                        className="w-full h-14 px-6 bg-slate-50 border border-slate-200 rounded-2xl focus:outline-none focus:border-primary transition-all font-bold text-slate-700"
+                                        className="w-full h-14 px-6 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl focus:outline-none focus:border-primary transition-all font-bold text-slate-700 dark:text-white"
                                         required
                                     />
                                 </div>
@@ -455,7 +469,7 @@ const Forum = () => {
                                                 key={cat}
                                                 type="button"
                                                 onClick={() => setNewCategory(cat)}
-                                                className={`py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all border ${newCategory === cat ? "bg-primary border-primary text-black shadow-lg shadow-primary/10" : "bg-white border-slate-200 text-slate-400 hover:border-primary/50"}`}
+                                                className={`py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all border ${newCategory === cat ? "bg-primary border-primary text-black shadow-lg shadow-primary/10" : "bg-white dark:bg-zinc-800 border-slate-200 dark:border-white/10 text-slate-400 dark:text-white/40 hover:border-primary/50"}`}
                                             >
                                                 {cat}
                                             </button>
@@ -470,8 +484,19 @@ const Forum = () => {
                                         value={newContent}
                                         onChange={(e) => setNewContent(e.target.value)}
                                         rows={6}
-                                        className="w-full px-6 py-5 bg-slate-50 border border-slate-200 rounded-[24px] focus:outline-none focus:border-primary transition-all font-medium text-slate-700 resize-none"
+                                        className="w-full px-6 py-5 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-[24px] focus:outline-none focus:border-primary transition-all font-medium text-slate-700 dark:text-white resize-none"
                                         required
+                                    />
+                                </div>
+
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1">Hashtags (Space separated)</label>
+                                    <input 
+                                        type="text"
+                                        placeholder="e.g. #ai #saas #automation"
+                                        value={newHashtags}
+                                        onChange={(e) => setNewHashtags(e.target.value)}
+                                        className="w-full h-14 px-6 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl focus:outline-none focus:border-primary transition-all font-bold text-slate-700 dark:text-white"
                                     />
                                 </div>
 

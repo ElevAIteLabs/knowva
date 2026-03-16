@@ -128,9 +128,7 @@
     color: transparent;
     background-image: linear-gradient(135deg, hsl(38, 95%, 54%), hsl(25, 90%, 48%));
   }
-  .glow-box {
-    box-shadow: 0 0 30px -5px hsl(38 95% 54% / 0.15), 0 0 60px -10px hsl(25 90% 48% / 0.1);
-  }
+
 
   .glow-border {
     border: 1px solid hsl(38 95% 54% / 0.2);
@@ -147,14 +145,10 @@
     -webkit-backdrop-filter: blur(24px);
     border: 1px solid rgba(255, 255, 255, 0.2);
     border-radius: 9999px;
-    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37), 
-                inset 0 0 0 1px rgba(255, 255, 255, 0.1),
-                0 0 0 1px rgba(255, 255, 255, 0.05);
+    box-shadow: none;
   }
 
-  .hero-glow {
-    background: radial-gradient(ellipse 60% 40% at 50% 0%, hsl(38 95% 54% / 0.12) 0%, transparent 70%);
-  }
+
 
   .section-container {
     max-width: 80rem;

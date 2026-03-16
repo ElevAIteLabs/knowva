@@ -210,7 +210,7 @@ const Profile = () => {
         <div className="min-h-screen flex flex-col bg-[#F8FAFC] text-slate-900 font-sans">
             <Navbar />
 
-            <main className="flex-grow pt-32 pb-20 px-6">
+            <main className="flex-grow pt-40 pb-20 px-6">
                 <div className="max-w-6xl mx-auto">
 
                     {/* ── Header ── */}
@@ -230,31 +230,44 @@ const Profile = () => {
                             </div>
                         </div>
 
-                        <div className="flex bg-slate-200/50 p-1 rounded-2xl border border-slate-200 backdrop-blur-md overflow-x-auto no-scrollbar">
-                            <button 
-                                onClick={() => setActiveTab("settings")}
-                                className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold transition-all whitespace-nowrap ${activeTab === "settings" ? "bg-white text-primary shadow-sm" : "text-slate-500 hover:text-slate-900"}`}
+                        <div className="flex flex-col md:flex-row gap-4">
+                            <div className="flex bg-slate-200/50 p-1 rounded-2xl border border-slate-200 backdrop-blur-md overflow-x-auto no-scrollbar">
+                                <button 
+                                    onClick={() => setActiveTab("settings")}
+                                    className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold transition-all whitespace-nowrap ${activeTab === "settings" ? "bg-white text-primary shadow-sm" : "text-slate-500 hover:text-slate-900"}`}
+                                >
+                                    <Settings size={16} /> Settings
+                                </button>
+                                <button 
+                                    onClick={() => setActiveTab("saved")}
+                                    className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold transition-all whitespace-nowrap ${activeTab === "saved" ? "bg-white text-primary shadow-sm" : "text-slate-500 hover:text-slate-900"}`}
+                                >
+                                    <Bookmark size={16} /> Saved
+                                </button>
+                                <button 
+                                    onClick={() => setActiveTab("reviews")}
+                                    className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold transition-all whitespace-nowrap ${activeTab === "reviews" ? "bg-white text-primary shadow-sm" : "text-slate-500 hover:text-slate-900"}`}
+                                >
+                                    <Star size={16} /> Reviews
+                                </button>
+                                <button 
+                                    onClick={() => setActiveTab("questions")}
+                                    className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold transition-all whitespace-nowrap ${activeTab === "questions" ? "bg-white text-primary shadow-sm" : "text-slate-500 hover:text-slate-900"}`}
+                                >
+                                    <MessageSquare size={16} /> Questions
+                                </button>
+                            </div>
+                            <Button 
+                                variant="outline" 
+                                onClick={() => {
+                                    localStorage.removeItem("user");
+                                    window.dispatchEvent(new Event("storage"));
+                                    navigate("/login");
+                                }}
+                                className="border-red-200 text-red-500 hover:bg-red-50 hover:text-red-600 rounded-2xl h-auto py-2.5 px-6 font-bold flex items-center gap-2"
                             >
-                                <Settings size={16} /> Settings
-                            </button>
-                            <button 
-                                onClick={() => setActiveTab("saved")}
-                                className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold transition-all whitespace-nowrap ${activeTab === "saved" ? "bg-white text-primary shadow-sm" : "text-slate-500 hover:text-slate-900"}`}
-                            >
-                                <Bookmark size={16} /> Saved
-                            </button>
-                            <button 
-                                onClick={() => setActiveTab("reviews")}
-                                className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold transition-all whitespace-nowrap ${activeTab === "reviews" ? "bg-white text-primary shadow-sm" : "text-slate-500 hover:text-slate-900"}`}
-                            >
-                                <Star size={16} /> Reviews
-                            </button>
-                            <button 
-                                onClick={() => setActiveTab("questions")}
-                                className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold transition-all whitespace-nowrap ${activeTab === "questions" ? "bg-white text-primary shadow-sm" : "text-slate-500 hover:text-slate-900"}`}
-                            >
-                                <MessageSquare size={16} /> Questions
-                            </button>
+                                <LogOut size={18} /> Logout
+                            </Button>
                         </div>
                     </div>
 

@@ -30,6 +30,18 @@ try {
     exit();
 }
 
+try {
+    $conn->exec("ALTER TABLE forum_threads ADD COLUMN image_url VARCHAR(255) NULL");
+} catch(Exception $e) {}
+
+try {
+    $conn->exec("ALTER TABLE forum_replies ADD COLUMN parent_id INT NULL DEFAULT NULL");
+} catch(Exception $e) {}
+
+try {
+    $conn->exec("ALTER TABLE forum_threads ADD COLUMN hashtags TEXT NULL");
+} catch(Exception $e) {}
+
 // Helper to check admin status
 function isAdmin($conn, $user_id) {
     if (!$user_id) return false;
@@ -70,8 +82,8 @@ if ($method === 'GET') {
         if ($thread_id > 0) {
             $stmt = $conn->prepare("
                 SELECT t.*, 
-                (SELECT COUNT(*) FROM upvotes WHERE target_id = t.id AND target_type = 'thread') as upvotes_count,
-                (SELECT COUNT(*) FROM upvotes WHERE target_id = t.id AND target_type = 'thread' AND user_id = ?) as has_voted
+                (SELECT COALESCE(SUM(vote_value), 0) FROM upvotes WHERE target_id = t.id AND target_type = 'thread') as upvotes_count,
+                (SELECT SUM(vote_value) FROM upvotes WHERE target_id = t.id AND target_type = 'thread' AND user_id = ?) as user_vote
                 FROM forum_threads t 
                 WHERE t.id = ?
             ");
@@ -83,13 +95,40 @@ if ($method === 'GET') {
                 exit();
             }
 
-            $stmtRep = $conn->prepare("SELECT * FROM forum_replies WHERE thread_id = ? ORDER BY created_at ASC");
-            $stmtRep->execute([$thread_id]);
-            $replies = $stmtRep->fetchAll(PDO::FETCH_ASSOC);
+            $stmtRep = $conn->prepare("
+                SELECT r.*,
+                (SELECT COALESCE(SUM(vote_value), 0) FROM upvotes WHERE target_id = r.id AND target_type = 'reply') as upvotes_count,
+                (SELECT SUM(vote_value) FROM upvotes WHERE target_id = r.id AND target_type = 'reply' AND user_id = ?) as user_vote
+                FROM forum_replies r 
+                WHERE thread_id = ? 
+                ORDER BY created_at ASC
+            ");
+            $stmtRep->execute([$login_uid, $thread_id]);
+            $flatReplies = $stmtRep->fetchAll(PDO::FETCH_ASSOC);
+
+            // Recursive function to build the tree
+            function buildReplyTree(array &$elements, $parentId = null) {
+                $branch = [];
+                foreach ($elements as &$element) {
+                    if ($element['parent_id'] == $parentId) {
+                        $children = buildReplyTree($elements, $element['id']);
+                        if ($children) {
+                            $element['replies'] = $children;
+                        } else {
+                            $element['replies'] = [];
+                        }
+                        $branch[] = $element;
+                        unset($element);
+                    }
+                }
+                return $branch;
+            }
+
+            $repliesTree = buildReplyTree($flatReplies);
 
             echo json_encode([
                 "status" => "success", 
-                "data" => ["thread" => $thread, "replies" => $replies]
+                "data" => ["thread" => $thread, "replies" => $repliesTree]
             ]);
             exit();
         }
@@ -113,8 +152,8 @@ if ($method === 'GET') {
         }
 
         $sql = "SELECT t.*, 
-                (SELECT COUNT(*) FROM upvotes WHERE target_id = t.id AND target_type = 'thread') as upvotes_count,
-                (SELECT COUNT(*) FROM upvotes WHERE target_id = t.id AND target_type = 'thread' AND user_id = ?) as has_voted
+                (SELECT COALESCE(SUM(vote_value), 0) FROM upvotes WHERE target_id = t.id AND target_type = 'thread') as upvotes_count,
+                (SELECT SUM(vote_value) FROM upvotes WHERE target_id = t.id AND target_type = 'thread' AND user_id = ?) as user_vote
                 FROM forum_threads t 
                 $where 
                 ORDER BY t.is_pinned DESC, t.created_at DESC";
@@ -141,8 +180,41 @@ else if ($method === 'POST') {
 
     try {
         if ($action === 'create') {
-            $stmt = $conn->prepare("INSERT INTO forum_threads (user_id, user_name, title, category, content) VALUES (?, ?, ?, ?, ?)");
-            $stmt->execute([$data->user_id, $data->user_name, $data->title, $data->category, $data->content]);
+            $image_url = null;
+            if (!empty($data->image_base64)) {
+                $img = $data->image_base64;
+                $img = str_replace('data:image/jpeg;base64,', '', $img);
+                $img = str_replace('data:image/png;base64,', '', $img);
+                $img = str_replace('data:image/gif;base64,', '', $img);
+                $img = str_replace(' ', '+', $img);
+                $imgData = base64_decode($img);
+                
+                $uploadDir = __DIR__ . '/uploads';
+                if (!file_exists($uploadDir)) {
+                    mkdir($uploadDir, 0777, true);
+                }
+                
+                $fileName = uniqid() . '.png';
+                $filePath = $uploadDir . '/' . $fileName;
+                file_put_contents($filePath, $imgData);
+                
+                $image_url = 'uploads/' . $fileName;
+            }
+
+            $hashtags = isset($data->hashtags) ? trim($data->hashtags) : null;
+            try {
+                if ($image_url) {
+                    $stmt = $conn->prepare("INSERT INTO forum_threads (user_id, user_name, title, category, content, image_url, hashtags) VALUES (?, ?, ?, ?, ?, ?, ?)");
+                    $stmt->execute([$data->user_id, $data->user_name, $data->title, $data->category, $data->content, $image_url, $hashtags]);
+                } else {
+                    $stmt = $conn->prepare("INSERT INTO forum_threads (user_id, user_name, title, category, content, hashtags) VALUES (?, ?, ?, ?, ?, ?)");
+                    $stmt->execute([$data->user_id, $data->user_name, $data->title, $data->category, $data->content, $hashtags]);
+                }
+            } catch (PDOException $e) {
+                // Fallback in case columns do not exist yet
+                $stmt = $conn->prepare("INSERT INTO forum_threads (user_id, user_name, title, category, content) VALUES (?, ?, ?, ?, ?)");
+                $stmt->execute([$data->user_id, $data->user_name, $data->title, $data->category, $data->content]);
+            }
             echo json_encode(["status" => "success", "message" => "Thread created"]);
         } 
         else if ($action === 'reply') {
@@ -152,8 +224,23 @@ else if ($method === 'POST') {
                 echo json_encode(["status" => "error", "message" => "Thread is locked"]);
                 exit();
             }
-            $stmt = $conn->prepare("INSERT INTO forum_replies (thread_id, user_id, user_name, content) VALUES (?, ?, ?, ?)");
-            $stmt->execute([$data->thread_id, $data->user_id, $data->user_name, $data->content]);
+            
+            $parent_id = isset($data->parent_id) ? (int)$data->parent_id : null;
+            
+            try {
+                if ($parent_id > 0) {
+                    $stmt = $conn->prepare("INSERT INTO forum_replies (thread_id, user_id, user_name, content, parent_id) VALUES (?, ?, ?, ?, ?)");
+                    $stmt->execute([$data->thread_id, $data->user_id, $data->user_name, $data->content, $parent_id]);
+                } else {
+                    $stmt = $conn->prepare("INSERT INTO forum_replies (thread_id, user_id, user_name, content, parent_id) VALUES (?, ?, ?, ?, NULL)");
+                    $stmt->execute([$data->thread_id, $data->user_id, $data->user_name, $data->content]);
+                }
+            } catch (PDOException $e) {
+                // Fallback in case `parent_id` column does not exist yet in DB
+                $stmt = $conn->prepare("INSERT INTO forum_replies (thread_id, user_id, user_name, content) VALUES (?, ?, ?, ?)");
+                $stmt->execute([$data->thread_id, $data->user_id, $data->user_name, $data->content]);
+            }
+            
             echo json_encode(["status" => "success", "message" => "Reply posted"]);
         }
         else if (in_array($action, ['pin', 'lock', 'hide'])) {
@@ -178,8 +265,9 @@ else if ($method === 'POST') {
             $check->execute([$data->thread_id]);
             $ownerId = $check->fetchColumn();
             if ($ownerId == $data->user_id || isAdmin($conn, $data->user_id)) {
-                $stmt = $conn->prepare("UPDATE forum_threads SET title = ?, content = ? WHERE id = ?");
-                $stmt->execute([$data->title, $data->content, $data->thread_id]);
+                $hashtags = isset($data->hashtags) ? trim($data->hashtags) : null;
+                $stmt = $conn->prepare("UPDATE forum_threads SET title = ?, content = ?, hashtags = ? WHERE id = ?");
+                $stmt->execute([$data->title, $data->content, $hashtags, $data->thread_id]);
                 echo json_encode(["status" => "success", "message" => "Updated"]);
             } else { echo json_encode(["status" => "error", "message" => "Unauthorized"]); }
         }

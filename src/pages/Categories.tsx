@@ -101,7 +101,7 @@ const Categories = () => {
 
       {/* ── Hero Section ──────────────────────────────────────────────── */}
       <section
-        className="relative overflow-hidden pt-36 pb-32 bg-cover bg-center bg-no-repeat border-b border-border"
+        className="relative overflow-hidden pt-44 pb-32 bg-cover bg-center bg-no-repeat border-b border-border"
         style={{ backgroundImage: `url(${categoriehomepage})` }}
       >
         <div className="absolute inset-0 bg-gradient-to-b from-background/90 via-background/60 to-background dark:from-background/95 dark:via-background/80 dark:to-background backdrop-blur-sm" />

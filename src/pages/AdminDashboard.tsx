@@ -661,7 +661,7 @@ const AdminDashboard = () => {
         <div className="min-h-screen flex flex-col bg-background text-foreground font-sans">
             <Navbar />
 
-            <main className="flex-grow pt-24 pb-20 px-4 md:px-8 max-w-7xl mx-auto w-full">
+            <main className="flex-grow pt-40 pb-20 px-4 md:px-8 max-w-7xl mx-auto w-full">
 
                 <div className="flex flex-col lg:flex-row gap-8">
                     {/* ── Left Sidebar Navigation ──────────────────────────────────── */}
@@ -669,14 +669,14 @@ const AdminDashboard = () => {
                         <div className="glass-card p-4 space-y-1">
                             <button
                                 onClick={() => setActiveTab("inventory")}
-                                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm transition-all ${activeTab === "inventory" ? "bg-primary text-black shadow-lg shadow-primary/20" : "text-foreground/40 hover:bg-white/5 hover:text-foreground"}`}
+                                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm transition-all ${activeTab === "inventory" ? "bg-yellow-500 text-black" : "text-foreground/40 hover:bg-white/5 hover:text-foreground"}`}
                             >
                                 <Layers size={18} />
                                 Content Inventory
                             </button>
                             <button
                                 onClick={() => setActiveTab("community")}
-                                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm transition-all ${activeTab === "community" ? "bg-primary text-black shadow-lg shadow-primary/20" : "text-foreground/40 hover:bg-white/5 hover:text-foreground"}`}
+                                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm transition-all ${activeTab === "community" ? "bg-yellow-500 text-black" : "text-foreground/40 hover:bg-white/5 hover:text-foreground"}`}
                             >
                                 <MessageSquare size={18} />
                                 Community Center
@@ -701,10 +701,10 @@ const AdminDashboard = () => {
                                 className="space-y-8"
                             >
                                 {/* ── Inventory Header ── */}
-                                <div className="flex flex-col md:flex-row justify-between w-full md:items-end mb-10 gap-6 glass-card p-8 glow-box">
+                                <div className="flex flex-col md:flex-row justify-between w-full md:items-end mb-10 gap-6 glass-card p-8">
                                     <div className="flex items-center gap-5">
-                                        <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary/20 to-blue-500/20 border border-primary/30 flex items-center justify-center flex-shrink-0">
-                                            <Layers size={32} className="text-primary" />
+                                        <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary/20 to-yellow-500/20 border border-primary/30 flex items-center justify-center flex-shrink-0">
+                                            <Layers size={32} className="text-yellow-500" />
                                         </div>
                                         <div>
                                             <h1 className="text-3xl font-display font-bold tracking-tight mb-2">Inventory</h1>
@@ -713,15 +713,15 @@ const AdminDashboard = () => {
                                     </div>
                                     <div className="flex items-center gap-3">
                                         <button onClick={() => setIsImportModalOpen(true)} className="flex items-center gap-2 bg-green-500/10 text-green-400 border border-green-500/20 px-5 py-3 rounded-xl font-bold hover:bg-green-500/20 transition-all text-sm"><FileSpreadsheet size={18} /> Bulk Import</button>
-                                        <button onClick={() => { resetForm(); setIsAddModalOpen(true); }} className="flex items-center gap-2 bg-primary text-primary-foreground px-5 py-3 rounded-xl font-bold hover:bg-white/90 transition-all shadow-lg text-sm"><Plus size={18} /> Add Tool</button>
+                                        <button onClick={() => { resetForm(); setIsAddModalOpen(true); }} className="flex items-center gap-2 bg-yellow-500 text-black px-5 py-3 rounded-xl font-bold hover:bg-yellow-400 transition-all text-sm"><Plus size={18} /> Add Tool</button>
                                     </div>
                                 </div>
 
                                 {/* ── Stats Bar (Moved inside tab) ── */}
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
                                     {[
-                                        { label: "Total Tools in DB", value: stats.totalTools, icon: <Layers size={20} className="text-primary" /> },
-                                        { label: "Active Categories", value: "8", icon: <BarChart2 size={20} className="text-blue-400" /> },
+                                        { label: "Total Tools in DB", value: stats.totalTools, icon: <Layers size={20} className="text-yellow-500" /> },
+                                        { label: "Active Categories", value: "8", icon: <BarChart2 size={20} className="text-yellow-400" /> },
                                     ].map((stat, i) => (
                                         <div key={i} className="glass-card p-5 flex items-center gap-4">
                                             <div className="w-10 h-10 rounded-xl bg-secondary/30 border border-border flex items-center justify-center flex-shrink-0">
@@ -739,7 +739,7 @@ const AdminDashboard = () => {
                                 <div className="glass-card overflow-hidden">
                                     <div className="p-4 sm:p-6 border-b border-border flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-secondary/30">
                                         <h2 className="text-lg font-bold font-display flex items-center gap-2">
-                                            <Layers className="text-primary w-5 h-5" /> All Inventory
+                                            <Layers className="text-yellow-500 w-5 h-5" /> All Inventory
                                             <span className="ml-2 text-xs font-normal text-foreground/40 bg-secondary/30 border border-border px-2 py-0.5 rounded-full">{tools.length} entries</span>
                                         </h2>
                                         <div className="relative w-full sm:w-64">
@@ -782,7 +782,7 @@ const AdminDashboard = () => {
                                                         </td>
                                                         <td className="px-6 py-4 text-right">
                                                             <div className="flex items-center justify-end gap-1">
-                                                                <button onClick={() => handleEditClick(tool)} className="p-2 text-foreground/20 hover:text-primary hover:bg-primary/10 rounded-lg transition-all"><Edit2 size={16} /></button>
+                                                                <button onClick={() => handleEditClick(tool)} className="p-2 text-foreground/20 hover:text-yellow-500 hover:bg-yellow-500/10 rounded-lg transition-all"><Edit2 size={16} /></button>
                                                                 <button onClick={() => handleDeleteTool(tool.id)} className="p-2 text-foreground/20 hover:text-red-400 hover:bg-red-400/10 rounded-lg transition-all"><Trash2 size={16} /></button>
                                                             </div>
                                                         </td>
@@ -799,9 +799,9 @@ const AdminDashboard = () => {
                                 animate={{ opacity: 1, x: 0 }}
                                 className="space-y-8"
                             >
-                                <div className="flex flex-col md:flex-row justify-between w-full md:items-end mb-10 gap-6 glass-card p-8 glow-box-primary">
+                                <div className="flex flex-col md:flex-row justify-between w-full md:items-end mb-10 gap-6 glass-card p-8">
                                     <div className="flex items-center gap-5">
-                                        <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary/20 to-orange-500/20 border border-primary/30 flex items-center justify-center flex-shrink-0">
+                                        <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary/20 to-yellow-500/20 border border-primary/30 flex items-center justify-center flex-shrink-0">
                                             <MessageSquare size={32} className="text-primary" />
                                         </div>
                                         <div>
@@ -930,7 +930,7 @@ const AdminDashboard = () => {
                     >
                         <motion.div
                             initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }}
-                            className="bg-card border border-border rounded-2xl w-full max-w-2xl shadow-2xl overflow-hidden my-8"
+                            className="bg-card border border-border rounded-2xl w-full max-w-2xl overflow-hidden my-8"
                         >
                             {/* Modal Header */}
                             <div className="flex justify-between items-center p-6 border-b border-border bg-secondary/10">
@@ -1149,11 +1149,11 @@ const AdminDashboard = () => {
                     >
                         <motion.div
                             initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }}
-                            className="bg-card border border-border rounded-3xl w-full max-w-4xl shadow-[0_30px_60px_rgba(0,0,0,0.2)] overflow-hidden my-8"
+                            className="bg-card border border-border rounded-3xl w-full max-w-4xl overflow-hidden my-8"
                         >
                             <div className="flex justify-between items-center p-6 border-b border-white/5 bg-white/5 backdrop-blur-md">
                                 <div className="flex items-center gap-4">
-                                    <div className="w-12 h-12 rounded-2xl bg-primary/20 border border-primary/30 flex items-center justify-center shadow-inner">
+                                    <div className="w-12 h-12 rounded-2xl bg-primary/20 border border-primary/30 flex items-center justify-center">
                                         <Zap size={24} className="text-primary" />
                                     </div>
                                     <div>
@@ -1214,7 +1214,7 @@ const AdminDashboard = () => {
                                             </div>
                                         </div>
                                     </div>
-                                    <div className="md:col-span-2"><label className="block text-xs uppercase tracking-wider text-white/50 mb-2 font-bold ml-1">Full Description *</label><textarea required value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} className="w-full bg-white/[0.03] border border-white/10 rounded-2xl px-5 py-4 text-sm focus:outline-none focus:border-primary/50 focus:bg-white/[0.05] transition-all min-h-[120px] shadow-inner" placeholder="Detailed description of the tool..." /></div>
+                                    <div className="md:col-span-2"><label className="block text-xs uppercase tracking-wider text-white/50 mb-2 font-bold ml-1">Full Description *</label><textarea required value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} className="w-full bg-white/[0.03] border border-white/10 rounded-2xl px-5 py-4 text-sm focus:outline-none focus:border-primary/50 focus:bg-white/[0.05] transition-all min-h-[120px]" placeholder="Detailed description of the tool..." /></div>
                                     <div className="md:col-span-2 flex items-center gap-3 bg-primary/5 p-4 rounded-2xl border border-primary/20">
                                         <input 
                                             type="checkbox" 

@@ -23,7 +23,7 @@ const Providers = () => {
         style={{ backgroundImage: `url(${foraiproviders})` }}
       >
         <Navbar />
-        <div className="relative z-10 flex flex-col items-center justify-center text-center px-6">
+        <div className="relative z-10 flex flex-col items-center justify-center text-center px-6 pt-40 pb-20">
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
             <h1 className="font-display text-3xl md:text-4xl font-bold text-white mb-3">
               For AI <span className="text-gradient">Providers</span>

@@ -407,7 +407,7 @@ const ToolDetail = () => {
       <Navbar />
 
       {/* Hero Section */}
-      <section className="relative min-h-[60vh] flex items-center justify-center overflow-hidden pt-5 md:pt-10"
+      <section className="relative min-h-[60vh] flex items-center justify-center overflow-hidden pt-20 md:pt-32"
         style={{
           backgroundImage: `url(${runwayvideo})`,
           backgroundSize: 'cover',
@@ -455,7 +455,7 @@ const ToolDetail = () => {
         </div>
       </section>
 
-      <div className="pt-24 pb-20">
+      <div className="pt-40 pb-20">
         <div className="section-container">
           <Link to="/categories" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-primary mb-6 transition-colors">
             <ChevronLeft className="w-4 h-4" /> Back to Tools

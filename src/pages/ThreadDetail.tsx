@@ -1,15 +1,35 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { 
-  MessageSquare, ChevronLeft, Send, Loader2, Sparkles, User, Clock, 
-  Hash, Pin, Lock, ShieldCheck, X, Triangle, Reply, MoreHorizontal, Pencil, Trash2 
+import {
+    ArrowLeft, MessageSquare, Send, User, Clock, Star, Share2,
+    MoreVertical, ShieldCheck, Heart, TrendingUp, ChevronRight, ChevronLeft,
+    Globe, Clock as ClockIcon, MessageCircle, AlertCircle,
+    CheckCircle2, Sparkles, Pin, Lock, Trash2, Pencil, X, Loader2,
+    Minus, Plus, ArrowUp, ArrowDown, Award, MoreHorizontal, MinusCircle, PlusCircle, Flag
 } from "lucide-react";
 import { API_ENDPOINTS } from "@/config/apiConfig";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import CommentList from "@/components/forum/CommentList";
+
+const getUserColor = (name: string) => {
+    const colors = [
+        'bg-rose-500', 'bg-sky-500', 'bg-emerald-500', 'bg-amber-500',
+        'bg-violet-500', 'bg-fuchsia-500', 'bg-indigo-500', 'bg-teal-500',
+        'bg-orange-500', 'bg-cyan-500'
+    ];
+    let hash = 0;
+    const userName = name || "Anonymous";
+    for (let i = 0; i < userName.length; i++) {
+        hash = userName.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    return colors[Math.abs(hash) % colors.length];
+};
+
+
 
 const ThreadDetail = () => {
     const { id } = useParams();
@@ -20,15 +40,17 @@ const ThreadDetail = () => {
     const [isPosting, setIsPosting] = useState(false);
     const [replyContent, setReplyContent] = useState("");
     const [upvoteCount, setUpvoteCount] = useState(0);
-    const [hasUpvoted, setHasUpvoted] = useState(false);
+    const [userVote, setUserVote] = useState(0);
     const [upvoteLoading, setUpvoteLoading] = useState(false);
-    
+
     // Edit state
     const [isEditing, setIsEditing] = useState(false);
     const [editTitle, setEditTitle] = useState("");
     const [editContent, setEditContent] = useState("");
     const [isUpdating, setIsUpdating] = useState(false);
     const [showOptions, setShowOptions] = useState(false);
+    const [isMainReplying, setIsMainReplying] = useState(false);
+    const [sortBy, setSortBy] = useState<'newest' | 'oldest'>('oldest');
 
     const currentUser = (() => {
         try { return JSON.parse(localStorage.getItem("user") || "null"); } catch { return null; }
@@ -55,16 +77,15 @@ const ThreadDetail = () => {
             setIsLoading(false);
         }
     };
-
     const fetchUpvotes = async () => {
         try {
             const res = await fetch(`${API_ENDPOINTS.UPVOTES}?target_id=${id}&target_type=thread&user_id=${currentUser?.id || 0}`);
             const result = await res.json();
             if (result.status === "success") {
                 setUpvoteCount(result.count);
-                setHasUpvoted(result.has_upvoted);
+                setUserVote(result.user_vote);
             }
-        } catch {}
+        } catch { }
     };
 
     useEffect(() => {
@@ -72,7 +93,19 @@ const ThreadDetail = () => {
         fetchUpvotes();
     }, [id, currentUser?.id]);
 
-    const handleUpvote = async () => {
+    const onVoteReply = async (replyId: number, type: 'upvote' | 'downvote') => {
+        if (!currentUser) { navigate("/login"); return; }
+        try {
+            const res = await fetch(API_ENDPOINTS.UPVOTES, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ user_id: currentUser.id, target_id: replyId, target_type: 'reply', action_type: type }),
+            });
+            return await res.json();
+        } catch { return { status: "error" }; }
+    };
+
+    const handleVote = async (type: 'upvote' | 'downvote') => {
         if (!currentUser) { navigate("/login"); return; }
         setUpvoteLoading(true);
         try {
@@ -82,23 +115,23 @@ const ThreadDetail = () => {
                 body: JSON.stringify({
                     user_id: currentUser.id,
                     target_id: id,
-                    target_type: 'thread'
+                    target_type: 'thread',
+                    action_type: type
                 }),
             });
             const result = await res.json();
             if (result.status === "success") {
                 setUpvoteCount(result.new_count);
-                setHasUpvoted(result.action === 'added');
-                toast.success(result.action === 'added' ? "Thread upvoted!" : "Upvote removed");
+                setUserVote(result.user_vote);
+                toast.success("Vote updated!");
             }
-        } catch { toast.error("Upvote failed"); }
+        } catch { toast.error("Vote failed"); }
         finally { setUpvoteLoading(false); }
     };
 
-    const handlePostReply = async (e: React.FormEvent) => {
-        e.preventDefault();
+    const handlePostReply = async (content: string, parentId: number | null = null) => {
         if (!currentUser) { navigate("/login"); return; }
-        if (!replyContent.trim()) { toast.error("Please write something"); return; }
+        if (!content.trim()) { toast.error("Please write something"); return; }
 
         setIsPosting(true);
         try {
@@ -110,13 +143,14 @@ const ThreadDetail = () => {
                     thread_id: id,
                     user_id: currentUser.id,
                     user_name: currentUser.fullName,
-                    content: replyContent.trim()
+                    content: content.trim(),
+                    parent_id: parentId
                 }),
             });
             const result = await res.json();
             if (result.status === "success") {
                 toast.success("Response published!");
-                setReplyContent("");
+                if (!parentId) setReplyContent("");
                 fetchThreadDetail();
             } else {
                 toast.error(result.message);
@@ -224,32 +258,32 @@ const ThreadDetail = () => {
 
     if (isLoading) {
         return (
-            <div className="min-h-screen flex items-center justify-center bg-[#F8FAFC]">
+            <div className="min-h-screen flex items-center justify-center bg-[#F8FAFC] dark:bg-background">
                 <Loader2 className="w-10 h-10 text-primary animate-spin" />
             </div>
         );
     }
 
     return (
-        <div className="min-h-screen flex flex-col bg-[#F8FAFC] text-slate-900 font-sans">
+        <div className="min-h-screen flex flex-col bg-[#F8FAFC] dark:bg-background text-slate-900 dark:text-slate-100 font-sans transition-colors duration-300">
             <Navbar />
 
-            <main className="flex-grow pt-32 pb-20 px-6">
+            <main className="flex-grow pt-40 pb-20 px-6">
                 <div className="max-w-4xl mx-auto">
-                    
-                    <Link to="/community" className="inline-flex items-center gap-2 text-slate-500 hover:text-primary font-bold text-sm mb-8 transition-colors group">
+
+                    <Link to="/community" className="inline-flex items-center gap-2 text-slate-500 dark:text-slate-400 hover:text-primary font-bold text-sm mb-8 transition-colors group">
                         <ChevronLeft size={18} className="group-hover:-translate-x-1 transition-transform" /> Back to Collective Mind
                     </Link>
 
                     {/* Main Thread Post - Threads Style */}
                     <div className="relative mb-8">
                         {/* Vertical Connection Line */}
-                        <div className="absolute left-6 top-16 bottom-0 w-0.5 bg-slate-100 hidden md:block" />
-                        
+                        <div className="absolute left-6 top-16 bottom-0 w-0.5 bg-slate-100 dark:bg-zinc-900 hidden md:block" />
+
                         <div className="flex gap-4">
                             {/* Avatar */}
                             <div className="relative z-10 flex-shrink-0">
-                                <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center text-lg font-black text-slate-400 border-2 border-white shadow-sm ring-1 ring-slate-100">
+                                <div className={`w-12 h-12 rounded-full ${getUserColor(thread.user_name)} flex items-center justify-center text-lg font-black text-white border-2 border-white dark:border-background shadow-md ring-1 ring-black/5`}>
                                     {thread.user_name.charAt(0).toUpperCase()}
                                 </div>
                             </div>
@@ -258,25 +292,36 @@ const ThreadDetail = () => {
                             <div className="flex-grow pt-1 pb-4">
                                 <div className="flex items-center justify-between mb-2">
                                     <div className="flex items-center gap-2">
-                                        <span className="text-sm font-black text-slate-900 hover:underline cursor-pointer">{thread.user_name}</span>
-                                        <span className="text-xs text-slate-400 font-medium">{formatDate(thread.created_at)}</span>
+                                        <span className="text-sm font-black text-slate-900 dark:text-white hover:underline cursor-pointer">{thread.user_name}</span>
+                                        <span className="text-xs text-slate-400 dark:text-zinc-500 font-medium">{formatDate(thread.created_at)}</span>
                                         {!!thread.is_pinned && (
                                             <span className="px-1.5 py-0.5 bg-primary/10 text-primary rounded-md text-[8px] font-black uppercase tracking-wider">Pinned</span>
                                         )}
                                     </div>
-                                    <div className="flex items-center gap-1">
+                                    <div className="flex items-center gap-4">
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-xs font-bold text-slate-400 dark:text-zinc-500">Sort by:</span>
+                                            <select
+                                                value={sortBy}
+                                                onChange={(e) => setSortBy(e.target.value as any)}
+                                                className="bg-transparent text-xs font-bold text-slate-600 dark:text-slate-300 focus:outline-none cursor-pointer"
+                                            >
+                                                <option value="oldest">Oldest</option>
+                                                <option value="newest">Newest</option>
+                                            </select>
+                                        </div>
                                         {(currentUser?.id == thread.user_id || currentUser?.role === 'admin') && (
                                             <>
-                                                <button 
+                                                <button
                                                     onClick={() => setIsEditing(true)}
-                                                    className="p-2 text-slate-300 hover:text-primary hover:bg-primary/5 rounded-lg transition-all"
+                                                    className="p-2 text-slate-300 dark:text-zinc-700 hover:text-primary hover:bg-primary/5 rounded-lg transition-all"
                                                     title="Edit Discussion"
                                                 >
                                                     <Pencil size={16} />
                                                 </button>
-                                                <button 
+                                                <button
                                                     onClick={handleDeleteThread}
-                                                    className="p-2 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
+                                                    className="p-2 text-slate-300 dark:text-zinc-700 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-all"
                                                     title="Delete Discussion"
                                                 >
                                                     <Trash2 size={16} />
@@ -287,28 +332,28 @@ const ThreadDetail = () => {
                                 </div>
 
                                 {isEditing ? (
-                                    <div className="mb-4 bg-slate-50 rounded-2xl p-4 border border-slate-100">
-                                        <input 
+                                    <div className="mb-4 bg-slate-50 dark:bg-zinc-950 rounded-2xl p-4 border border-slate-100 dark:border-zinc-800">
+                                        <input
                                             type="text"
                                             value={editTitle}
                                             onChange={(e) => setEditTitle(e.target.value)}
-                                            className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2 text-sm font-bold mb-3 focus:outline-none focus:border-primary"
+                                            className="w-full bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-xl px-4 py-2 text-sm font-bold mb-3 focus:outline-none focus:border-primary dark:text-white"
                                             placeholder="Discussion Title"
                                         />
                                         <textarea
                                             value={editContent}
                                             onChange={(e) => setEditContent(e.target.value)}
-                                            className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm font-medium mb-3 focus:outline-none focus:border-primary min-h-[120px] resize-none"
+                                            className="w-full bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-xl px-4 py-3 text-sm font-medium mb-3 focus:outline-none focus:border-primary min-h-[120px] resize-none dark:text-white"
                                             placeholder="Update your thinking..."
                                         />
                                         <div className="flex justify-end gap-2">
-                                            <button 
+                                            <button
                                                 onClick={() => setIsEditing(false)}
-                                                className="px-4 py-2 text-xs font-black text-slate-400 hover:text-slate-900"
+                                                className="px-4 py-2 text-xs font-black text-slate-400 dark:text-zinc-600 hover:text-slate-900 dark:hover:text-slate-300"
                                             >
                                                 Cancel
                                             </button>
-                                            <button 
+                                            <button
                                                 onClick={handleUpdateThread}
                                                 disabled={isUpdating}
                                                 className="px-4 py-2 bg-primary text-black rounded-xl text-xs font-black disabled:opacity-50"
@@ -319,135 +364,103 @@ const ThreadDetail = () => {
                                     </div>
                                 ) : (
                                     <div className="mb-4">
-                                        <h1 className="text-xl md:text-2xl font-black text-slate-900 mb-2 leading-tight">
+                                        <h1 className="text-xl md:text-2xl font-black text-slate-900 dark:text-white mb-2 leading-tight">
                                             {thread.title}
                                         </h1>
-                                        <p className="text-slate-600 text-sm md:text-base leading-relaxed whitespace-pre-wrap">
+                                        <p className="text-slate-600 dark:text-slate-400 text-sm md:text-base leading-relaxed whitespace-pre-wrap font-medium">
                                             {thread.content}
                                         </p>
+                                        {thread.image_url && (
+                                            <div className="mt-4 rounded-2xl overflow-hidden border border-slate-200 dark:border-zinc-800">
+                                                <img src={thread.image_url.startsWith('uploads/') ? `${API_ENDPOINTS.COMMUNITY.replace('/forum.php', '')}/${thread.image_url}` : thread.image_url} alt="Discussion visual" className="w-full max-h-[600px] object-cover" />
+                                            </div>
+                                        )}
                                     </div>
                                 )}
-
                                 {/* Thread Actions */}
                                 <div className="flex items-center gap-6">
-                                    <button 
-                                        onClick={handleUpvote}
-                                        disabled={upvoteLoading}
-                                        className={`flex items-center gap-1.5 text-xs font-black transition-all ${hasUpvoted ? "text-primary scale-110" : "text-slate-400 hover:text-primary"}`}
+                                    <div className={`flex items-center bg-secondary/30 dark:bg-zinc-950/50 rounded-xl border transition-all ${userVote !== 0 ? 'border-primary/30' : 'border-transparent dark:border-zinc-800/50'}`}>
+                                        <button
+                                            onClick={() => handleVote('upvote')}
+                                            disabled={upvoteLoading}
+                                            className={`flex items-center justify-center w-10 h-10 rounded-l-xl transition-all ${userVote === 1 ? 'text-orange-500 bg-orange-500/10' : 'text-slate-400 dark:text-zinc-600 hover:text-orange-500 hover:bg-slate-100 dark:hover:bg-zinc-900'}`}
+                                            title="Upvote"
+                                        >
+                                            <ArrowUp size={20} className={userVote === 1 ? 'stroke-[3px]' : ''} />
+                                        </button>
+                                        <div className={`text-sm font-black px-1 min-w-[20px] text-center ${userVote === 1 ? 'text-orange-600' : (userVote === -1 ? 'text-blue-600 dark:text-blue-400' : 'text-slate-700 dark:text-zinc-400')}`}>
+                                            {upvoteCount}
+                                        </div>
+                                        <button
+                                            onClick={() => handleVote('downvote')}
+                                            disabled={upvoteLoading}
+                                            className={`flex items-center justify-center w-10 h-10 rounded-r-xl transition-all ${userVote === -1 ? 'text-blue-500 bg-blue-500/10' : 'text-slate-400 dark:text-zinc-600 hover:text-blue-500 hover:bg-slate-100 dark:hover:bg-zinc-900'}`}
+                                            title="Downvote"
+                                        >
+                                            <ArrowDown size={20} className={userVote === -1 ? 'stroke-[3px]' : ''} />
+                                        </button>
+                                    </div>
+                                    <button
+                                        onClick={() => setIsMainReplying(!isMainReplying)}
+                                        className="flex items-center gap-1.5 text-slate-400 dark:text-zinc-600 hover:text-primary transition-all text-xs font-black"
                                     >
-                                        <Triangle size={18} className={hasUpvoted ? "fill-current" : ""} />
-                                        {upvoteCount}
-                                    </button>
-                                    <button className="flex items-center gap-1.5 text-slate-400 hover:text-primary transition-all text-xs font-black">
                                         <MessageSquare size={18} />
-                                        {replies.length}
+                                        {(() => {
+                                            const countNested = (items: any[]): number => {
+                                                if (!items) return 0;
+                                                const childrenKey = items[0] && items[0].replies ? 'replies' : 'children';
+                                                return items.length + items.reduce((acc, item) => acc + countNested(item[childrenKey] || []), 0);
+                                            };
+                                            return countNested(replies);
+                                        })()} Comments
                                     </button>
-                                    <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest bg-slate-50 px-2 py-0.5 rounded-md border border-slate-100">
+                                    <span className="text-[10px] font-black text-slate-300 dark:text-zinc-700 uppercase tracking-widest bg-slate-50 dark:bg-zinc-900 px-2 py-0.5 rounded-md border border-slate-100 dark:border-zinc-800">
                                         {thread.category}
                                     </span>
                                 </div>
+
+                                {/* Main Reply Form toggle */}
+                                {isMainReplying && !thread.is_locked && (
+                                    <div className="mt-6 flex gap-3 max-w-2xl pr-4">
+                                        <textarea
+                                            value={replyContent}
+                                            onChange={(e) => setReplyContent(e.target.value)}
+                                            placeholder="What are your thoughts?"
+                                            rows={3}
+                                            className="flex-grow px-4 py-3 bg-white dark:bg-background border border-slate-200 dark:border-zinc-800 rounded-xl focus:outline-none focus:border-primary transition-all text-sm resize-none shadow-sm dark:text-white"
+                                        />
+                                        <div className="flex flex-col gap-2">
+                                            <Button disabled={isPosting} onClick={() => { handlePostReply(replyContent); setIsMainReplying(false); }} className="h-10 px-6 font-bold rounded-xl bg-primary text-black shadow-md hover:bg-primary/90 hover:scale-105 transition-all">
+                                                {isPosting ? <Loader2 className="animate-spin w-4 h-4" /> : "Comment"}
+                                            </Button>
+                                            <Button onClick={() => setIsMainReplying(false)} variant="ghost" className="h-10 px-6 font-bold rounded-xl text-slate-500 dark:text-zinc-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-zinc-800 transition-all">
+                                                Cancel
+                                            </Button>
+                                        </div>
+                                    </div>
+                                )}
+                                {isMainReplying && !!thread.is_locked && (
+                                    <div className="mt-4 text-xs font-bold text-slate-400 bg-slate-50 p-3 rounded-lg flex items-center gap-2">
+                                        <Lock size={14} /> This discussion is locked.
+                                    </div>
+                                )}
+
                             </div>
                         </div>
                     </div>
 
                     {/* Replies Section - Threads Style */}
-                    <div className="space-y-6 mb-12">
-                        {replies.length === 0 ? (
-                            <div className="ml-16 py-8 text-slate-400 text-sm font-bold border-l-2 border-slate-50 pl-6">
-                                No responses yet. Be the first to reply...
-                            </div>
-                        ) : (
-                            <div className="space-y-8">
-                                {replies.map((reply, idx) => (
-                                    <motion.div 
-                                        key={reply.id}
-                                        initial={{ opacity: 0, y: 10 }}
-                                        animate={{ opacity: 1, y: 0 }}
-                                        transition={{ delay: idx * 0.05 }}
-                                        className="relative group"
-                                    >
-                                        {/* Reply Vertical Line (unless last) */}
-                                        {idx !== replies.length - 1 && (
-                                            <div className="absolute left-6 top-14 bottom-[-24px] w-0.5 bg-slate-50 hidden md:block" />
-                                        )}
-
-                                        <div className="flex gap-4">
-                                            {/* Reply Avatar */}
-                                            <div className="flex-shrink-0 relative z-10">
-                                                <div className="w-10 h-10 rounded-full bg-slate-50 flex items-center justify-center text-sm font-black text-slate-400 border-2 border-white shadow-sm group-hover:ring-1 group-hover:ring-primary/20 transition-all">
-                                                    {reply.user_name.charAt(0).toUpperCase()}
-                                                </div>
-                                            </div>
-
-                                            {/* Reply Content */}
-                                            <div className="flex-grow pt-0.5">
-                                                <div className="flex items-center justify-between mb-1">
-                                                    <div className="flex items-center gap-2">
-                                                        <span className="text-xs font-black text-slate-900 group-hover:text-primary transition-colors cursor-pointer">{reply.user_name}</span>
-                                                        <span className="text-[10px] text-slate-400 font-medium">{formatDate(reply.created_at)}</span>
-                                                    </div>
-                                                    <div className="flex items-center gap-2">
-                                                        {(currentUser?.id == reply.user_id || currentUser?.role === 'admin') && (
-                                                            <button 
-                                                                onClick={() => handleDeleteReply(reply.id)}
-                                                                className="p-1 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded transition-all"
-                                                                title="Delete Response"
-                                                            >
-                                                                <Trash2 size={12} />
-                                                            </button>
-                                                        )}
-                                                        <Triangle size={12} className="text-slate-100 cursor-pointer hover:text-primary transition-colors" />
-                                                    </div>
-                                                </div>
-                                                <p className="text-slate-600 text-sm leading-relaxed whitespace-pre-wrap mb-3 pr-4">
-                                                    {reply.content}
-                                                </p>
-                                                <div className="flex items-center gap-4 text-[10px] font-black text-slate-400">
-                                                    <button className="hover:text-primary transition-colors">REPLY</button>
-                                                    <button className="hover:text-primary transition-colors">LIKE</button>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </motion.div>
-                                ))}
-                            </div>
-                        )}
+                    <div className="mb-12">
+                        <CommentList
+                            replies={replies}
+                            currentUser={currentUser}
+                            handleDeleteReply={handleDeleteReply}
+                            handlePostReply={handlePostReply}
+                            formatDate={formatDate}
+                            onVote={onVoteReply}
+                            sortBy={sortBy}
+                        />
                     </div>
-
-                    {/* Reply Form */}
-                    {!thread.is_locked ? (
-                        <div className="bg-slate-900 rounded-[40px] p-8 md:p-12 text-white relative overflow-hidden shadow-2xl">
-                            <div className="absolute top-0 right-0 w-64 h-64 bg-primary/10 -mr-32 -mt-32 rounded-full blur-[80px]" />
-                            <div className="relative z-10">
-                                <h3 className="text-2xl font-black mb-2">Contribute Thinking</h3>
-                                <p className="text-slate-400 text-sm mb-8">Your insights help the community evolve rapidly.</p>
-                                
-                                <form onSubmit={handlePostReply} className="space-y-6">
-                                    <textarea 
-                                        value={replyContent}
-                                        onChange={(e) => setReplyContent(e.target.value)}
-                                        placeholder="Add your expert opinion..."
-                                        rows={5}
-                                        className="w-full px-6 py-5 bg-white/5 border border-white/10 rounded-[24px] focus:outline-none focus:border-primary transition-all font-medium text-white resize-none"
-                                    />
-                                    <Button 
-                                        type="submit"
-                                        disabled={isPosting}
-                                        className="w-full bg-primary text-black hover:bg-primary/90 font-black rounded-2xl h-14 transition-all"
-                                    >
-                                        {isPosting ? <Loader2 className="animate-spin mr-2" /> : <Send size={18} className="mr-2" />}
-                                        Post Response
-                                    </Button>
-                                </form>
-                            </div>
-                        </div>
-                    ) : (
-                        <div className="bg-slate-100 border border-slate-200 rounded-[32px] p-12 text-center text-slate-500">
-                            <Lock size={32} className="mx-auto mb-4 opacity-50" />
-                            <h3 className="text-xl font-bold">This discussion is locked</h3>
-                            <p className="text-sm">No new responses can be added at this time.</p>
-                        </div>
-                    )}
 
                 </div>
             </main>

@@ -32,11 +32,18 @@ try {
 $conn->exec("CREATE TABLE IF NOT EXISTS upvotes (
     id          INT AUTO_INCREMENT PRIMARY KEY,
     user_id     INT           NOT NULL,
-    target_id   VARCHAR(255)  NOT NULL, -- Can be tool_slug or thread_id
-    target_type ENUM('tool', 'thread') NOT NULL,
+    target_id   VARCHAR(255)  NOT NULL, 
+    target_type VARCHAR(50)   NOT NULL,
+    vote_value  INT           DEFAULT 1,
     created_at  DATETIME      DEFAULT CURRENT_TIMESTAMP,
     UNIQUE KEY unique_upvote (user_id, target_id, target_type)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
+
+try { $conn->exec("ALTER TABLE upvotes MODIFY COLUMN target_type VARCHAR(50)"); } catch(Exception $e) {}
+try { 
+    $conn->exec("ALTER TABLE upvotes ADD COLUMN vote_value INT DEFAULT 1"); 
+    $conn->exec("UPDATE upvotes SET vote_value = 1 WHERE vote_value IS NULL");
+} catch(Exception $e) {}
 
 $method = $_SERVER['REQUEST_METHOD'];
 
@@ -53,22 +60,28 @@ if ($method === 'GET') {
 
     try {
         // Get total count
-        $stmt = $conn->prepare("SELECT COUNT(*) as total FROM upvotes WHERE target_id = ? AND target_type = ?");
+        $stmt = $conn->prepare("SELECT COALESCE(SUM(vote_value), 0) as total FROM upvotes WHERE target_id = ? AND target_type = ?");
         $stmt->execute([$target_id, $target_type]);
         $count = $stmt->fetch(PDO::FETCH_ASSOC)['total'];
 
         // Check if current user upvoted
         $has_upvoted = false;
+        $user_vote = 0;
         if ($user_id > 0) {
-            $stmt = $conn->prepare("SELECT id FROM upvotes WHERE user_id = ? AND target_id = ? AND target_type = ?");
+            $stmt = $conn->prepare("SELECT id, vote_value FROM upvotes WHERE user_id = ? AND target_id = ? AND target_type = ?");
             $stmt->execute([$user_id, $target_id, $target_type]);
-            $has_upvoted = $stmt->rowCount() > 0;
+            $existing = $stmt->fetch(PDO::FETCH_ASSOC);
+            if ($existing) {
+                $has_upvoted = true;
+                $user_vote = (int)$existing['vote_value'];
+            }
         }
 
         echo json_encode([
             "status" => "success",
             "count" => (int)$count,
-            "has_upvoted" => $has_upvoted
+            "has_upvoted" => $has_upvoted,
+            "user_vote" => $user_vote
         ]);
     } catch (Exception $e) {
         echo json_encode(["status" => "error", "message" => $e->getMessage()]);
@@ -86,31 +99,47 @@ else if ($method === 'POST') {
     $user_id     = (int)$data->user_id;
     $target_id   = $data->target_id;
     $target_type = $data->target_type;
+    $action_type = isset($data->action_type) ? $data->action_type : 'upvote'; // 'upvote' or 'downvote'
+    $incoming_vote = ($action_type === 'downvote') ? -1 : 1;
 
     try {
-        // Toggle logic: If exists, delete. Else, insert.
-        $stmt = $conn->prepare("SELECT id FROM upvotes WHERE user_id = ? AND target_id = ? AND target_type = ?");
+        $stmt = $conn->prepare("SELECT id, vote_value FROM upvotes WHERE user_id = ? AND target_id = ? AND target_type = ?");
         $stmt->execute([$user_id, $target_id, $target_type]);
+        $existing = $stmt->fetch(PDO::FETCH_ASSOC);
         
-        if ($stmt->rowCount() > 0) {
-            // Already upvoted, just return success
-            $action = 'already_voted';
+        $action = '';
+        $user_vote = 0;
+
+        if ($existing) {
+            if ($existing['vote_value'] == $incoming_vote) {
+                // Clicking same button again removes it
+                $conn->prepare("DELETE FROM upvotes WHERE id = ?")->execute([$existing['id']]);
+                $action = 'removed';
+                $user_vote = 0;
+            } else {
+                // Switching vote direction
+                $conn->prepare("UPDATE upvotes SET vote_value = ? WHERE id = ?")->execute([$incoming_vote, $existing['id']]);
+                $action = 'updated';
+                $user_vote = $incoming_vote;
+            }
         } else {
-            // Insert
-            $ins = $conn->prepare("INSERT INTO upvotes (user_id, target_id, target_type) VALUES (?, ?, ?)");
-            $ins->execute([$user_id, $target_id, $target_type]);
+            // First time voting
+            $ins = $conn->prepare("INSERT INTO upvotes (user_id, target_id, target_type, vote_value) VALUES (?, ?, ?, ?)");
+            $ins->execute([$user_id, $target_id, $target_type, $incoming_vote]);
             $action = 'added';
+            $user_vote = $incoming_vote;
         }
 
-        // Get new count
-        $stmt = $conn->prepare("SELECT COUNT(*) as total FROM upvotes WHERE target_id = ? AND target_type = ?");
+        // Get new total score
+        $stmt = $conn->prepare("SELECT COALESCE(SUM(vote_value), 0) as total FROM upvotes WHERE target_id = ? AND target_type = ?");
         $stmt->execute([$target_id, $target_type]);
         $count = (int)$stmt->fetch(PDO::FETCH_ASSOC)['total'];
 
         echo json_encode([
             "status" => "success",
             "action" => $action,
-            "new_count" => $count
+            "new_count" => $count,
+            "user_vote" => $user_vote
         ]);
     } catch (Exception $e) {
         echo json_encode(["status" => "error", "message" => $e->getMessage()]);

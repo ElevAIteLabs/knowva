@@ -129,7 +129,7 @@ const Compare = () => {
       <Navbar />
       
       {/* ── Hero Section ──────────────────────────────────────────────── */}
-      <div className="pt-36 pb-32 relative overflow-hidden border-b border-border" 
+      <div className="pt-44 pb-32 relative overflow-hidden border-b border-border" 
            style={{
              backgroundImage: `url(${compareaitools})`,
              backgroundSize: 'cover',
@@ -150,7 +150,7 @@ const Compare = () => {
                 Side-By-Side Analysis
             </div>
             <h1 className="font-display text-5xl md:text-7xl font-black text-foreground mb-6 tracking-tight">
-              Compare AI Tools <span className="gradient-text glow-effect drop-shadow-sm">Side by Side</span>
+              Compare AI Tools <span className="gradient-text whitespace-nowrap">Side by Side</span>
             </h1>
             <p className="text-muted-foreground text-xl max-w-2xl mx-auto font-light">
               Evaluate features, pricing, and technical capabilities to find the perfect foundation for your workflow.
@@ -165,7 +165,7 @@ const Compare = () => {
                   <motion.div
                     initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
-                    className="bg-card backdrop-blur-md rounded-3xl border border-border shadow-[0_20px_40px_rgba(0,0,0,0.05)] overflow-hidden flex flex-col hover:-translate-y-2 hover:shadow-[0_20px_40px_rgba(255,179,71,0.08)] hover:border-primary/40 transition-all duration-500 group relative h-full"
+                    className="bg-card backdrop-blur-md rounded-3xl border border-border overflow-hidden flex flex-col hover:-translate-y-2 hover:border-primary/40 transition-all duration-500 group relative h-full"
                   >
                     {/* Remove Button */}
                     <button 
@@ -185,7 +185,7 @@ const Compare = () => {
 
                     {/* Card Header */}
                     <div className="p-8 pb-0 text-center relative z-10 flex flex-col items-center">
-                      <div className="w-20 h-20 mx-auto rounded-3xl mb-6 flex items-center justify-center bg-secondary/80 border border-border shadow-inner relative group-hover:scale-110 transition-transform duration-500 overflow-hidden">
+                      <div className="w-20 h-20 mx-auto rounded-3xl mb-6 flex items-center justify-center bg-secondary/80 border border-border relative group-hover:scale-110 transition-transform duration-500 overflow-hidden">
                         {tool.icon_display.startsWith('http') || tool.icon_display.includes('.') ? (
                           <img src={tool.icon_display} alt={tool.name} className="w-12 h-12 object-contain" />
                         ) : (
@@ -223,7 +223,7 @@ const Compare = () => {
 
                       <button 
                         onClick={() => window.open(tool.website_url, '_blank')}
-                        className="w-full py-4 rounded-xl bg-primary text-primary-foreground font-bold text-sm transition-all shadow-md hover:scale-[1.02] hover:shadow-primary/30 flex items-center justify-center gap-2"
+                        className="w-full py-4 rounded-xl bg-primary text-primary-foreground font-bold text-sm transition-all hover:scale-[1.02] flex items-center justify-center gap-2"
                       >
                         Visit Website <Zap className="w-4 h-4" />
                       </button>
@@ -262,7 +262,7 @@ const Compare = () => {
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="relative w-full max-w-2xl bg-card border border-border rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[80vh]"
+              className="relative w-full max-w-2xl bg-card border border-border rounded-3xl overflow-hidden flex flex-col max-h-[80vh]"
             >
               <div className="p-6 border-b border-border flex flex-col gap-4">
                 <div className="flex items-center justify-between">
