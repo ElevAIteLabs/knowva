@@ -6,9 +6,9 @@ import {
     MoreVertical, ShieldCheck, Heart, TrendingUp, ChevronRight, ChevronLeft,
     Globe, Clock as ClockIcon, MessageCircle, AlertCircle,
     CheckCircle2, Sparkles, Pin, Lock, Trash2, Pencil, X, Loader2,
-    Minus, Plus, ArrowUp, ArrowDown, Award, MoreHorizontal, MinusCircle, PlusCircle, Flag
+    Minus, Plus, ArrowUp, ArrowDown, Award, MoreHorizontal, MinusCircle, PlusCircle, Flag, Upload
 } from "lucide-react";
-import { API_ENDPOINTS } from "@/config/apiConfig";
+import { API_ENDPOINTS, API_BASE_URL } from "@/config/apiConfig";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { toast } from "sonner";
@@ -40,6 +40,7 @@ const ThreadDetail = () => {
     const [isPosting, setIsPosting] = useState(false);
     const [replyContent, setReplyContent] = useState("");
     const [upvoteCount, setUpvoteCount] = useState(0);
+    const [downvoteCount, setDownvoteCount] = useState(0);
     const [userVote, setUserVote] = useState(0);
     const [upvoteLoading, setUpvoteLoading] = useState(false);
 
@@ -51,6 +52,7 @@ const ThreadDetail = () => {
     const [showOptions, setShowOptions] = useState(false);
     const [isMainReplying, setIsMainReplying] = useState(false);
     const [sortBy, setSortBy] = useState<'newest' | 'oldest'>('oldest');
+    const [editImage, setEditImage] = useState<File | null>(null);
 
     const currentUser = (() => {
         try { return JSON.parse(localStorage.getItem("user") || "null"); } catch { return null; }
@@ -82,7 +84,8 @@ const ThreadDetail = () => {
             const res = await fetch(`${API_ENDPOINTS.UPVOTES}?target_id=${id}&target_type=thread&user_id=${currentUser?.id || 0}`);
             const result = await res.json();
             if (result.status === "success") {
-                setUpvoteCount(result.count);
+                setUpvoteCount(result.upvotes || result.count || 0);
+                setDownvoteCount(result.downvotes || 0);
                 setUserVote(result.user_vote);
             }
         } catch { }
@@ -121,7 +124,21 @@ const ThreadDetail = () => {
             });
             const result = await res.json();
             if (result.status === "success") {
-                setUpvoteCount(result.new_count);
+                let newUp = upvoteCount;
+                let newDown = downvoteCount;
+                
+                if (type === 'upvote') {
+                    if (result.action === 'added') newUp++;
+                    else if (result.action === 'removed') newUp--;
+                    else if (result.action === 'updated') { newUp++; newDown--; }
+                } else {
+                    if (result.action === 'added') newDown++;
+                    else if (result.action === 'removed') newDown--;
+                    else if (result.action === 'updated') { newDown++; newUp--; }
+                }
+
+                setUpvoteCount(result.new_upvotes ?? result.new_count ?? result.upvotes ?? result.count ?? newUp);
+                setDownvoteCount(result.new_downvotes ?? result.downvotes ?? newDown);
                 setUserVote(result.user_vote);
                 toast.success("Vote updated!");
             }
@@ -171,21 +188,25 @@ const ThreadDetail = () => {
 
         setIsUpdating(true);
         try {
+            const formData = new FormData();
+            formData.append("action", "edit");
+            formData.append("thread_id", id as string);
+            formData.append("user_id", currentUser.id);
+            formData.append("title", editTitle.trim());
+            formData.append("content", editContent.trim());
+            if (editImage) {
+                formData.append("image", editImage);
+            }
+
             const res = await fetch(API_ENDPOINTS.COMMUNITY, {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    action: "edit",
-                    thread_id: id,
-                    user_id: currentUser.id,
-                    title: editTitle.trim(),
-                    content: editContent.trim()
-                }),
+                body: formData,
             });
             const result = await res.json();
             if (result.status === "success") {
                 toast.success("Thread updated!");
                 setIsEditing(false);
+                setEditImage(null);
                 fetchThreadDetail();
             } else {
                 toast.error(result.message);
@@ -346,9 +367,34 @@ const ThreadDetail = () => {
                                             className="w-full bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-xl px-4 py-3 text-sm font-medium mb-3 focus:outline-none focus:border-primary min-h-[120px] resize-none dark:text-white"
                                             placeholder="Update your thinking..."
                                         />
+                                        <div className="relative mb-3 group/file">
+                                            <input 
+                                                type="file" 
+                                                accept="image/*"
+                                                onChange={(e) => setEditImage(e.target.files ? e.target.files[0] : null)}
+                                                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                                            />
+                                            <div className="w-full h-10 px-4 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-xl flex items-center gap-2 transition-all group-hover/file:border-primary/50 overflow-hidden">
+                                                <div className="p-1.5 bg-primary/10 rounded-md text-primary">
+                                                    <Upload size={12} />
+                                                </div>
+                                                <span className="text-[10px] font-bold text-slate-500 truncate">
+                                                    {editImage ? editImage.name : "Change discussion image (Optional)"}
+                                                </span>
+                                                {editImage && (
+                                                    <button 
+                                                        type="button" 
+                                                        onClick={(e) => { e.stopPropagation(); setEditImage(null); }}
+                                                        className="ml-auto p-1 hover:bg-red-500/10 text-red-500 rounded-md z-20"
+                                                    >
+                                                        <X size={12} />
+                                                    </button>
+                                                )}
+                                            </div>
+                                        </div>
                                         <div className="flex justify-end gap-2">
                                             <button
-                                                onClick={() => setIsEditing(false)}
+                                                onClick={() => { setIsEditing(false); setEditImage(null); }}
                                                 className="px-4 py-2 text-xs font-black text-slate-400 dark:text-zinc-600 hover:text-slate-900 dark:hover:text-slate-300"
                                             >
                                                 Cancel
@@ -372,31 +418,44 @@ const ThreadDetail = () => {
                                         </p>
                                         {thread.image_url && (
                                             <div className="mt-4 rounded-2xl overflow-hidden border border-slate-200 dark:border-zinc-800">
-                                                <img src={thread.image_url.startsWith('uploads/') ? `${API_ENDPOINTS.COMMUNITY.replace('/forum.php', '')}/${thread.image_url}` : thread.image_url} alt="Discussion visual" className="w-full max-h-[600px] object-cover" />
+                                                <img 
+                                                    src={thread.image_url.startsWith('uploads/') 
+                                                        ? `${API_BASE_URL}/${thread.image_url.startsWith('/') ? thread.image_url.slice(1) : thread.image_url}` 
+                                                        : thread.image_url} 
+                                                    alt="Discussion visual" 
+                                                    className="w-full max-h-[600px] object-cover" 
+                                                    onError={(e) => {
+                                                        const target = e.target as HTMLImageElement;
+                                                        if (!target.src.includes('knowva_api')) {
+                                                            // Try prefixing with knowva_api as a fallback
+                                                            target.src = `${API_ENDPOINTS.COMMUNITY.replace('/forum.php', '')}/${thread.image_url}`;
+                                                        }
+                                                    }}
+                                                />
                                             </div>
                                         )}
                                     </div>
                                 )}
                                 {/* Thread Actions */}
                                 <div className="flex items-center gap-6">
-                                    <div className={`flex items-center bg-secondary/30 dark:bg-zinc-950/50 rounded-xl border transition-all ${userVote !== 0 ? 'border-primary/30' : 'border-transparent dark:border-zinc-800/50'}`}>
+                                    <div className={`flex items-center bg-secondary/30 dark:bg-zinc-950/50 rounded-xl border transition-all overflow-hidden ${userVote !== 0 ? 'border-primary/30' : 'border-transparent dark:border-zinc-800/50'}`}>
                                         <button
                                             onClick={() => handleVote('upvote')}
                                             disabled={upvoteLoading}
-                                            className={`flex items-center justify-center w-10 h-10 rounded-l-xl transition-all ${userVote === 1 ? 'text-orange-500 bg-orange-500/10' : 'text-slate-400 dark:text-zinc-600 hover:text-orange-500 hover:bg-slate-100 dark:hover:bg-zinc-900'}`}
+                                            className={`flex items-center gap-1.5 px-3 py-2 transition-all ${userVote === 1 ? 'text-orange-500 bg-orange-500/10' : 'text-slate-400 dark:text-zinc-600 hover:text-orange-500 hover:bg-slate-100 dark:hover:bg-zinc-900'}`}
                                             title="Upvote"
                                         >
                                             <ArrowUp size={20} className={userVote === 1 ? 'stroke-[3px]' : ''} />
+                                            <span className="text-sm font-black">{upvoteCount}</span>
                                         </button>
-                                        <div className={`text-sm font-black px-1 min-w-[20px] text-center ${userVote === 1 ? 'text-orange-600' : (userVote === -1 ? 'text-blue-600 dark:text-blue-400' : 'text-slate-700 dark:text-zinc-400')}`}>
-                                            {upvoteCount}
-                                        </div>
+                                        <div className="w-[1px] h-4 bg-slate-200 dark:bg-white/10" />
                                         <button
                                             onClick={() => handleVote('downvote')}
                                             disabled={upvoteLoading}
-                                            className={`flex items-center justify-center w-10 h-10 rounded-r-xl transition-all ${userVote === -1 ? 'text-blue-500 bg-blue-500/10' : 'text-slate-400 dark:text-zinc-600 hover:text-blue-500 hover:bg-slate-100 dark:hover:bg-zinc-900'}`}
+                                            className={`flex items-center gap-1.5 px-3 py-2 transition-all ${userVote === -1 ? 'text-blue-500 bg-blue-500/10' : 'text-slate-400 dark:text-zinc-600 hover:text-blue-500 hover:bg-slate-100 dark:hover:bg-zinc-900'}`}
                                             title="Downvote"
                                         >
+                                            <span className="text-sm font-black">{downvoteCount}</span>
                                             <ArrowDown size={20} className={userVote === -1 ? 'stroke-[3px]' : ''} />
                                         </button>
                                     </div>

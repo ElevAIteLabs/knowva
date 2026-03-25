@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Search, ChevronRight, Loader2, Sparkles, Filter } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
@@ -16,6 +17,7 @@ const Categories = () => {
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [selectedPricing, setSelectedPricing] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
+  const navigate = useNavigate();
   const [dbTools, setDbTools] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -71,6 +73,21 @@ const Categories = () => {
       t.description?.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesCat && matchesPrice && matchesSearch;
   });
+
+  const handleSearchEnter = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && searchQuery.trim() && filteredTools.length > 0) {
+      const topMatch = filteredTools[0];
+      const user = localStorage.getItem("user");
+      if (!user) {
+        toast("Authentication required", {
+          description: "Please log in to view tool details.",
+        });
+        navigate("/login");
+        return;
+      }
+      navigate(`/tool/${topMatch.name.toLowerCase().replace(/\s+/g, '-')}`);
+    }
+  };
 
   const isFiltering =
     selectedCategory !== "All" ||
@@ -151,6 +168,7 @@ const Categories = () => {
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
+                  onKeyDown={handleSearchEnter}
                   placeholder="What are you looking to build today?..."
                   className="bg-transparent border-none outline-none text-foreground placeholder:text-muted-foreground text-lg flex-1"
                 />
@@ -247,13 +265,13 @@ const Categories = () => {
                 </div>
 
                 {isLoading ? (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                  <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-6">
                     {[...Array(8)].map((_, i) => (
-                      <div key={i} className="bg-card/50 rounded-3xl h-[300px] animate-pulse border border-border" />
+                      <div key={i} className="bg-card/50 rounded-2xl md:rounded-3xl h-[200px] md:h-[300px] animate-pulse border border-border" />
                     ))}
                   </div>
                 ) : filteredTools.length > 0 ? (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                  <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-6">
                     {filteredTools.map((tool, i) => (
                       <ToolCard key={tool.name + i} {...tool} delay={i * 0.03} />
                     ))}

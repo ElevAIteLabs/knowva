@@ -129,25 +129,14 @@ const ToolCard = ({ id, name, description, category, rating, pricing, icon, dela
       className="h-full"
     >
       <button onClick={handleClick} className="block w-full text-left group h-full focus:outline-none">
-        <div className="flex flex-col h-full bg-card text-card-foreground border border-border rounded-3xl p-6 transition-all duration-500 hover:-translate-y-2 hover:border-primary/40 relative overflow-hidden backdrop-blur-sm z-10">
+        <div className="flex flex-col h-full bg-card text-card-foreground border border-border rounded-2xl md:rounded-3xl p-3 sm:p-6 transition-all duration-500 hover:-translate-y-2 hover:border-primary/40 relative overflow-hidden backdrop-blur-sm z-10">
 
 
 
-          {/* Bookmark Button */}
-          <button
-            onClick={handleSave}
-            className={`absolute top-16 right-5 z-[20] p-2.5 rounded-xl transition-all duration-300 backdrop-blur-md border ${isSaved
-              ? "bg-primary text-primary-foreground border-primary"
-              : "bg-background/40 text-muted-foreground border-white/10 hover:border-primary/50 hover:text-primary"
-              }`}
-            disabled={isSaving}
-          >
-            <Bookmark className={`w-4 h-4 ${isSaved ? "fill-current" : ""}`} />
-          </button>
 
-          <div className="flex items-start justify-between mb-6 relative">
+          <div className="flex items-start justify-between mb-4 sm:mb-6 relative">
             <div className="w-fit">
-              <div className="w-14 h-14 rounded-2xl bg-secondary/80 border border-border flex items-center justify-center p-3 group-hover:scale-110 group-hover:bg-primary/10 transition-all duration-500 overflow-hidden text-foreground">
+              <div className="w-10 h-10 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl bg-secondary/80 border border-border flex items-center justify-center p-2 sm:p-3 group-hover:scale-110 group-hover:bg-primary/10 transition-all duration-500 overflow-hidden text-foreground">
                 <div className="flex items-center justify-center w-full h-full">
                   {icon && (typeof icon === 'string' && (icon.replace(/^['"\[]|['"\]]$/g, '').trim().startsWith('http') || icon.includes('.') || icon.includes('/'))) ? (
                     <img
@@ -170,32 +159,39 @@ const ToolCard = ({ id, name, description, category, rating, pricing, icon, dela
                 </div>
               </div>
             </div>
-            <div className="flex items-center gap-2">
-              <span className="px-3 py-1 text-[10px] uppercase tracking-wider font-bold rounded-full bg-secondary text-secondary-foreground border border-border group-hover:bg-primary/20 group-hover:text-primary transition-colors">
+            <div className="flex items-center gap-1.5 sm:gap-2">
+              <span className="hidden sm:inline-block px-3 py-1 text-[10px] uppercase tracking-wider font-bold rounded-full bg-secondary text-secondary-foreground border border-border group-hover:bg-primary/20 group-hover:text-primary transition-colors">
                 {pricing}
               </span>
-              <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center rotate-0 group-hover:bg-primary group-hover:text-background transition-all duration-500">
-                <ArrowUpRight className="w-4 h-4 text-muted-foreground group-hover:text-background transition-colors" />
-              </div>
+              <button
+                onClick={handleSave}
+                className={`p-1.5 sm:p-2.5 rounded-lg transition-all duration-300 backdrop-blur-md border z-[20] ${isSaved
+                  ? "bg-primary text-primary-foreground border-primary"
+                  : "bg-background/40 text-muted-foreground border-white/10 hover:border-primary/50 hover:text-primary"
+                  }`}
+                disabled={isSaving}
+              >
+                <Bookmark className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${isSaved ? "fill-current" : ""}`} />
+              </button>
             </div>
           </div>
 
           <div className="flex-1">
-            <h3 className="text-xl font-display font-bold text-foreground mb-2 group-hover:text-primary transition-colors">
+            <h3 className="text-base sm:text-xl font-display font-bold text-foreground mb-1 sm:mb-2 group-hover:text-primary transition-colors line-clamp-1">
               {name}
             </h3>
-            <p className="text-sm text-muted-foreground mb-6 line-clamp-2 leading-relaxed font-light">
+            <p className="text-[11px] sm:text-sm text-muted-foreground mb-4 sm:mb-6 line-clamp-2 leading-relaxed font-light">
               {description}
             </p>
           </div>
 
-          <div className="flex items-center justify-between pt-4 border-t border-border mt-auto">
-            <span className="text-xs font-medium text-muted-foreground bg-secondary/50 px-3 py-1.5 rounded-lg border border-border/50">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between pt-3 sm:pt-4 border-t border-border mt-auto gap-2 sm:gap-0">
+            <span className="text-[9px] sm:text-xs font-medium text-muted-foreground bg-secondary/50 px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg border border-border/50 truncate max-w-[80px] sm:max-w-none">
               {category}
             </span>
-            <div className="flex items-center gap-1.5 bg-yellow-500/10 px-2 py-1 rounded-lg border border-yellow-500/20">
-              <Star className="w-3.5 h-3.5 fill-yellow-500 text-yellow-500" />
-              <span className="text-sm font-bold text-foreground">{rating.toFixed(1)}</span>
+            <div className="flex items-center gap-1 sm:gap-1.5 bg-yellow-500/10 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-lg border border-yellow-500/20 self-end sm:self-auto">
+              <Star className="w-3 h-3 sm:w-3.5 sm:h-3.5 fill-yellow-500 text-yellow-500" />
+              <span className="text-[11px] sm:text-sm font-bold text-foreground">{rating.toFixed(1)}</span>
             </div>
           </div>
         </div>

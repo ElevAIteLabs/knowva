@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
+import { useLocation } from "react-router-dom";
 import { Check, X, Star, Layers, Activity, Zap, Search, Plus, Trash2, Filter, ChevronDown } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import Navbar from "@/components/Navbar";
@@ -39,6 +40,7 @@ const safeParse = (str: string, fallback: any) => {
 const Compare = () => {
   const [allTools, setAllTools] = useState<any[]>([]);
   const [selectedTools, setSelectedTools] = useState<(any | null)[]>([null, null, null]);
+  const location = useLocation();
   const [isSelectorOpen, setIsSelectorOpen] = useState(false);
   const [activeSlot, setActiveSlot] = useState<number | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
@@ -76,13 +78,20 @@ const Compare = () => {
           }));
         setAllTools(formattedTools);
         
-        // Pre-select some tools if available
-        if (formattedTools.length >= 3) {
-            setSelectedTools([formattedTools[0], formattedTools[1], formattedTools[2]]);
-        } else if (formattedTools.length > 0) {
-            const newSelected = [...selectedTools];
-            formattedTools.forEach((tool, i) => { if (i < 3) newSelected[i] = tool; });
-            setSelectedTools(newSelected);
+        // Handle query param tool_id if present
+        const searchParams = new URLSearchParams(location.search);
+        const toolId = searchParams.get('tool_id');
+        
+        if (toolId) {
+            const preselectedTool = formattedTools.find(t => t.id.toString() === toolId);
+            if (preselectedTool) {
+                const newSelected = [null, null, null];
+                newSelected[0] = preselectedTool;
+                setSelectedTools(newSelected);
+            }
+        } else {
+            // Keep them null as per user requirement (no previously added tools)
+            setSelectedTools([null, null, null]);
         }
       }
     } catch (error) {

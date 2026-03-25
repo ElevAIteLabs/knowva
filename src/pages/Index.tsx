@@ -115,16 +115,6 @@ const Index = () => {
     navigate(targetPath);
     return true;
   };
-  const handleSearch = () => {
-    if (searchQuery.trim()) {
-      // Logic: If there's a search query, scroll to the discovery section
-      const section = document.getElementById('all-tools');
-      if (section) {
-        section.scrollIntoView({ behavior: 'smooth' });
-      }
-    }
-  };
-
   const discoverTools = useMemo(() => {
     let tools = [...dbTools];
 
@@ -142,9 +132,29 @@ const Index = () => {
       const countA = parseInt(a.reviews_count) || 0;
       const countB = parseInt(b.reviews_count) || 0;
       if (countB !== countA) return countB - countA;
-      return b.rating - a.rating; // Tie-breaker by rating
+      return (Number(b.rating) || 0) - (Number(a.rating) || 0); // Tie-breaker by rating
     }).slice(0, 12);
   }, [dbTools, searchQuery]);
+
+  const handleSearch = () => {
+    if (searchQuery.trim() && discoverTools.length > 0) {
+      const topMatch = discoverTools[0];
+      const user = localStorage.getItem("user");
+      if (!user) {
+        toast("Authentication required", {
+          description: "Please log in to view tool details.",
+        });
+        navigate("/login");
+        return;
+      }
+      navigate(`/tool/${topMatch.name.toLowerCase().replace(/\s+/g, '-')}`);
+    } else {
+      const section = document.getElementById('all-tools');
+      if (section) {
+        section.scrollIntoView({ behavior: 'smooth' });
+      }
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background text-foreground selection:bg-primary/30" ref={containerRef}>
@@ -176,7 +186,7 @@ const Index = () => {
       {/* ────────────────────────────────────────────────────────────────────────
           HERO SECTION (Ultra Premium)
       ──────────────────────────────────────────────────────────────────────── */}
-      <section className="relative w-full min-h-[95vh] flex items-center justify-center overflow-hidden pt-32">
+      <section className="relative w-full min-h-[90vh] md:min-h-[95vh] flex items-center justify-center overflow-hidden pt-24 md:pt-32 pb-16 md:pb-0">
         <div className="absolute inset-0 z-0">
           <video
             src={herosection}
@@ -206,20 +216,20 @@ const Index = () => {
           </motion.div>
 
           <motion.h1
-            className="font-display text-5xl md:text-7xl lg:text-8xl font-black mb-8 leading-[1.1] tracking-tighter text-foreground"
+            className="font-display text-3xl sm:text-5xl md:text-7xl lg:text-8xl font-black mb-5 md:mb-8 leading-[1.1] tracking-tighter text-foreground"
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1, duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
           >
             Find The Perfect AI.
             <br />
-            <span className="gradient-text">
+            <span className="gradient-text leading-relaxed py-2 block md:inline">
               Ship Faster.
             </span>
           </motion.h1>
 
           <motion.p
-            className="text-lg md:text-2xl text-muted-foreground mb-12 max-w-3xl mx-auto leading-relaxed font-light"
+            className="text-base sm:text-lg md:text-2xl text-muted-foreground mb-10 md:mb-12 max-w-3xl mx-auto leading-relaxed font-light px-4 md:px-0"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2, duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
@@ -236,19 +246,21 @@ const Index = () => {
             {/* Search Glow effect behind */}
             <div className="absolute -inset-1 bg-gradient-to-r from-primary to-orange-600 rounded-2xl blur opacity-20 group-hover:opacity-40 transition duration-500"></div>
 
-            <div className="relative flex items-center bg-card/80 backdrop-blur-xl border border-border rounded-2xl p-2 transition-all duration-300 focus-within:border-primary/50 focus-within:bg-card">
-              <Search className="w-6 h-6 text-muted-foreground ml-4" />
-              <input
-                type="text"
-                placeholder="Search AI tools (e.g., ChatGPT, Midjourney)..."
-                className="flex-1 bg-transparent border-none outline-none text-foreground placeholder:text-muted-foreground py-3 px-4 text-base md:text-lg"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-              />
+            <div className="relative flex flex-col sm:flex-row items-center bg-card/80 backdrop-blur-xl border border-border rounded-2xl sm:p-2 transition-all duration-300 focus-within:border-primary/50 focus-within:bg-card gap-2 p-2">
+              <div className="flex items-center w-full">
+                <Search className="w-5 h-5 sm:w-6 sm:h-6 text-muted-foreground ml-4" />
+                <input
+                  type="text"
+                  placeholder="Search AI tools..."
+                  className="flex-1 bg-transparent border-none outline-none text-foreground placeholder:text-muted-foreground py-3 px-4 text-sm sm:text-base md:text-lg w-full"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+                />
+              </div>
               <button
                 onClick={handleSearch}
-                 className="px-6 md:px-8 py-3 bg-foreground text-background font-semibold rounded-xl ml-2 hover:scale-[1.02] transition-transform duration-300 flex items-center gap-2"
+                className="w-full sm:w-auto px-6 md:px-8 py-3 bg-foreground text-background font-semibold rounded-xl sm:ml-2 hover:scale-[1.02] transition-transform duration-300 flex items-center justify-center gap-2"
               >
                 Search <ArrowRight className="w-4 h-4" />
               </button>
@@ -548,7 +560,7 @@ const Index = () => {
             </motion.button>
           </motion.div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-6">
             {discoverTools.length > 0 ? (
               discoverTools.map((tool, i) => (
                 <ToolCard key={`${tool.name}-${i}`} {...tool} delay={i * 0.05} />

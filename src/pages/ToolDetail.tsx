@@ -457,7 +457,7 @@ const ToolDetail = () => {
 
       <div className="pt-40 pb-20">
         <div className="section-container">
-          <Link to="/categories" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-primary mb-6 transition-colors">
+          <Link to="/all-tools" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-primary mb-6 transition-colors">
             <ChevronLeft className="w-4 h-4" /> Back to Tools
           </Link>
 
@@ -512,7 +512,7 @@ const ToolDetail = () => {
                 <a href={tool.website} target="_blank" rel="noopener noreferrer" className="px-6 py-3 bg-primary text-primary-foreground rounded-xl font-medium text-sm hover:bg-primary/90 transition-colors flex items-center gap-2">
                   Visit Website <ExternalLink className="w-4 h-4" />
                 </a>
-                <Link to="/compare" className="px-6 py-3 bg-secondary text-secondary-foreground rounded-xl font-medium text-sm hover:bg-secondary/80 transition-colors">
+                <Link to={`/compare?tool_id=${tool.id}`} className="px-6 py-3 bg-secondary text-secondary-foreground rounded-xl font-medium text-sm hover:bg-secondary/80 transition-colors">
                   Compare
                 </Link>
               </div>

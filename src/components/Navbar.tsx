@@ -60,17 +60,16 @@ const Navbar = () => {
   const toggleTheme = () => setTheme((t) => (t === "dark" ? "light" : "dark"));
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 flex justify-center p-4 font-sans">
+    <nav className="fixed top-0 left-0 right-0 z-50 flex justify-center p-2 sm:p-4 font-sans">
       <div className="w-full max-w-7xl relative">
-        <div className="glass-morphism-pill !bg-black-700/80 border border-white/10 flex items-center justify-between h-24 px-8 relative overflow-hidden backdrop-blur-3xl rounded-full">
+        <div className="glass-morphism-pill !bg-black-700/80 border border-white/10 flex items-center justify-between h-16 sm:h-20 md:h-24 px-4 sm:px-6 md:px-8 relative overflow-hidden backdrop-blur-3xl rounded-full transition-all duration-300">
 
-          {/* Logo Section */}
           <div className="flex items-center flex-1">
             <Link to="/" className="flex items-center gap-2 transition-transform hover:scale-110">
               <img
                 src={logo}
                 alt="KNOWva"
-                className="h-40 w-auto object-contain transition-all duration-300 translate-y-4"
+                className="h-20 sm:h-32 md:h-40 w-auto object-contain transition-all duration-300 translate-y-2 sm:translate-y-4"
                 style={{
                   filter: 'invert(79%) sepia(87%) saturate(541%) hue-rotate(334deg) brightness(101%) contrast(101%)'
                 }}
@@ -153,36 +152,27 @@ const Navbar = () => {
               <div className="flex items-center gap-3">
                 <Link
                   to="/login"
-                   className="px-8 py-3 text-lg font-bold rounded-full border border-white/10 text-white/80 hover:bg-white/5 transition-all duration-300 backdrop-blur-md"
+                  className="px-8 py-3 text-lg font-bold rounded-full border border-white/10 text-white/80 hover:bg-white/5 transition-all duration-300 backdrop-blur-md"
                 >
                   Log In
                 </Link>
                 <Link
                   to="/signup"
-                   className="px-8 py-3 text-lg font-bold rounded-full bg-primary text-black transition-all duration-300"
-                  >
+                  className="px-8 py-3 text-lg font-bold rounded-full bg-primary text-black transition-all duration-300"
+                >
                   Sign Up
                 </Link>
               </div>
             )}
           </div>
 
-          {/* Mobile Right Controls */}
           <div className="md:hidden flex items-center gap-2">
-            {user && (
-              <button
-                onClick={toggleTheme}
-                className="p-2 dark:text-black/80 text-black/80 hover:text-black dark:hover:text-black rounded-full transition-colors"
-                title="Toggle Theme"
-              >
-                {theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}
-              </button>
-            )}
             <button
               onClick={() => setMobileOpen(!mobileOpen)}
-              className="p-2 dark:text-white/80 text-black/80 hover:text-black dark:hover:text-white rounded-full transition-colors"
+              className="p-2.5 bg-white/5 border border-white/10 dark:text-white/80 text-white/80 hover:text-white dark:hover:text-white rounded-full transition-all duration-300 backdrop-blur-md"
+              aria-label="Toggle Menu"
             >
-              {mobileOpen ? <X size={20} /> : <Menu size={20} />}
+              {mobileOpen ? <X size={24} /> : <Menu size={24} />}
             </button>
           </div>
         </div>
@@ -191,10 +181,10 @@ const Navbar = () => {
       <AnimatePresence>
         {mobileOpen && (
           <motion.div
-            initial={{ opacity: 0, y: -10 }}
+            initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            className="md:hidden absolute top-[70px] left-3 right-3 glass-morphism-pill dark:!bg-black/40 !bg-white/80 dark:!border-white/10 !border-black/5 py-4 px-6 backdrop-blur-2xl rounded-3xl"
+            exit={{ opacity: 0, y: -20 }}
+            className="md:hidden absolute top-[85px] sm:top-[95px] left-4 right-4 !bg-black-700/90 border border-white/10 py-6 px-6 backdrop-blur-3xl rounded-[2.5rem] shadow-2xl z-[100]"
           >
             <div className="flex flex-col gap-2">
               {navLinks.map((link) => (

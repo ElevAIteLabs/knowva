@@ -49,12 +49,27 @@ const Comment: React.FC<CommentProps> = ({
     const [showOptions, setShowOptions] = useState(false);
 
     const [upvoteCount, setUpvoteCount] = useState(parseInt(reply.upvotes_count || 0));
+    const [downvoteCount, setDownvoteCount] = useState(parseInt(reply.downvotes_count || 0));
     const [userVote, setUserVote] = useState(parseInt(reply.user_vote || 0));
 
     const handleLocalVote = async (type: 'upvote' | 'downvote') => {
         const result = await onVote(reply.id, type);
         if (result?.status === "success") {
-            setUpvoteCount(result.new_count);
+            let newUp = upvoteCount;
+            let newDown = downvoteCount;
+            
+            if (type === 'upvote') {
+                if (result.action === 'added') newUp++;
+                else if (result.action === 'removed') newUp--;
+                else if (result.action === 'updated') { newUp++; newDown--; }
+            } else {
+                if (result.action === 'added') newDown++;
+                else if (result.action === 'removed') newDown--;
+                else if (result.action === 'updated') { newDown++; newUp--; }
+            }
+
+            setUpvoteCount(result.new_upvotes ?? result.new_count ?? result.upvotes ?? result.count ?? newUp);
+            setDownvoteCount(result.new_downvotes ?? result.downvotes ?? newDown);
             setUserVote(result.user_vote);
         }
     };
@@ -147,21 +162,27 @@ const Comment: React.FC<CommentProps> = ({
 
                 {/* Actions */}
                 <div className="flex items-center gap-1 text-slate-500 dark:text-zinc-500 mt-1 mb-1 -ml-1">
-                    <div className="flex items-center bg-slate-100/50 dark:bg-zinc-900/50 rounded-full px-0.5">
+                    <div className="flex items-center bg-slate-100/50 dark:bg-zinc-900/50 rounded-full px-1 py-0.5 gap-1 shadow-inner border border-slate-200/50 dark:border-white/5">
                         <button
                             onClick={() => handleLocalVote('upvote')}
-                            className={`flex items-center justify-center w-7 h-7 rounded-full hover:bg-white dark:hover:bg-zinc-800 transition-all ${userVote === 1 ? 'text-orange-500' : ''}`}
+                            className={`flex items-center justify-center w-7 h-7 rounded-full transition-all group/up ${userVote === 1 ? 'text-orange-500 bg-orange-500/10' : 'hover:bg-white dark:hover:bg-zinc-800'}`}
+                            title="Upvote"
                         >
-                            <ArrowUp size={14} strokeWidth={3} />
+                            <ArrowUp size={14} className={userVote === 1 ? 'stroke-[3px]' : ''} />
                         </button>
-                        <span className={`px-1 text-[11px] min-w-[16px] text-center font-bold ${userVote === 1 ? 'text-orange-600' : (userVote === -1 ? 'text-blue-600 dark:text-blue-400' : 'text-slate-700 dark:text-zinc-400')}`}>
-                            {upvoteCount || 0}
+                        <span className={`text-[10px] min-w-[12px] text-center font-black ${userVote === 1 ? 'text-orange-600' : 'text-slate-500 dark:text-zinc-500'}`}>
+                            {upvoteCount}
+                        </span>
+                        <div className="w-[1px] h-3 bg-slate-200 dark:bg-white/10 mx-0.5" />
+                        <span className={`text-[10px] min-w-[12px] text-center font-black ${userVote === -1 ? 'text-blue-600' : 'text-slate-500 dark:text-zinc-500'}`}>
+                            {downvoteCount}
                         </span>
                         <button
                             onClick={() => handleLocalVote('downvote')}
-                            className={`flex items-center justify-center w-7 h-7 rounded-full hover:bg-white dark:hover:bg-zinc-800 transition-all ${userVote === -1 ? 'text-blue-500' : ''}`}
+                            className={`flex items-center justify-center w-7 h-7 rounded-full transition-all group/down ${userVote === -1 ? 'text-blue-500 bg-blue-500/10' : 'hover:bg-white dark:hover:bg-zinc-800'}`}
+                            title="Downvote"
                         >
-                            <ArrowDown size={14} strokeWidth={3} />
+                            <ArrowDown size={14} className={userVote === -1 ? 'stroke-[3px]' : ''} />
                         </button>
                     </div>
 

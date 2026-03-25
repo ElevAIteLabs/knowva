@@ -59,10 +59,18 @@ if ($method === 'GET') {
     }
 
     try {
-        // Get total count
-        $stmt = $conn->prepare("SELECT COALESCE(SUM(vote_value), 0) as total FROM upvotes WHERE target_id = ? AND target_type = ?");
-        $stmt->execute([$target_id, $target_type]);
-        $count = $stmt->fetch(PDO::FETCH_ASSOC)['total'];
+        // Get separate counts and total net score
+        $stmt_up = $conn->prepare("SELECT COUNT(*) as up FROM upvotes WHERE target_id = ? AND target_type = ? AND vote_value = 1");
+        $stmt_up->execute([$target_id, $target_type]);
+        $upvotes = $stmt_up->fetch(PDO::FETCH_ASSOC)['up'];
+
+        $stmt_down = $conn->prepare("SELECT COUNT(*) as down FROM upvotes WHERE target_id = ? AND target_type = ? AND vote_value = -1");
+        $stmt_down->execute([$target_id, $target_type]);
+        $downvotes = $stmt_down->fetch(PDO::FETCH_ASSOC)['down'];
+
+        $stmt_total = $conn->prepare("SELECT COALESCE(SUM(vote_value), 0) as score FROM upvotes WHERE target_id = ? AND target_type = ?");
+        $stmt_total->execute([$target_id, $target_type]);
+        $score = $stmt_total->fetch(PDO::FETCH_ASSOC)['score'];
 
         // Check if current user upvoted
         $has_upvoted = false;
@@ -79,7 +87,9 @@ if ($method === 'GET') {
 
         echo json_encode([
             "status" => "success",
-            "count" => (int)$count,
+            "count" => (int)$score,
+            "upvotes" => (int)$upvotes,
+            "downvotes" => (int)$downvotes,
             "has_upvoted" => $has_upvoted,
             "user_vote" => $user_vote
         ]);
@@ -130,15 +140,25 @@ else if ($method === 'POST') {
             $user_vote = $incoming_vote;
         }
 
-        // Get new total score
-        $stmt = $conn->prepare("SELECT COALESCE(SUM(vote_value), 0) as total FROM upvotes WHERE target_id = ? AND target_type = ?");
-        $stmt->execute([$target_id, $target_type]);
-        $count = (int)$stmt->fetch(PDO::FETCH_ASSOC)['total'];
+        // Get updated counts after vote
+        $stmt_up = $conn->prepare("SELECT COUNT(*) as up FROM upvotes WHERE target_id = ? AND target_type = ? AND vote_value = 1");
+        $stmt_up->execute([$target_id, $target_type]);
+        $new_upvotes = $stmt_up->fetch(PDO::FETCH_ASSOC)['up'];
+
+        $stmt_down = $conn->prepare("SELECT COUNT(*) as down FROM upvotes WHERE target_id = ? AND target_type = ? AND vote_value = -1");
+        $stmt_down->execute([$target_id, $target_type]);
+        $new_downvotes = $stmt_down->fetch(PDO::FETCH_ASSOC)['down'];
+
+        $stmt_total = $conn->prepare("SELECT COALESCE(SUM(vote_value), 0) as score FROM upvotes WHERE target_id = ? AND target_type = ?");
+        $stmt_total->execute([$target_id, $target_type]);
+        $new_score = (int)$stmt_total->fetch(PDO::FETCH_ASSOC)['score'];
 
         echo json_encode([
             "status" => "success",
             "action" => $action,
-            "new_count" => $count,
+            "new_count" => $new_score,
+            "new_upvotes" => (int)$new_upvotes,
+            "new_downvotes" => (int)$new_downvotes,
             "user_vote" => $user_vote
         ]);
     } catch (Exception $e) {

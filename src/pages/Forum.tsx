@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { 
   MessageSquare, Plus, Pin, Lock, ShieldCheck, User, Clock, 
   Search, Send, X, Loader2, Sparkles, Filter, ChevronRight, Hash, Triangle, Trash2, Pencil,
-  ArrowUp, ArrowDown
+  ArrowUp, ArrowDown, Upload
 } from "lucide-react";
 import { API_ENDPOINTS } from "@/config/apiConfig";
 import Navbar from "@/components/Navbar";
@@ -25,6 +25,7 @@ const Forum = () => {
     const [newCategory, setNewCategory] = useState("General");
     const [newContent, setNewContent] = useState("");
     const [newHashtags, setNewHashtags] = useState("");
+    const [newImage, setNewImage] = useState<File | null>(null);
 
     const currentUser = (() => {
         try { return JSON.parse(localStorage.getItem("user") || "null"); } catch { return null; }
@@ -59,18 +60,21 @@ const Forum = () => {
 
         setIsPosting(true);
         try {
+            const formData = new FormData();
+            formData.append("action", "create");
+            formData.append("user_id", currentUser.id);
+            formData.append("user_name", currentUser.fullName);
+            formData.append("title", newTitle.trim());
+            formData.append("category", newCategory);
+            formData.append("content", newContent.trim());
+            formData.append("hashtags", newHashtags.trim());
+            if (newImage) {
+                formData.append("image", newImage);
+            }
+
             const res = await fetch(API_ENDPOINTS.COMMUNITY, {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    action: "create",
-                    user_id: currentUser.id,
-                    user_name: currentUser.fullName,
-                    title: newTitle.trim(),
-                    category: newCategory,
-                    content: newContent.trim(),
-                    hashtags: newHashtags.trim()
-                }),
+                body: formData,
             });
             const result = await res.json();
             if (result.status === "success") {
@@ -79,6 +83,7 @@ const Forum = () => {
                 setNewTitle("");
                 setNewContent("");
                 setNewHashtags("");
+                setNewImage(null);
                 fetchThreads();
             } else { toast.error(result.message); }
         } catch { toast.error("Post failed"); }
@@ -106,11 +111,30 @@ const Forum = () => {
                 toast.success(result.action === 'added' ? "Vote recorded!" : (result.action === 'removed' ? "Vote removed" : "Vote updated"));
                 
                 // Optimistic update
-                setThreads(prev => prev.map(t => 
-                    t.id === threadId 
-                        ? { ...t, upvotes_count: result.new_count, user_vote: result.user_vote } 
-                        : t
-                ));
+                setThreads(prev => prev.map(t => {
+                    if (t.id === threadId) {
+                        let upCount = parseInt(t.upvotes_count || 0);
+                        let downCount = parseInt(t.downvotes_count || 0);
+                        
+                        if (type === 'upvote') {
+                            if (result.action === 'added') upCount++;
+                            else if (result.action === 'removed') upCount--;
+                            else if (result.action === 'updated') { upCount++; downCount--; }
+                        } else {
+                            if (result.action === 'added') downCount++;
+                            else if (result.action === 'removed') downCount--;
+                            else if (result.action === 'updated') { downCount++; upCount--; }
+                        }
+                        
+                        return { 
+                            ...t, 
+                            upvotes_count: result.new_upvotes ?? result.new_count ?? result.upvotes ?? result.count ?? upCount,
+                            downvotes_count: result.new_downvotes ?? result.downvotes ?? downCount,
+                            user_vote: result.user_vote 
+                        };
+                    }
+                    return t;
+                }));
             }
         } catch {
             toast.error("Vote failed");
@@ -186,25 +210,25 @@ const Forum = () => {
                     
                     {/* Header Section */}
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-12">
-                        <div className="space-y-2">
+                        <div className="space-y-2 text-center md:text-left">
                             <motion.div 
                                 initial={{ opacity: 0, x: -20 }}
                                 animate={{ opacity: 1, x: 0 }}
-                                className="flex items-center gap-2 text-primary font-black uppercase tracking-[0.2em] text-[10px]"
+                                className="flex items-center justify-center md:justify-start gap-2 text-primary font-black uppercase tracking-[0.2em] text-[10px]"
                             >
                                 <Sparkles size={12} /> Community Hub
                             </motion.div>
-                            <h1 className="text-4xl md:text-5xl font-black tracking-tight text-slate-900 dark:text-white">
+                            <h1 className="text-3xl md:text-5xl font-black tracking-tight text-slate-900 dark:text-white leading-tight">
                                 Collective <span className="text-primary">Intelligence</span>
                             </h1>
-                            <p className="text-slate-500 max-w-lg">
+                            <p className="text-slate-500 max-w-lg mx-auto md:mx-0 text-sm md:text-base">
                                 Connect with AI founders, prompt engineers, and tech enthusiasts.
                             </p>
                         </div>
 
                         <Button 
                             onClick={() => currentUser ? setShowNewThreadModal(true) : navigate("/login")}
-                            className="bg-primary text-black hover:bg-primary/90 font-black rounded-2xl h-14 px-8 transition-all hover:scale-105"
+                            className="bg-primary text-black hover:bg-primary/90 font-black rounded-2xl h-12 md:h-14 px-6 md:px-8 transition-all hover:scale-105 w-full md:w-auto mt-4 md:mt-0"
                         >
                             <Plus size={20} className="mr-2" /> Start Discussion
                         </Button>
@@ -215,23 +239,23 @@ const Forum = () => {
                         <div className="lg:col-span-3 space-y-8">
                             
                             {/* Filters & Search - Regular Style */}
-                            <div className="flex flex-col md:flex-row gap-4 p-2">
-                                <div className="relative flex-grow">
+                            <div className="flex flex-col gap-4">
+                                <div className="relative w-full">
                                     <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
                                     <input 
                                         type="text"
                                         placeholder="Search discussions..."
                                         value={searchQuery}
                                         onChange={(e) => setSearchQuery(e.target.value)}
-                                        className="w-full h-14 pl-12 pr-4 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-white/10 rounded-xl focus:outline-none focus:border-primary transition-all font-medium text-slate-700 dark:text-white"
+                                        className="w-full h-12 md:h-14 pl-12 pr-4 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-white/10 rounded-xl focus:outline-none focus:border-primary transition-all font-medium text-slate-700 dark:text-white text-sm"
                                     />
                                 </div>
-                                <div className="flex gap-2 overflow-x-auto no-scrollbar">
+                                <div className="flex gap-2 overflow-x-auto no-scrollbar pb-2">
                                     {categories.map(cat => (
                                         <button
                                             key={cat}
                                             onClick={() => setSelectedCategory(cat)}
-                                            className={`h-14 px-6 rounded-xl font-bold text-xs uppercase tracking-wider transition-all whitespace-nowrap ${
+                                            className={`h-10 md:h-14 px-4 md:px-6 rounded-xl font-bold text-[10px] md:text-xs uppercase tracking-wider transition-all whitespace-nowrap ${
                                                 selectedCategory === cat 
                                                 ? "bg-primary text-black border-b-2 border-black/10" 
                                                 : "bg-white dark:bg-zinc-900 text-slate-500 dark:text-white/60 border border-slate-200 dark:border-white/10 hover:border-slate-300 dark:hover:border-white/20 hover:bg-slate-50 dark:hover:bg-zinc-800"
@@ -267,7 +291,7 @@ const Forum = () => {
                                             onClick={() => navigate(`/community/${thread.id}`)}
                                         >
                                             {!!thread.is_pinned && (
-                                                <div className="absolute top-0 right-10 bg-primary text-black px-3 py-1 rounded-b-xl text-[10px] font-black uppercase tracking-tighter animate-pulse">
+                                                <div className="absolute top-0 right-4 md:right-10 bg-primary text-black px-2 md:px-3 py-1 rounded-b-lg md:rounded-b-xl text-[8px] md:text-[10px] font-black uppercase tracking-tighter animate-pulse">
                                                     Pinned Activity
                                                 </div>
                                             )}
@@ -305,14 +329,14 @@ const Forum = () => {
                                                         )}
                                                     </div>
 
-                                                    <div className="flex items-center justify-between pt-4 border-t border-slate-50">
-                                                        <div className="flex items-center gap-3">
-                                                            <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center text-xs font-black text-primary border border-primary/20">
+                                                    <div className="flex items-center justify-between pt-4 border-t border-slate-50 dark:border-white/5">
+                                                        <div className="flex items-center gap-2 md:gap-3">
+                                                            <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center text-[10px] md:text-xs font-black text-primary border border-primary/20 flex-shrink-0">
                                                                 {thread.user_name.charAt(0).toUpperCase()}
                                                             </div>
-                                                            <div className="text-sm font-bold text-slate-700 dark:text-white/80">
+                                                            <div className="text-[12px] md:text-sm font-bold text-slate-700 dark:text-white/80 line-clamp-1">
                                                                 {thread.user_name}
-                                                                <span className="block text-[10px] font-medium text-slate-400 dark:text-white/40 uppercase tracking-widest">Thought Leader</span>
+                                                                <span className="hidden md:block text-[10px] font-medium text-slate-400 dark:text-white/40 uppercase tracking-widest">Thought Leader</span>
                                                             </div>
                                                         </div>
 
@@ -364,29 +388,29 @@ const Forum = () => {
                                                                 </div>
                                                             )}
 
-                                                            <div className="flex gap-3">
-                                                             <div className="flex bg-slate-100/50 dark:bg-white/5 rounded-xl overflow-hidden border border-slate-200/50 dark:border-white/10">
+                                                            <div className="flex gap-2 md:gap-3 items-center">
+                                                              <div className="flex bg-slate-100/50 dark:bg-white/5 rounded-xl overflow-hidden border border-slate-200/50 dark:border-white/10 scale-90 md:scale-100 items-center">
                                                                 <button 
                                                                     onClick={(e) => handleVote(e, thread.id, 'upvote')}
-                                                                    className={`p-2 transition-all ${thread.user_vote == 1 ? "text-orange-500 bg-orange-50 dark:bg-orange-500/10" : "text-slate-400 dark:text-white/30 hover:text-orange-500 hover:bg-slate-100 dark:hover:bg-white/5"}`}
+                                                                    className={`p-1.5 md:p-2 flex items-center gap-1.5 transition-all ${thread.user_vote == 1 ? "text-orange-500 bg-orange-50 dark:bg-orange-500/10" : "text-slate-400 dark:text-white/30 hover:text-orange-500 hover:bg-slate-100 dark:hover:bg-white/5"}`}
                                                                     title="Upvote"
                                                                 >
-                                                                    <ArrowUp size={18} strokeWidth={3} />
+                                                                    <ArrowUp size={18} strokeWidth={3} className="w-3.5 h-3.5 md:w-4 md:h-4" />
+                                                                    <span className="text-[10px] md:text-xs font-black">{thread.upvotes_count || 0}</span>
                                                                 </button>
-                                                                <div className={`flex items-center px-1 text-xs font-black min-w-[20px] justify-center ${thread.user_vote == 1 ? "text-orange-600 dark:text-orange-400" : (thread.user_vote == -1 ? "text-blue-600 dark:text-blue-400" : "text-slate-600 dark:text-white/60")}`}>
-                                                                    {thread.upvotes_count || 0}
-                                                                </div>
+                                                                <div className="w-[1px] h-4 bg-slate-200 dark:bg-white/10 mx-0.5" />
                                                                 <button 
                                                                     onClick={(e) => handleVote(e, thread.id, 'downvote')}
-                                                                    className={`p-2 transition-all ${thread.user_vote == -1 ? "text-blue-500 bg-blue-50 dark:bg-blue-500/10" : "text-slate-400 dark:text-white/30 hover:text-blue-500 hover:bg-slate-100 dark:hover:bg-white/5"}`}
+                                                                    className={`p-1.5 md:p-2 flex items-center gap-1.5 transition-all ${thread.user_vote == -1 ? "text-blue-500 bg-blue-50 dark:bg-blue-500/10" : "text-slate-400 dark:text-white/30 hover:text-blue-500 hover:bg-slate-100 dark:hover:bg-white/5"}`}
                                                                     title="Downvote"
                                                                 >
-                                                                    <ArrowDown size={18} strokeWidth={3} />
+                                                                    <span className="text-[10px] md:text-xs font-black">{thread.downvotes_count || 0}</span>
+                                                                    <ArrowDown size={18} strokeWidth={3} className="w-3.5 h-3.5 md:w-4 md:h-4" />
                                                                 </button>
-                                                            </div>
-                                                                <Button variant="ghost" className="text-primary font-black text-xs hover:bg-primary/5 uppercase tracking-widest px-0">
-                                                                    Read Thread <ChevronRight size={14} className="ml-1" />
-                                                                </Button>
+                                                              </div>
+                                                              <Button variant="ghost" className="text-primary font-black text-[10px] md:text-xs hover:bg-primary/5 uppercase tracking-widest px-0 flex-shrink-0">
+                                                                  <span className="hidden md:inline">Read Thread</span> <ChevronRight size={14} className="ml-1" />
+                                                              </Button>
                                                             </div>
                                                         </div>
                                                     </div>
@@ -398,8 +422,8 @@ const Forum = () => {
                             </div>
                         </div>
 
-                        {/* Sidebar */}
-                        <div className="space-y-8">
+                        {/* Sidebar - Hidden on mobile, shown on large screens */}
+                        <div className="hidden lg:block space-y-8">
                             <div className="bg-white dark:bg-zinc-900 border border-slate-200 dark:border-white/10 rounded-[32px] p-8 shadow-sm">
                                 <h3 className="text-xs font-black uppercase tracking-widest text-primary mb-6 flex items-center gap-2">
                                     <Hash size={14} /> Popular Topics
@@ -431,14 +455,19 @@ const Forum = () => {
             {/* New Thread Modal */}
             <AnimatePresence>
                 {showNewThreadModal && (
-                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-slate-900/60 backdrop-blur-md">
+                    <div 
+                        className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-slate-900/60 backdrop-blur-md cursor-pointer"
+                        onClick={() => setShowNewThreadModal(false)}
+                    >
                         <motion.div 
-                            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                            initial={{ opacity: 0, scale: 0.9, y: 40 }}
                             animate={{ opacity: 1, scale: 1, y: 0 }}
-                            exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                            className="bg-white dark:bg-zinc-900 rounded-[40px] w-full max-w-2xl shadow-2xl overflow-hidden border border-slate-200 dark:border-white/10"
+                            exit={{ opacity: 0, scale: 0.9, y: 40 }}
+                            transition={{ type: "spring", damping: 25, stiffness: 300 }}
+                            onClick={(e) => e.stopPropagation()}
+                            className="bg-white/95 dark:bg-zinc-900/95 backdrop-blur-2xl rounded-[40px] w-full max-w-2xl shadow-[0_32px_128px_-16px_rgba(0,0,0,0.3)] flex flex-col max-h-[90vh] border border-white/20 dark:border-white/10 overflow-hidden cursor-default"
                         >
-                            <div className="p-8 border-b border-slate-100 dark:border-white/5 flex items-center justify-between bg-slate-50/50 dark:bg-white/5">
+                            <div className="p-8 border-b border-slate-100 dark:border-white/5 flex items-center justify-between bg-slate-50/50 dark:bg-white/5 shrink-0">
                                 <div>
                                     <h2 className="text-2xl font-black text-slate-900 dark:text-white">Start Discussion</h2>
                                     <p className="text-xs text-slate-500 font-bold uppercase tracking-wider mt-1">Join the Collective Mind</p>
@@ -448,7 +477,7 @@ const Forum = () => {
                                 </button>
                             </div>
                             
-                            <form onSubmit={handleCreateThread} className="p-8 space-y-6">
+                            <form onSubmit={handleCreateThread} className="p-8 space-y-6 overflow-y-auto flex-1 custom-scrollbar">
                                 <div className="space-y-2">
                                     <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1">Discussion Title</label>
                                     <input 
@@ -487,6 +516,35 @@ const Forum = () => {
                                         className="w-full px-6 py-5 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-[24px] focus:outline-none focus:border-primary transition-all font-medium text-slate-700 dark:text-white resize-none"
                                         required
                                     />
+                                </div>
+
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1">Attachment (Optional)</label>
+                                    <div className="relative group/file">
+                                        <input 
+                                            type="file" 
+                                            accept="image/*"
+                                            onChange={(e) => setNewImage(e.target.files ? e.target.files[0] : null)}
+                                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                                        />
+                                        <div className="w-full h-14 px-6 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl flex items-center gap-3 transition-all group-hover/file:border-primary/50 overflow-hidden">
+                                            <div className="p-2 bg-primary/10 rounded-lg text-primary">
+                                                <Upload size={16} />
+                                            </div>
+                                            <span className="text-xs font-bold text-slate-500 truncate">
+                                                {newImage ? newImage.name : "Click to upload discussion image"}
+                                            </span>
+                                            {newImage && (
+                                                <button 
+                                                    type="button" 
+                                                    onClick={(e) => { e.stopPropagation(); setNewImage(null); }}
+                                                    className="ml-auto p-1.5 hover:bg-red-500/10 text-red-500 rounded-md z-20"
+                                                >
+                                                    <X size={14} />
+                                                </button>
+                                            )}
+                                        </div>
+                                    </div>
                                 </div>
 
                                 <div className="space-y-2">

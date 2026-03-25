@@ -214,47 +214,47 @@ const Profile = () => {
                 <div className="max-w-6xl mx-auto">
 
                     {/* ── Header ── */}
-                    <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
-                        <div className="flex items-center gap-6">
-                            <div className="w-20 h-20 rounded-3xl bg-white border border-slate-200 flex items-center justify-center text-3xl font-black text-primary select-none shadow-sm capitalize">
+                    <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-8 md:mb-12">
+                        <div className="flex items-center gap-4 md:gap-6">
+                            <div className="w-16 h-16 md:w-20 md:h-20 rounded-2xl md:rounded-3xl bg-white border border-slate-200 flex items-center justify-center text-2xl md:text-3xl font-black text-primary select-none shadow-sm capitalize flex-shrink-0">
                                 {initials}
                             </div>
                             <div>
-                                <h1 className="text-4xl font-black tracking-tight mb-1 text-slate-900">
+                                <h1 className="text-2xl md:text-4xl font-black tracking-tight mb-1 text-slate-900 leading-tight">
                                     Hey, {watchedValues.fullName.split(" ")[0] || "Founder"}!
                                 </h1>
-                                <p className="text-slate-500 text-sm flex items-center gap-2">
+                                <p className="text-slate-500 text-[12px] md:text-sm flex items-center gap-2">
                                     <Sparkles size={14} className="text-primary" />
                                     Account & Personal Discovery Hub
                                 </p>
                             </div>
                         </div>
 
-                        <div className="flex flex-col md:flex-row gap-4">
-                            <div className="flex bg-slate-200/50 p-1 rounded-2xl border border-slate-200 backdrop-blur-md overflow-x-auto no-scrollbar">
+                        <div className="flex flex-col gap-4">
+                            <div className="flex bg-slate-200/50 p-1 rounded-2xl border border-slate-200 backdrop-blur-md overflow-x-auto no-scrollbar scroll-smooth">
                                 <button 
                                     onClick={() => setActiveTab("settings")}
-                                    className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold transition-all whitespace-nowrap ${activeTab === "settings" ? "bg-white text-primary shadow-sm" : "text-slate-500 hover:text-slate-900"}`}
+                                    className={`flex items-center gap-2 px-4 md:px-6 py-2 md:py-2.5 rounded-xl text-xs md:text-sm font-bold transition-all whitespace-nowrap ${activeTab === "settings" ? "bg-white text-primary shadow-sm" : "text-slate-500 hover:text-slate-900"}`}
                                 >
-                                    <Settings size={16} /> Settings
+                                    <Settings size={18} className="w-3.5 h-3.5 md:w-4 md:h-4" /> Settings
                                 </button>
                                 <button 
                                     onClick={() => setActiveTab("saved")}
-                                    className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold transition-all whitespace-nowrap ${activeTab === "saved" ? "bg-white text-primary shadow-sm" : "text-slate-500 hover:text-slate-900"}`}
+                                    className={`flex items-center gap-2 px-4 md:px-6 py-2 md:py-2.5 rounded-xl text-xs md:text-sm font-bold transition-all whitespace-nowrap ${activeTab === "saved" ? "bg-white text-primary shadow-sm" : "text-slate-500 hover:text-slate-900"}`}
                                 >
-                                    <Bookmark size={16} /> Saved
+                                    <Bookmark size={18} className="w-3.5 h-3.5 md:w-4 md:h-4" /> Saved
                                 </button>
                                 <button 
                                     onClick={() => setActiveTab("reviews")}
-                                    className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold transition-all whitespace-nowrap ${activeTab === "reviews" ? "bg-white text-primary shadow-sm" : "text-slate-500 hover:text-slate-900"}`}
+                                    className={`flex items-center gap-2 px-4 md:px-6 py-2 md:py-2.5 rounded-xl text-xs md:text-sm font-bold transition-all whitespace-nowrap ${activeTab === "reviews" ? "bg-white text-primary shadow-sm" : "text-slate-500 hover:text-slate-900"}`}
                                 >
-                                    <Star size={16} /> Reviews
+                                    <Star size={18} className="w-3.5 h-3.5 md:w-4 md:h-4" /> Reviews
                                 </button>
                                 <button 
                                     onClick={() => setActiveTab("questions")}
-                                    className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold transition-all whitespace-nowrap ${activeTab === "questions" ? "bg-white text-primary shadow-sm" : "text-slate-500 hover:text-slate-900"}`}
+                                    className={`flex items-center gap-2 px-4 md:px-6 py-2 md:py-2.5 rounded-xl text-xs md:text-sm font-bold transition-all whitespace-nowrap ${activeTab === "questions" ? "bg-white text-primary shadow-sm" : "text-slate-500 hover:text-slate-900"}`}
                                 >
-                                    <MessageSquare size={16} /> Questions
+                                    <MessageSquare size={18} className="w-3.5 h-3.5 md:w-4 md:h-4" /> Questions
                                 </button>
                             </div>
                             <Button 
@@ -264,7 +264,7 @@ const Profile = () => {
                                     window.dispatchEvent(new Event("storage"));
                                     navigate("/login");
                                 }}
-                                className="border-red-200 text-red-500 hover:bg-red-50 hover:text-red-600 rounded-2xl h-auto py-2.5 px-6 font-bold flex items-center gap-2"
+                                className="border-red-200 text-red-500 hover:bg-red-50 hover:text-red-600 rounded-2xl h-12 md:h-auto py-2.5 px-6 font-bold flex items-center gap-2 w-full md:w-auto mt-2 md:mt-0"
                             >
                                 <LogOut size={18} /> Logout
                             </Button>
@@ -310,11 +310,11 @@ const Profile = () => {
                                                         name="fullName"
                                                         render={({ field }) => (
                                                             <FormItem className="space-y-2">
-                                                                <FormLabel className="text-xs uppercase tracking-[0.2em] text-slate-400 font-black">Full Name</FormLabel>
+                                                                <FormLabel className="text-[10px] md:text-xs uppercase tracking-[0.2em] text-slate-400 font-black">Full Name</FormLabel>
                                                                 <FormControl>
                                                                     <Input
                                                                         placeholder="Display Name"
-                                                                        className="bg-slate-50 border-slate-200 h-14 px-5 focus:border-primary/50 transition-all rounded-2xl font-bold text-lg text-slate-900"
+                                                                        className="bg-slate-50 border-slate-200 h-12 md:h-14 px-5 focus:border-primary/50 transition-all rounded-2xl font-bold text-base md:text-lg text-slate-900"
                                                                         {...field}
                                                                     />
                                                                 </FormControl>
@@ -363,12 +363,12 @@ const Profile = () => {
                                                         name="password"
                                                         render={({ field }) => (
                                                             <FormItem className="space-y-2">
-                                                                <FormLabel className="text-xs uppercase tracking-[0.2em] text-slate-400 font-black">Security Pin / Password</FormLabel>
+                                                                <FormLabel className="text-[10px] md:text-xs uppercase tracking-[0.2em] text-slate-400 font-black">Security Pin / Password</FormLabel>
                                                                 <FormControl>
                                                                     <Input
                                                                         type="password"
                                                                         placeholder="••••••••"
-                                                                        className="bg-slate-50 border-slate-200 h-14 px-5 focus:border-primary/50 transition-all rounded-2xl font-bold text-slate-900"
+                                                                        className="bg-slate-50 border-slate-200 h-12 md:h-14 px-5 focus:border-primary/50 transition-all rounded-2xl font-bold text-slate-900"
                                                                         {...field}
                                                                     />
                                                                 </FormControl>
@@ -377,25 +377,14 @@ const Profile = () => {
                                                         )}
                                                     />
 
-                                                    <div className="pt-8 border-t border-slate-100 flex items-center justify-between gap-4">
+                                                    <div className="pt-8 border-t border-slate-100 flex items-center justify-start gap-4">
                                                         <Button
                                                             type="submit"
                                                             disabled={isLoading || !isDirty}
-                                                            className="h-14 px-10 bg-primary text-black hover:bg-primary/90 font-black rounded-2xl shadow-md transition-all disabled:opacity-30 flex items-center gap-3"
+                                                            className="h-14 px-10 bg-primary text-black hover:bg-primary/90 font-black rounded-2xl shadow-md transition-all disabled:opacity-30 flex items-center gap-3 w-full md:w-auto"
                                                         >
                                                             {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save size={20} />}
                                                             Save Profile
-                                                        </Button>
-                                                        
-                                                        <Button 
-                                                            variant="ghost" 
-                                                            onClick={() => {
-                                                                localStorage.removeItem("user");
-                                                                navigate("/login");
-                                                            }}
-                                                            className="text-red-500 hover:text-red-600 hover:bg-red-50 h-14 px-6 rounded-2xl font-bold"
-                                                        >
-                                                            <LogOut size={18} className="mr-2" /> Log Out
                                                         </Button>
                                                     </div>
                                                 </form>
@@ -479,7 +468,7 @@ const Profile = () => {
                                         <p className="font-bold tracking-widest uppercase text-xs text-slate-400">Loading Knowledge Base...</p>
                                     </div>
                                 ) : savedTools.length > 0 ? (
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                                    <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-6">
                                         {savedTools.map((tool, idx) => (
                                             <ToolCard key={tool.id || idx} {...tool} delay={idx * 0.05} />
                                         ))}

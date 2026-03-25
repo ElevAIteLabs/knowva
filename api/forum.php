@@ -82,7 +82,8 @@ if ($method === 'GET') {
         if ($thread_id > 0) {
             $stmt = $conn->prepare("
                 SELECT t.*, 
-                (SELECT COALESCE(SUM(vote_value), 0) FROM upvotes WHERE target_id = t.id AND target_type = 'thread') as upvotes_count,
+                (SELECT COUNT(*) FROM upvotes WHERE target_id = t.id AND target_type = 'thread' AND vote_value = 1) as upvotes_count,
+                (SELECT COUNT(*) FROM upvotes WHERE target_id = t.id AND target_type = 'thread' AND vote_value = -1) as downvotes_count,
                 (SELECT SUM(vote_value) FROM upvotes WHERE target_id = t.id AND target_type = 'thread' AND user_id = ?) as user_vote
                 FROM forum_threads t 
                 WHERE t.id = ?
@@ -97,7 +98,8 @@ if ($method === 'GET') {
 
             $stmtRep = $conn->prepare("
                 SELECT r.*,
-                (SELECT COALESCE(SUM(vote_value), 0) FROM upvotes WHERE target_id = r.id AND target_type = 'reply') as upvotes_count,
+                (SELECT COUNT(*) FROM upvotes WHERE target_id = r.id AND target_type = 'reply' AND vote_value = 1) as upvotes_count,
+                (SELECT COUNT(*) FROM upvotes WHERE target_id = r.id AND target_type = 'reply' AND vote_value = -1) as downvotes_count,
                 (SELECT SUM(vote_value) FROM upvotes WHERE target_id = r.id AND target_type = 'reply' AND user_id = ?) as user_vote
                 FROM forum_replies r 
                 WHERE thread_id = ? 
@@ -152,7 +154,8 @@ if ($method === 'GET') {
         }
 
         $sql = "SELECT t.*, 
-                (SELECT COALESCE(SUM(vote_value), 0) FROM upvotes WHERE target_id = t.id AND target_type = 'thread') as upvotes_count,
+                (SELECT COUNT(*) FROM upvotes WHERE target_id = t.id AND target_type = 'thread' AND vote_value = 1) as upvotes_count,
+                (SELECT COUNT(*) FROM upvotes WHERE target_id = t.id AND target_type = 'thread' AND vote_value = -1) as downvotes_count,
                 (SELECT SUM(vote_value) FROM upvotes WHERE target_id = t.id AND target_type = 'thread' AND user_id = ?) as user_vote
                 FROM forum_threads t 
                 $where 
@@ -170,128 +173,146 @@ if ($method === 'GET') {
 
 // ── POST Logic ─────────────────────────────────────────────────────────────
 else if ($method === 'POST') {
-    $data = json_decode(file_get_contents("php://input"));
-    if (!$data || !isset($data->action)) {
+    // Attempt to get JSON data
+    $json = json_decode(file_get_contents("php://input"), true);
+    // Merge with $_POST for FormData support
+    $data = $json ? $json : $_POST;
+
+    if (!isset($data['action'])) {
         echo json_encode(["status" => "error", "message" => "Action required"]);
         exit();
     }
 
-    $action = $data->action;
+    $action = $data['action'];
 
     try {
         if ($action === 'create') {
             $image_url = null;
-            if (!empty($data->image_base64)) {
-                $img = $data->image_base64;
-                $img = str_replace('data:image/jpeg;base64,', '', $img);
-                $img = str_replace('data:image/png;base64,', '', $img);
-                $img = str_replace('data:image/gif;base64,', '', $img);
-                $img = str_replace(' ', '+', $img);
-                $imgData = base64_decode($img);
-                
-                $uploadDir = __DIR__ . '/uploads';
+            
+            // Handle Multipart File Upload
+            if (isset($_FILES['image']) && $_FILES['image']['error'] === UPLOAD_ERR_OK) {
+                $uploadDir = '../uploads';
                 if (!file_exists($uploadDir)) {
                     mkdir($uploadDir, 0777, true);
                 }
+                $fileName = uniqid() . '_' . basename($_FILES['image']['name']);
+                $filePath = $uploadDir . '/' . $fileName;
+                if (move_uploaded_file($_FILES['image']['tmp_name'], $filePath)) {
+                    $image_url = 'uploads/' . $fileName;
+                }
+            } 
+            // Fallback to Base64
+            else if (!empty($data['image_base64'])) {
+                $img = $data['image_base64'];
+                $img = str_replace(['data:image/jpeg;base64,', 'data:image/png;base64,', 'data:image/gif;base64,'], '', $img);
+                $img = str_replace(' ', '+', $img);
+                $imgData = base64_decode($img);
+                
+                $uploadDir = '../uploads';
+                if (!file_exists($uploadDir)) mkdir($uploadDir, 0777, true);
                 
                 $fileName = uniqid() . '.png';
                 $filePath = $uploadDir . '/' . $fileName;
                 file_put_contents($filePath, $imgData);
-                
                 $image_url = 'uploads/' . $fileName;
             }
 
-            $hashtags = isset($data->hashtags) ? trim($data->hashtags) : null;
-            try {
-                if ($image_url) {
-                    $stmt = $conn->prepare("INSERT INTO forum_threads (user_id, user_name, title, category, content, image_url, hashtags) VALUES (?, ?, ?, ?, ?, ?, ?)");
-                    $stmt->execute([$data->user_id, $data->user_name, $data->title, $data->category, $data->content, $image_url, $hashtags]);
-                } else {
-                    $stmt = $conn->prepare("INSERT INTO forum_threads (user_id, user_name, title, category, content, hashtags) VALUES (?, ?, ?, ?, ?, ?)");
-                    $stmt->execute([$data->user_id, $data->user_name, $data->title, $data->category, $data->content, $hashtags]);
-                }
-            } catch (PDOException $e) {
-                // Fallback in case columns do not exist yet
-                $stmt = $conn->prepare("INSERT INTO forum_threads (user_id, user_name, title, category, content) VALUES (?, ?, ?, ?, ?)");
-                $stmt->execute([$data->user_id, $data->user_name, $data->title, $data->category, $data->content]);
+            $hashtags = isset($data['hashtags']) ? trim($data['hashtags']) : null;
+            $user_id = $data['user_id'];
+            $user_name = $data['user_name'];
+            $title = $data['title'];
+            $category = $data['category'];
+            $content = $data['content'];
+
+            if ($image_url) {
+                $stmt = $conn->prepare("INSERT INTO forum_threads (user_id, user_name, title, category, content, image_url, hashtags) VALUES (?, ?, ?, ?, ?, ?, ?)");
+                $stmt->execute([$user_id, $user_name, $title, $category, $content, $image_url, $hashtags]);
+            } else {
+                $stmt = $conn->prepare("INSERT INTO forum_threads (user_id, user_name, title, category, content, hashtags) VALUES (?, ?, ?, ?, ?, ?)");
+                $stmt->execute([$user_id, $user_name, $title, $category, $content, $hashtags]);
             }
-            echo json_encode(["status" => "success", "message" => "Thread created"]);
+            echo json_encode(["status" => "success", "message" => "Thread created", "image_url" => $image_url]);
         } 
         else if ($action === 'reply') {
             $chk = $conn->prepare("SELECT is_locked FROM forum_threads WHERE id = ?");
-            $chk->execute([$data->thread_id]);
+            $chk->execute([$data['thread_id']]);
             if ($chk->fetchColumn()) {
                 echo json_encode(["status" => "error", "message" => "Thread is locked"]);
                 exit();
             }
             
-            $parent_id = isset($data->parent_id) ? (int)$data->parent_id : null;
-            
-            try {
-                if ($parent_id > 0) {
-                    $stmt = $conn->prepare("INSERT INTO forum_replies (thread_id, user_id, user_name, content, parent_id) VALUES (?, ?, ?, ?, ?)");
-                    $stmt->execute([$data->thread_id, $data->user_id, $data->user_name, $data->content, $parent_id]);
-                } else {
-                    $stmt = $conn->prepare("INSERT INTO forum_replies (thread_id, user_id, user_name, content, parent_id) VALUES (?, ?, ?, ?, NULL)");
-                    $stmt->execute([$data->thread_id, $data->user_id, $data->user_name, $data->content]);
-                }
-            } catch (PDOException $e) {
-                // Fallback in case `parent_id` column does not exist yet in DB
-                $stmt = $conn->prepare("INSERT INTO forum_replies (thread_id, user_id, user_name, content) VALUES (?, ?, ?, ?)");
-                $stmt->execute([$data->thread_id, $data->user_id, $data->user_name, $data->content]);
-            }
+            $parent_id = isset($data['parent_id']) ? (int)$data['parent_id'] : null;
+            $stmt = $conn->prepare("INSERT INTO forum_replies (thread_id, user_id, user_name, content, parent_id) VALUES (?, ?, ?, ?, ?)");
+            $stmt->execute([$data['thread_id'], $data['user_id'], $data['user_name'], $data['content'], $parent_id]);
             
             echo json_encode(["status" => "success", "message" => "Reply posted"]);
         }
         else if (in_array($action, ['pin', 'lock', 'hide'])) {
-            if (isAdmin($conn, $data->admin_id)) {
+            if (isAdmin($conn, $data['admin_id'])) {
                 $col = ($action === 'pin') ? 'is_pinned' : "is_" . $action;
                 $stmt = $conn->prepare("UPDATE forum_threads SET $col = ? WHERE id = ?");
-                $stmt->execute([(int)$data->status, $data->thread_id]);
+                $stmt->execute([(int)$data['status'], $data['thread_id']]);
                 echo json_encode(["status" => "success", "message" => "Status updated"]);
             } else { echo json_encode(["status" => "error", "message" => "Unauthorized"]); }
         }
         else if ($action === 'delete') {
             $check = $conn->prepare("SELECT user_id FROM forum_threads WHERE id = ?");
-            $check->execute([$data->thread_id]);
+            $check->execute([$data['thread_id']]);
             $ownerId = $check->fetchColumn();
-            if ($ownerId == $data->user_id || isAdmin($conn, $data->user_id)) {
-                $conn->prepare("DELETE FROM forum_threads WHERE id = ?")->execute([$data->thread_id]);
+            if ($ownerId == $data['user_id'] || isAdmin($conn, $data['user_id'])) {
+                $conn->prepare("DELETE FROM forum_threads WHERE id = ?")->execute([$data['thread_id']]);
                 echo json_encode(["status" => "success", "message" => "Deleted"]);
             } else { echo json_encode(["status" => "error", "message" => "Unauthorized"]); }
         }
         else if ($action === 'edit') {
             $check = $conn->prepare("SELECT user_id FROM forum_threads WHERE id = ?");
-            $check->execute([$data->thread_id]);
+            $check->execute([$data['thread_id']]);
             $ownerId = $check->fetchColumn();
-            if ($ownerId == $data->user_id || isAdmin($conn, $data->user_id)) {
-                $hashtags = isset($data->hashtags) ? trim($data->hashtags) : null;
-                $stmt = $conn->prepare("UPDATE forum_threads SET title = ?, content = ?, hashtags = ? WHERE id = ?");
-                $stmt->execute([$data->title, $data->content, $hashtags, $data->thread_id]);
+            if ($ownerId == $data['user_id'] || isAdmin($conn, $data['user_id'])) {
+                $hashtags = isset($data['hashtags']) ? trim($data['hashtags']) : null;
+                
+                // Handle image update in edit mode
+                $image_sql = "";
+                $params = [$data['title'], $data['content'], $hashtags];
+                
+                if (isset($_FILES['image']) && $_FILES['image']['error'] === UPLOAD_ERR_OK) {
+                    $uploadDir = '../uploads';
+                    if (!file_exists($uploadDir)) mkdir($uploadDir, 0777, true);
+                    $fileName = uniqid() . '_' . basename($_FILES['image']['name']);
+                    $filePath = $uploadDir . '/' . $fileName;
+                    if (move_uploaded_file($_FILES['image']['tmp_name'], $filePath)) {
+                        $image_sql = ", image_url = ?";
+                        $params[] = 'uploads/' . $fileName;
+                    }
+                }
+                
+                $params[] = $data['thread_id'];
+                $stmt = $conn->prepare("UPDATE forum_threads SET title = ?, content = ?, hashtags = ? $image_sql WHERE id = ?");
+                $stmt->execute($params);
                 echo json_encode(["status" => "success", "message" => "Updated"]);
             } else { echo json_encode(["status" => "error", "message" => "Unauthorized"]); }
         }
         else if ($action === 'delete_reply') {
             $check = $conn->prepare("SELECT user_id FROM forum_replies WHERE id = ?");
-            $check->execute([$data->reply_id]);
+            $check->execute([$data['reply_id']]);
             $ownerId = $check->fetchColumn();
-            if ($ownerId == $data->user_id || isAdmin($conn, $data->user_id)) {
-                $conn->prepare("DELETE FROM forum_replies WHERE id = ?")->execute([$data->reply_id]);
+            if ($ownerId == $data['user_id'] || isAdmin($conn, $data['user_id'])) {
+                $conn->prepare("DELETE FROM forum_replies WHERE id = ?")->execute([$data['reply_id']]);
                 echo json_encode(["status" => "success", "message" => "Reply deleted"]);
             } else { echo json_encode(["status" => "error", "message" => "Unauthorized"]); }
         }
         else if ($action === 'edit_reply') {
             $check = $conn->prepare("SELECT user_id FROM forum_replies WHERE id = ?");
-            $check->execute([$data->reply_id]);
+            $check->execute([$data['reply_id']]);
             $ownerId = $check->fetchColumn();
-            if ($ownerId == $data->user_id || isAdmin($conn, $data->user_id)) {
+            if ($ownerId == $data['user_id'] || isAdmin($conn, $data['user_id'])) {
                 $stmt = $conn->prepare("UPDATE forum_replies SET content = ? WHERE id = ?");
-                $stmt->execute([$data->content, $data->reply_id]);
+                $stmt->execute([$data['content'], $data['reply_id']]);
                 echo json_encode(["status" => "success", "message" => "Reply updated"]);
             } else { echo json_encode(["status" => "error", "message" => "Unauthorized"]); }
         }
     } catch (Exception $e) {
-        echo json_encode(["status" => "error", "message" => "Server error"]);
+        echo json_encode(["status" => "error", "message" => $e->getMessage()]);
     }
 }
 ?>

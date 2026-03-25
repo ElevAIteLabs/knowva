@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 import { motion } from "framer-motion";
 import { ArrowLeft, Search, SlidersHorizontal, ChevronDown, Loader2 } from "lucide-react";
 import Navbar from "@/components/Navbar";
@@ -14,6 +15,7 @@ const CategoryPage = () => {
   const { categoryName } = useParams();
   const [selectedPricing, setSelectedPricing] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
+  const navigate = useNavigate();
   const [sortBy, setSortBy] = useState("Popular");
   const [dbTools, setDbTools] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -100,6 +102,21 @@ const CategoryPage = () => {
 
   const filteredTools = getSortedAndFilteredTools();
 
+  const handleSearchEnter = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && searchQuery.trim() && filteredTools.length > 0) {
+      const topMatch = filteredTools[0];
+      const user = localStorage.getItem("user");
+      if (!user) {
+        toast("Authentication required", {
+          description: "Please log in to view tool details.",
+        });
+        navigate("/login");
+        return;
+      }
+      navigate(`/tool/${topMatch.name.toLowerCase().replace(/\s+/g, '-')}`);
+    }
+  };
+
   if (!category) {
     return (
       <div className="min-h-screen bg-background">
@@ -173,6 +190,7 @@ const CategoryPage = () => {
                       type="text"
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
+                      onKeyDown={handleSearchEnter}
                       placeholder="Search tools..."
                       className="bg-transparent border-none outline-none text-foreground placeholder:text-muted-foreground text-sm flex-1"
                     />
@@ -267,7 +285,7 @@ const CategoryPage = () => {
               </div>
 
               {isLoading ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
+                <div className="grid grid-cols-2 sm:grid-cols-2 xl:grid-cols-3 gap-3 md:gap-5">
                   {[...Array(6)].map((_, i) => (
                     <div
                       key={i}
@@ -276,7 +294,7 @@ const CategoryPage = () => {
                   ))}
                 </div>
               ) : filteredTools.length > 0 ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
+                <div className="grid grid-cols-2 sm:grid-cols-2 xl:grid-cols-3 gap-3 md:gap-5">
                   {filteredTools.map((tool, i) => (
                     <ToolCard key={tool.name + i} {...tool} delay={i * 0.03} />
                   ))}
