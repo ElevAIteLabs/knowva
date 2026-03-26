@@ -69,7 +69,7 @@ const Navbar = () => {
               <img
                 src={logo}
                 alt="KNOWva"
-                className="h-20 sm:h-36 w-auto object-contain translate-y-3 sm:translate-y-3"
+                className="h-20 sm:h-36 w-auto object-contain translate-y-4 sm:translate-y-4"
               />
             </Link>
           </div>
