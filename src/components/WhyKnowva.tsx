@@ -37,7 +37,7 @@ const cards: WhyCard[] = [
       <Star key="st" className="w-3.5 h-3.5" />,
     ],
     cta: "Explore Tools",
-    ctaLink: "/categories",
+    ctaLink: "/all-tools",
     accentColor: "from-orange-500/20 to-amber-500/10",
   },
   {
@@ -51,7 +51,7 @@ const cards: WhyCard[] = [
       <Star key="st" className="w-3.5 h-3.5" />,
     ],
     cta: "Get Matched",
-    ctaLink: "/categories",
+    ctaLink: "/all-tools",
     accentColor: "from-cyan-500/20 to-blue-500/10",
   },
   {
@@ -79,7 +79,7 @@ const cards: WhyCard[] = [
       <ShieldCheck key="s2" className="w-3.5 h-3.5" />,
     ],
     cta: "See Reviews",
-    ctaLink: "/categories",
+    ctaLink: "/all-tools",
     accentColor: "from-emerald-500/20 to-teal-500/10",
   },
   {

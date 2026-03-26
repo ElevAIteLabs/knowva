@@ -273,7 +273,7 @@ else if ($method === 'POST') {
                 
                 // Handle image update in edit mode
                 $image_sql = "";
-                $params = [$data['title'], $data['content'], $hashtags];
+                $params = [$data['title'], $data['content'], $hashtags, $data['category']];
                 
                 if (isset($_FILES['image']) && $_FILES['image']['error'] === UPLOAD_ERR_OK) {
                     $uploadDir = '../uploads';
@@ -287,7 +287,7 @@ else if ($method === 'POST') {
                 }
                 
                 $params[] = $data['thread_id'];
-                $stmt = $conn->prepare("UPDATE forum_threads SET title = ?, content = ?, hashtags = ? $image_sql WHERE id = ?");
+                $stmt = $conn->prepare("UPDATE forum_threads SET title = ?, content = ?, hashtags = ?, category = ? $image_sql WHERE id = ?");
                 $stmt->execute($params);
                 echo json_encode(["status" => "success", "message" => "Updated"]);
             } else { echo json_encode(["status" => "error", "message" => "Unauthorized"]); }

@@ -1,4 +1,4 @@
-import { Star, ExternalLink, Check, X, ChevronLeft, Send, LogIn, Loader2, Bookmark, LayoutGrid, CreditCard, Terminal, HelpCircle, History, MessageSquare, Info, ShieldCheck, Triangle } from "lucide-react";
+import { Star, ExternalLink, Check, X, ChevronLeft, Send, LogIn, Loader2, Bookmark, LayoutGrid, CreditCard, Terminal, HelpCircle, History, MessageSquare, Info, ShieldCheck, Triangle, ArrowUp, ArrowDown } from "lucide-react";
 import { Link, useParams, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { useEffect, useState } from "react";
@@ -33,8 +33,9 @@ const ToolDetail = () => {
   const [isSaved, setIsSaved] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [upvoteCount, setUpvoteCount] = useState(0);
-  const [hasUpvoted, setHasUpvoted] = useState(false);
-  const [upvoteLoading, setUpvoteLoading] = useState(false);
+  const [downvoteCount, setDownvoteCount] = useState(0);
+  const [userVote, setUserVote] = useState(0);
+  const [voteLoading, setVoteLoading] = useState(false);
 
   // Computed live rating — average of all user reviews; falls back to tool's own rating
   const avgRating = reviews.length > 0
@@ -60,18 +61,19 @@ const ToolDetail = () => {
         const res = await fetch(`${API_ENDPOINTS.UPVOTES}?target_id=${slug}&target_type=tool&user_id=${currentUser?.id || 0}`);
         const result = await res.json();
         if (result.status === "success") {
-          setUpvoteCount(result.count);
-          setHasUpvoted(result.has_upvoted);
+          setUpvoteCount(result.upvotes);
+          setDownvoteCount(result.downvotes);
+          setUserVote(result.user_vote);
         }
       } catch { }
     };
     fetchUpvotes();
   }, [slug, currentUser?.id]);
 
-  const handleUpvote = async () => {
+  const handleVote = async (type: 'upvote' | 'downvote') => {
     if (!currentUser) { navigate("/login"); return; }
     if (!slug) return;
-    setUpvoteLoading(true);
+    setVoteLoading(true);
     try {
       const res = await fetch(API_ENDPOINTS.UPVOTES, {
         method: "POST",
@@ -79,17 +81,19 @@ const ToolDetail = () => {
         body: JSON.stringify({
           user_id: currentUser.id,
           target_id: slug,
-          target_type: 'tool'
+          target_type: 'tool',
+          action_type: type
         }),
       });
       const result = await res.json();
       if (result.status === "success") {
-        setUpvoteCount(result.new_count);
-        setHasUpvoted(result.action === 'added');
-        toast.success(result.action === 'added' ? "Tool upvoted!" : "Upvote removed");
+        setUpvoteCount(result.new_upvotes);
+        setDownvoteCount(result.new_downvotes);
+        setUserVote(result.user_vote);
+        toast.success(result.action === 'added' ? "Vote added!" : result.action === 'updated' ? "Vote updated!" : "Vote removed");
       }
-    } catch { toast.error("Upvote failed"); }
-    finally { setUpvoteLoading(false); }
+    } catch { toast.error("Vote failed"); }
+    finally { setVoteLoading(false); }
   };
 
   const handleModeration = async (reviewId: number, action: 'verify' | 'hide', currentStatus: boolean) => {
@@ -494,14 +498,27 @@ const ToolDetail = () => {
                 </div>
               </div>
               <div className="flex gap-3 flex-shrink-0 flex-wrap md:flex-nowrap">
-                <button
-                  onClick={handleUpvote}
-                  disabled={upvoteLoading}
-                  className={`flex flex-col items-center justify-center px-4 py-2 rounded-xl border transition-all ${hasUpvoted ? "bg-primary/20 text-primary border-primary shadow-[0_0_15px_rgba(255,179,71,0.15)]" : "bg-card border-border text-muted-foreground hover:bg-primary/5 hover:text-primary hover:border-primary/30"}`}
-                >
-                  <Triangle className={`w-5 h-5 ${hasUpvoted ? "fill-current" : ""}`} />
-                  <span className="text-[10px] font-black mt-1">{upvoteCount}</span>
-                </button>
+                <div className={`flex items-center bg-card/50 backdrop-blur-md rounded-xl border transition-all overflow-hidden ${userVote !== 0 ? 'border-primary/50 ring-1 ring-primary/20' : 'border-border'}`}>
+                  <button
+                    onClick={() => handleVote('upvote')}
+                    disabled={voteLoading}
+                    className={`flex items-center gap-1.5 px-4 py-2 transition-all group/up ${userVote === 1 ? 'text-primary bg-primary/10' : 'text-muted-foreground hover:text-primary hover:bg-primary/5'}`}
+                    title="Upvote"
+                  >
+                    <ArrowUp size={20} className={`${userVote === 1 ? 'stroke-[3px]' : 'group-hover/up:translate-y-[-2px]'} transition-transform`} />
+                    <span className="text-sm font-black">{upvoteCount}</span>
+                  </button>
+                  <div className="w-[1px] h-4 bg-border" />
+                  <button
+                    onClick={() => handleVote('downvote')}
+                    disabled={voteLoading}
+                    className={`flex items-center gap-1.5 px-4 py-2 transition-all group/down ${userVote === -1 ? 'text-blue-500 bg-blue-500/10' : 'text-muted-foreground hover:text-blue-500 hover:bg-blue-500/5'}`}
+                    title="Downvote"
+                  >
+                    <span className="text-sm font-black">{downvoteCount}</span>
+                    <ArrowDown size={20} className={`${userVote === -1 ? 'stroke-[3px]' : 'group-hover/down:translate-y-[2px]'} transition-transform`} />
+                  </button>
+                </div>
                 <button
                   onClick={handleSaveToggle}
                   disabled={isSaving}

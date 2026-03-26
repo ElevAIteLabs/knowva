@@ -3,7 +3,6 @@ import { motion, useScroll, useTransform } from "framer-motion";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { consultingServices } from "@/data/mockData";
-import aiConsultingBg from "@/assets/aiconsultingtool.jpg";
 
 const Consulting = () => {
   const { scrollY } = useScroll();
@@ -11,8 +10,7 @@ const Consulting = () => {
   return (
     <>
       <section
-        className="w-full min-h-screen bg-cover bg-center bg-no-repeat"
-        style={{ backgroundImage: `url(${aiConsultingBg})` }}
+        className="w-full min-h-screen bg-gradient-to-br from-[#020617] via-[#0F172A] to-[#1E293B]"
       >
         <div className="bg-black/60 min-h-screen py-20">
           <Navbar />
@@ -59,54 +57,55 @@ const Consulting = () => {
                 ))}
               </div>
 
-              {/* Booking Form */}
-              <div className="flex justify-center items-center min-h-screen px-4">
+              {/* Booking Form Slice */}
+              <div className="flex justify-center items-center pb-20 px-4">
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
-                  style={{ x }}
-                  className="w-full max-w-xl p-6 rounded-2xl bg-white text-gray-900 shadow-xl"
+                  className="w-full max-w-xl p-8 rounded-3xl bg-white text-gray-900 shadow-2xl relative z-10"
                 >
                   <h2 className="font-display text-2xl font-bold text-gray-900 mb-6">Book a Consultation</h2>
-                  <form className="space-y-3">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-900 mb-2">Name</label>
-                      <input
-                        type="text"
-                        className="w-full py-2 px-4 rounded-xl bg-gray-50 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                        placeholder="Your name"
-                      />
+                  <form className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-xs uppercase tracking-widest font-black text-gray-400 mb-2">Name</label>
+                        <input
+                          type="text"
+                          className="w-full py-3 px-4 rounded-xl bg-gray-50 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all font-medium"
+                          placeholder="Your name"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs uppercase tracking-widest font-black text-gray-400 mb-2">Email</label>
+                        <input
+                          type="email"
+                          className="w-full py-3 px-4 rounded-xl bg-gray-50 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all font-medium"
+                          placeholder="your@email.com"
+                        />
+                      </div>
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-900 mb-2">Email</label>
-                      <input
-                        type="email"
-                        className="w-full py-2 px-4 rounded-xl bg-gray-50 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                        placeholder="your@email.com"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-900 mb-2">Company</label>
+                      <label className="block text-xs uppercase tracking-widest font-black text-gray-400 mb-2">Company</label>
                       <input
                         type="text"
-                        className="w-full py-2 px-4 rounded-xl bg-gray-50 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                        className="w-full py-3 px-4 rounded-xl bg-gray-50 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all font-medium"
                         placeholder="Your company"
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-900 mb-2">Message</label>
+                      <label className="block text-xs uppercase tracking-widest font-black text-gray-400 mb-2">Message</label>
                       <textarea
-                        className="w-full py-2 px-4 rounded-xl bg-gray-50 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent resize-none"
+                        className="w-full py-3 px-4 rounded-xl bg-gray-50 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all font-medium resize-none"
                         rows={4}
                         placeholder="Tell us about your AI needs..."
                       />
                     </div>
                     <button
                       type="submit"
-                      className="w-full bg-orange-500 hover:bg-orange-600 text-black font-semibold py-3 rounded-xl transition-colors"
+                      className="w-full bg-orange-500 hover:bg-orange-600 text-black font-black py-4 rounded-xl transition-all shadow-lg shadow-orange-500/20 flex items-center justify-center gap-2 group"
                     >
-                      Send Message <ArrowRight className="w-4 h-4 ml-2 inline" />
+                      Send Message <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                     </button>
                   </form>
                 </motion.div>

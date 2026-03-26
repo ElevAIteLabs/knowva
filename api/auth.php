@@ -37,6 +37,12 @@ try {
     if (!$stmt->fetch()) {
         $conn->exec("ALTER TABLE users ADD COLUMN role VARCHAR(50) DEFAULT 'user'");
     }
+    
+    // Check if linkedin_url column exists
+    $stmt = $conn->query("SHOW COLUMNS FROM users LIKE 'linkedin_url'");
+    if (!$stmt->fetch()) {
+        $conn->exec("ALTER TABLE users ADD COLUMN linkedin_url VARCHAR(255) DEFAULT ''");
+    }
 } catch (Exception $e) {
     // Ignore error
 }
@@ -64,7 +70,7 @@ if ($action === 'login') {
     $password = $data->password;
 
     try {
-        $stmt = $conn->prepare("SELECT id, fullName, email, mobile, password, role FROM users WHERE email = ?");
+        $stmt = $conn->prepare("SELECT id, fullName, email, mobile, password, role, linkedin_url FROM users WHERE email = ?");
         $stmt->execute([$email]);
         $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -132,7 +138,7 @@ else if ($action === 'google_sync') {
     $role = 'user';
 
     try {
-        $stmt = $conn->prepare("SELECT id, fullName, email, mobile, role FROM users WHERE email = ?");
+        $stmt = $conn->prepare("SELECT id, fullName, email, mobile, role, linkedin_url FROM users WHERE email = ?");
         $stmt->execute([$email]);
         $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -150,7 +156,7 @@ else if ($action === 'google_sync') {
             $stmt->execute([$fullName, $email, $dummyPass, $role]);
             
             $newId = $conn->lastInsertId();
-            $stmt = $conn->prepare("SELECT id, fullName, email, mobile, role FROM users WHERE id = ?");
+            $stmt = $conn->prepare("SELECT id, fullName, email, mobile, role, linkedin_url FROM users WHERE id = ?");
             $stmt->execute([$newId]);
             $newUser = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -175,6 +181,7 @@ else if ($action === 'update_profile') {
     $fullName = strip_tags($data->fullName);
     $email = filter_var($data->email, FILTER_SANITIZE_EMAIL);
     $mobile = strip_tags($data->mobile);
+    $linkedin_url = isset($data->linkedin_url) ? strip_tags($data->linkedin_url) : '';
 
     try {
         // Check if email already exists for a DIFFERENT user
@@ -189,17 +196,17 @@ else if ($action === 'update_profile') {
         if (isset($data->password) && !empty(trim($data->password))) {
             // Update with password
             $password = password_hash($data->password, PASSWORD_BCRYPT);
-            $stmt = $conn->prepare("UPDATE users SET fullName = ?, email = ?, mobile = ?, password = ? WHERE id = ?");
-            $success = $stmt->execute([$fullName, $email, $mobile, $password, $id]);
+            $stmt = $conn->prepare("UPDATE users SET fullName = ?, email = ?, mobile = ?, linkedin_url = ?, password = ? WHERE id = ?");
+            $success = $stmt->execute([$fullName, $email, $mobile, $linkedin_url, $password, $id]);
         } else {
             // Update without password
-            $stmt = $conn->prepare("UPDATE users SET fullName = ?, email = ?, mobile = ? WHERE id = ?");
-            $success = $stmt->execute([$fullName, $email, $mobile, $id]);
+            $stmt = $conn->prepare("UPDATE users SET fullName = ?, email = ?, mobile = ?, linkedin_url = ? WHERE id = ?");
+            $success = $stmt->execute([$fullName, $email, $mobile, $linkedin_url, $id]);
         }
 
         if ($success) {
             // Fetch updated user to return
-            $stmt = $conn->prepare("SELECT id, fullName, email, mobile, role FROM users WHERE id = ?");
+            $stmt = $conn->prepare("SELECT id, fullName, email, mobile, role, linkedin_url FROM users WHERE id = ?");
             $stmt->execute([$id]);
             $updatedUser = $stmt->fetch(PDO::FETCH_ASSOC);
 

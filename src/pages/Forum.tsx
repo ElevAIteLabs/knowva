@@ -51,7 +51,21 @@ const Forum = () => {
         }
     };
 
-    useEffect(() => { fetchThreads(); }, [selectedCategory]);
+    useEffect(() => { 
+        fetchThreads(); 
+    }, [selectedCategory]);
+
+    useEffect(() => {
+        const params = new URLSearchParams(window.location.search);
+        const search = params.get('search');
+        if (search) {
+            setSearchQuery(search);
+            // Scroll to results
+            setTimeout(() => {
+                window.scrollTo({ top: 400, behavior: 'smooth' });
+            }, 500);
+        }
+    }, [window.location.search]);
 
     const handleCreateThread = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -188,12 +202,36 @@ const Forum = () => {
         } catch { toast.error("Moderation error"); }
     };
 
-    const filteredThreads = threads.filter(t => 
-        t.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
-        t.content.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (t.hashtags && t.hashtags.toLowerCase().includes(searchQuery.toLowerCase()))
-    );
+    const filteredThreads = threads.filter(t => {
+        const matchesSearch = t.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                             t.content.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                             (t.hashtags && t.hashtags.toLowerCase().includes(searchQuery.toLowerCase()));
+        return matchesSearch;
+    });
 
+    const getPopularHashtags = () => {
+        const counts: { [key: string]: number } = {};
+        threads.forEach(t => {
+            if (t.hashtags) {
+                const tags = t.hashtags.split(/\s+/).filter(tag => tag.trim() !== "");
+                tags.forEach(tag => {
+                    const normalized = tag.startsWith("#") ? tag.toLowerCase() : `#${tag.toLowerCase()}`;
+                    counts[normalized] = (counts[normalized] || 0) + 1;
+                });
+            }
+        });
+        return Object.entries(counts)
+            .sort((a, b) => b[1] - a[1])
+            .slice(0, 5)
+            .map(([tag]) => tag);
+    };
+
+    const popularTags = getPopularHashtags();
+
+    const handleTagClick = (tag: string) => {
+        setSearchQuery(tag);
+        window.scrollTo({ top: 300, behavior: 'smooth' });
+    };
     const formatDate = (dateStr: string) => {
         try {
             const d = new Date(dateStr);
@@ -244,11 +282,19 @@ const Forum = () => {
                                     <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
                                     <input 
                                         type="text"
-                                        placeholder="Search discussions..."
+                                        placeholder="Search discussions (e.g. #ai)..."
                                         value={searchQuery}
                                         onChange={(e) => setSearchQuery(e.target.value)}
-                                        className="w-full h-12 md:h-14 pl-12 pr-4 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-white/10 rounded-xl focus:outline-none focus:border-primary transition-all font-medium text-slate-700 dark:text-white text-sm"
+                                        className="w-full h-12 md:h-14 pl-12 pr-12 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-white/10 rounded-xl focus:outline-none focus:border-primary transition-all font-medium text-slate-700 dark:text-white text-sm"
                                     />
+                                    {searchQuery && (
+                                        <button 
+                                            onClick={() => setSearchQuery("")}
+                                            className="absolute right-4 top-1/2 -translate-y-1/2 p-1.5 hover:bg-slate-100 dark:hover:bg-white/5 rounded-full text-slate-400"
+                                        >
+                                            <X size={14} />
+                                        </button>
+                                    )}
                                 </div>
                                 <div className="flex gap-2 overflow-x-auto no-scrollbar pb-2">
                                     {categories.map(cat => (
@@ -320,11 +366,18 @@ const Forum = () => {
                                                         </p>
                                                         {thread.hashtags && (
                                                             <div className="flex flex-wrap gap-2 mt-3">
-                                                                {thread.hashtags.split(' ').map((tag: string, i: number) => (
-                                                                    <span key={i} className="text-[11px] font-bold text-primary bg-primary/5 px-2 py-0.5 rounded-md">
-                                                                        {tag.startsWith('#') ? tag : `#${tag}`}
-                                                                    </span>
-                                                                ))}
+                                                                {thread.hashtags.split(/\s+/).filter((s: string) => s.trim() !== "").map((tag: string, i: number) => {
+                                                                    const displayTag = tag.startsWith('#') ? tag : `#${tag}`;
+                                                                    return (
+                                                                        <span 
+                                                                            key={i} 
+                                                                            onClick={(e) => { e.stopPropagation(); handleTagClick(displayTag); }}
+                                                                            className="text-[11px] font-bold text-primary bg-primary/5 px-2 py-0.5 rounded-md hover:bg-primary/10 transition-colors cursor-pointer"
+                                                                        >
+                                                                            {displayTag}
+                                                                        </span>
+                                                                    );
+                                                                })}
                                                             </div>
                                                         )}
                                                     </div>
@@ -429,24 +482,24 @@ const Forum = () => {
                                     <Hash size={14} /> Popular Topics
                                 </h3>
                                 <div className="space-y-4">
-                                    {["SaaS Builders", "AI Art", "LLM Fine-tuning", "Automation"].map(tag => (
-                                        <div key={tag} className="flex items-center justify-between group cursor-pointer hover:translate-x-1 transition-transform">
-                                            <span className="text-slate-600 dark:text-white/60 font-bold text-sm">#{tag}</span>
-                                            <span className="text-[10px] font-black px-2 py-1 bg-slate-50 dark:bg-white/5 rounded-lg text-slate-400 group-hover:bg-primary/10 group-hover:text-primary transition-colors">Trending</span>
-                                        </div>
-                                    ))}
+                                    {popularTags.length > 0 ? (
+                                        popularTags.map(tag => (
+                                            <div 
+                                                key={tag} 
+                                                onClick={() => handleTagClick(tag)}
+                                                className="flex items-center justify-between group cursor-pointer hover:translate-x-1 transition-transform"
+                                            >
+                                                <span className="text-slate-600 dark:text-white/60 font-bold text-sm group-hover:text-primary transition-colors">{tag}</span>
+                                                <span className="text-[10px] font-black px-2 py-1 bg-slate-50 dark:bg-white/5 rounded-lg text-slate-400 group-hover:bg-primary/10 group-hover:text-primary transition-colors">Popular</span>
+                                            </div>
+                                        ))
+                                    ) : (
+                                        <p className="text-[10px] font-bold text-slate-400 italic">No hashtags yet...</p>
+                                    )}
                                 </div>
                             </div>
 
-                            <div className="bg-slate-900 rounded-[32px] p-8 text-white relative overflow-hidden shadow-2xl">
-                                <div className="absolute top-0 right-0 w-32 h-32 bg-primary/20 -mr-16 -mt-16 rounded-full blur-3xl opacity-50" />
-                                <ShieldCheck className="w-12 h-12 text-primary mb-4" />
-                                <h4 className="text-xl font-black mb-3 leading-tight">Expert Verified Reviews</h4>
-                                <p className="text-slate-400 text-xs leading-relaxed mb-6">
-                                    Look for the "Expert" badge to find insights from verified AI professionals.
-                                </p>
-                                <Button className="w-full bg-white text-black hover:bg-slate-100 font-black rounded-xl h-12 shadow-inner">Become an Expert</Button>
-                            </div>
+
                         </div>
                     </div>
                 </div>

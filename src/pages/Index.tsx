@@ -137,7 +137,70 @@ const Index = () => {
   }, [dbTools, searchQuery]);
 
   const handleSearch = () => {
-    if (searchQuery.trim() && discoverTools.length > 0) {
+    const query = searchQuery.toLowerCase().trim();
+    if (!query) {
+      const section = document.getElementById('all-tools');
+      if (section) section.scrollIntoView({ behavior: 'smooth' });
+      return;
+    }
+
+    // Smart Category Mapping
+    const categoryKeywords: { [key: string]: string } = {
+      "video": "Video & Animation",
+      "animation": "Video & Animation",
+      "movie": "Video & Animation",
+      "image": "Image Generation",
+      "photo": "Image Generation",
+      "art": "Image Generation",
+      "drawing": "Image Generation",
+      "picture": "Image Generation",
+      "text": "Text Generation",
+      "writing": "Text Generation",
+      "content": "Text Generation",
+      "chat": "Text Generation",
+      "language": "Text Generation",
+      "coding": "Developer Tools",
+      "code": "Developer Tools",
+      "programming": "Developer Tools",
+      "developer": "Developer Tools",
+      "audio": "Audio & Music",
+      "music": "Audio & Music",
+      "sound": "Audio & Music",
+      "voice": "Audio & Music",
+      "data": "Data Analytics",
+      "analytics": "Data Analytics",
+      "stats": "Data Analytics",
+      "marketing": "Marketing",
+      "ads": "Marketing",
+      "seo": "Marketing",
+      "productivity": "Productivity",
+      "efficiency": "Productivity",
+      "design": "Design",
+      "ui": "Design",
+      "ux": "Design",
+      "education": "Education",
+      "learning": "Education",
+      "healthcare": "Healthcare",
+      "medical": "Healthcare",
+      "support": "Customer Support",
+      "customer": "Customer Support",
+    };
+
+    // Check for category keywords in the query
+    let matchedCategory = "";
+    for (const [kw, cat] of Object.entries(categoryKeywords)) {
+      if (query.includes(kw)) {
+        matchedCategory = cat;
+        break;
+      }
+    }
+
+    if (matchedCategory) {
+      navigate(`/category/${matchedCategory.toLowerCase().replace(/ & /g, '-').replace(/\s+/g, '-')}`);
+      return;
+    }
+
+    if (discoverTools.length > 0) {
       const topMatch = discoverTools[0];
       const user = localStorage.getItem("user");
       if (!user) {
@@ -152,6 +215,8 @@ const Index = () => {
       const section = document.getElementById('all-tools');
       if (section) {
         section.scrollIntoView({ behavior: 'smooth' });
+      } else {
+        navigate("/all-tools");
       }
     }
   };
@@ -266,18 +331,7 @@ const Index = () => {
               </button>
             </div>
 
-            <div className="flex flex-wrap items-center justify-center gap-2 mt-6">
-              <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Fast Search:</span>
-              {["ChatGPT", "Midjourney", "Cursor", "Claude"].map((term) => (
-                <button
-                  key={term}
-                  onClick={(e) => checkAuth(e, `/tool/${term.toLowerCase().replace(/\s+/g, '-')}`)}
-                  className="px-3 py-1 text-xs font-medium text-foreground bg-secondary/50 border border-border rounded-lg hover:bg-primary hover:text-primary-foreground hover:border-primary transition-all duration-300"
-                >
-                  {term}
-                </button>
-              ))}
-            </div>
+
           </motion.div>
         </motion.div>
       </section>
@@ -473,61 +527,58 @@ const Index = () => {
                 <Sparkles size={16} /> <span className="text-xs font-black uppercase tracking-[0.2em]">Weekly Spotlight</span>
               </div>
               <h2 className="text-4xl md:text-5xl font-bold text-foreground mb-4 tracking-tight">
-                Trending This Week
+                Trending Now
               </h2>
               <p className="text-muted-foreground text-base max-w-xl mx-auto">
                 Our handpicked selection of top-performing AI tools for this week.
               </p>
             </motion.div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              {allTrendingTools.slice(0, 4).map((tool, i) => (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+              {allTrendingTools.slice(0, 10).map((tool, i) => (
                 <motion.div
                   key={`spotlight-${tool.id}`}
                   initial={{ opacity: 0, scale: 0.9, y: 30 }}
                   whileInView={{ opacity: 1, scale: 1, y: 0 }}
-                  whileHover={{ y: -10, scale: 1.02 }}
+                  whileHover={{ y: -5, scale: 1.02 }}
                   viewport={{ once: true }}
-                  transition={{ duration: 0.6, delay: i * 0.2 }}
+                  transition={{ duration: 0.6, delay: i * 0.1 }}
                   className="relative group cursor-pointer"
                   onClick={(e) => checkAuth(e, `/tool/${tool.id}`)}
                 >
-                  <div className="absolute -inset-1 bg-gradient-to-r from-primary via-orange-500 to-primary rounded-[40px] blur opacity-20 transition duration-1000" />
-                  <div className="relative bg-card border border-border rounded-2xl p-6 h-full flex flex-col md:flex-row gap-6 items-center overflow-hidden transition-shadow">
-                    <div className="w-20 h-20 rounded-xl bg-secondary border border-border flex items-center justify-center overflow-hidden flex-shrink-0">
+                  <div className="absolute -inset-1 bg-gradient-to-r from-primary via-orange-500 to-primary rounded-[24px] blur opacity-10 transition duration-1000 group-hover:opacity-30" />
+                  <div className="relative bg-card border border-border rounded-2xl p-4 h-full flex items-center gap-4 overflow-hidden transition-shadow">
+                    <div className="w-12 h-12 rounded-xl bg-secondary border border-border flex items-center justify-center overflow-hidden flex-shrink-0">
                       {tool.icon && (typeof tool.icon === 'string' && (tool.icon.startsWith('http') || tool.icon.includes('.') || tool.icon.includes('/'))) ? (
                         <img
                           src={tool.icon}
                           alt={tool.name}
-                          className="w-12 h-12 object-contain"
+                          className="w-8 h-8 object-contain"
                           onError={(e) => {
                             const target = e.target as HTMLImageElement;
                             target.style.display = 'none';
                             if (target.parentElement) {
-                              target.parentElement.innerHTML = `<span class="text-foreground text-2xl font-black font-display">${tool.name.charAt(0)}</span>`;
+                              target.parentElement.innerHTML = `<span class="text-foreground text-lg font-black font-display">${tool.name.charAt(0)}</span>`;
                             }
                           }}
                         />
                       ) : (
-                        <span className="text-foreground text-2xl font-black font-display">
+                        <span className="text-foreground text-lg font-black font-display">
                           {tool.icon?.length < 5 ? tool.icon : (tool.name ? tool.name.charAt(0) : '?')}
                         </span>
                       )}
                     </div>
 
-                    <div className="flex-1 text-center md:text-left">
-                      <h3 className="text-xl font-bold text-foreground mb-2">
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-sm font-bold text-foreground mb-0.5 truncate">
                         {tool.name}
                       </h3>
-                      <p className="text-muted-foreground text-sm line-clamp-2 mb-4">
-                        {tool.description}
-                      </p>
-                      <div className="flex items-center justify-center md:justify-start gap-4">
-                        <div className="flex items-center gap-1">
-                          <Star size={14} className="text-yellow-500 fill-yellow-500" />
-                          <span className="text-sm font-bold">{tool.rating}</span>
+                      <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-0.5">
+                          <Star size={10} className="text-yellow-500 fill-yellow-500" />
+                          <span className="text-[10px] font-bold">{tool.rating}</span>
                         </div>
-                        <span className="text-xs text-muted-foreground px-2 py-0.5 rounded-full bg-secondary">
+                        <span className="text-[9px] text-muted-foreground px-1 py-0.5 rounded bg-secondary uppercase font-black">
                           {tool.pricing}
                         </span>
                       </div>

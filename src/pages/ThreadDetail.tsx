@@ -48,6 +48,8 @@ const ThreadDetail = () => {
     const [isEditing, setIsEditing] = useState(false);
     const [editTitle, setEditTitle] = useState("");
     const [editContent, setEditContent] = useState("");
+    const [editCategory, setEditCategory] = useState("General");
+    const [editHashtags, setEditHashtags] = useState("");
     const [isUpdating, setIsUpdating] = useState(false);
     const [showOptions, setShowOptions] = useState(false);
     const [isMainReplying, setIsMainReplying] = useState(false);
@@ -68,6 +70,8 @@ const ThreadDetail = () => {
                 setReplies(result.data.replies);
                 setEditTitle(result.data.thread.title);
                 setEditContent(result.data.thread.content);
+                setEditCategory(result.data.thread.category || "General");
+                setEditHashtags(result.data.thread.hashtags || "");
             } else {
                 toast.error(result.message);
                 navigate("/community");
@@ -94,6 +98,12 @@ const ThreadDetail = () => {
     useEffect(() => {
         fetchThreadDetail();
         fetchUpvotes();
+        
+        // Check for edit query param
+        const params = new URLSearchParams(window.location.search);
+        if (params.get('edit') === 'true') {
+            setIsEditing(true);
+        }
     }, [id, currentUser?.id]);
 
     const onVoteReply = async (replyId: number, type: 'upvote' | 'downvote') => {
@@ -194,6 +204,8 @@ const ThreadDetail = () => {
             formData.append("user_id", currentUser.id);
             formData.append("title", editTitle.trim());
             formData.append("content", editContent.trim());
+            formData.append("category", editCategory);
+            formData.append("hashtags", editHashtags.trim());
             if (editImage) {
                 formData.append("image", editImage);
             }
@@ -361,12 +373,41 @@ const ThreadDetail = () => {
                                             className="w-full bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-xl px-4 py-2 text-sm font-bold mb-3 focus:outline-none focus:border-primary dark:text-white"
                                             placeholder="Discussion Title"
                                         />
+                                        
+                                        <div className="mb-3 space-y-2">
+                                            <label className="text-[10px] font-black uppercase text-slate-400">Update Category</label>
+                                            <div className="flex flex-wrap gap-2">
+                                                {["General", "Questions", "Showcase", "Tutorials", "Feedback"].map(cat => (
+                                                    <button
+                                                        key={cat}
+                                                        type="button"
+                                                        onClick={() => setEditCategory(cat)}
+                                                        className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-tighter border transition-all ${editCategory === cat ? "bg-primary border-primary text-black" : "bg-white dark:bg-zinc-900 border-slate-200 dark:border-zinc-800 text-slate-400"}`}
+                                                    >
+                                                        {cat}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </div>
+
                                         <textarea
                                             value={editContent}
                                             onChange={(e) => setEditContent(e.target.value)}
                                             className="w-full bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-xl px-4 py-3 text-sm font-medium mb-3 focus:outline-none focus:border-primary min-h-[120px] resize-none dark:text-white"
                                             placeholder="Update your thinking..."
                                         />
+                                        
+                                        <div className="mb-3">
+                                            <label className="text-[10px] font-black uppercase text-slate-400 block mb-1">Hashtags</label>
+                                            <input
+                                                type="text"
+                                                value={editHashtags}
+                                                onChange={(e) => setEditHashtags(e.target.value)}
+                                                className="w-full bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-xl px-4 py-2 text-sm font-bold focus:outline-none focus:border-primary dark:text-white"
+                                                placeholder="#ai #saas"
+                                            />
+                                        </div>
+
                                         <div className="relative mb-3 group/file">
                                             <input 
                                                 type="file" 
@@ -432,6 +473,22 @@ const ThreadDetail = () => {
                                                         }
                                                     }}
                                                 />
+                                            </div>
+                                        )}
+                                        {thread.hashtags && (
+                                            <div className="flex flex-wrap gap-2 mt-4">
+                                                {thread.hashtags.split(/\s+/).filter((s: string) => s.trim() !== "").map((tag: string, i: number) => {
+                                                    const displayTag = tag.startsWith('#') ? tag : `#${tag}`;
+                                                    return (
+                                                        <span 
+                                                            key={i} 
+                                                            onClick={() => navigate(`/community?search=${encodeURIComponent(displayTag)}`)}
+                                                            className="text-xs font-bold text-primary bg-primary/5 px-3 py-1 rounded-lg hover:bg-primary/10 transition-colors cursor-pointer"
+                                                        >
+                                                            {displayTag}
+                                                        </span>
+                                                    );
+                                                })}
                                             </div>
                                         )}
                                     </div>

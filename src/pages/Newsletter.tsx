@@ -2,7 +2,6 @@ import { Mail, Calendar, ArrowRight } from "lucide-react";
 import { motion } from "framer-motion";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import aitoolsweekly from "@/assets/aitoolsweekly.jpg";
 
 const newsletters = [
   { title: "AI Tools Weekly #47 – Sora Goes Public", date: "Feb 7, 2026", description: "OpenAI's video model is finally available. Plus: 5 new developer tools and a deep dive into AI code editors." },
@@ -14,13 +13,7 @@ const newsletters = [
 
 const Newsletter = () => {
   return (
-    <div className="min-h-screen" 
-         style={{
-           backgroundImage: `url(${aitoolsweekly})`,
-           backgroundSize: 'cover',
-           backgroundPosition: 'center',
-           backgroundRepeat: 'no-repeat'
-         }}>
+    <div className="min-h-screen bg-gradient-to-b from-[#0F172A] via-[#1E293B] to-background">
       <Navbar />
       <div className="pt-40 pb-20">
         <div className="section-container">
