@@ -179,7 +179,7 @@ const Carousel3D = ({ items, autoRotateInterval = 2000 }: Carousel3DProps) => {
 
 
                       {/* Icon Section */}
-                      <div className="w-16 h-16 rounded-2xl bg-secondary/80 border border-border flex items-center justify-center text-4xl mb-6 overflow-hidden shadow-inner p-2 relative z-10">
+                      <div className="w-12 h-12 rounded-2xl bg-secondary/80 border border-border flex items-center justify-center text-3xl mb-4 overflow-hidden shadow-inner p-2 relative z-10">
                         {tool.icon && (typeof tool.icon === 'string' && (tool.icon.replace(/^['"\[]|['"\]]$/g, '').trim().startsWith('http') || tool.icon.includes('.') || tool.icon.includes('/'))) ? (() => {
                           const cleanIcon = typeof tool.icon === 'string' ? tool.icon.replace(/^['"\[]|['"\]]$/g, '').trim() : '';
                           return (

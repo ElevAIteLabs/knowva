@@ -334,7 +334,7 @@ const Forum = () => {
                                             animate={{ opacity: 1, y: 0 }}
                                             transition={{ delay: idx * 0.05 }}
                                             className={`group block bg-white dark:bg-zinc-900 border rounded-[32px] p-6 transition-all hover:border-primary/30 relative overflow-hidden ${thread.is_pinned ? "border-primary/50" : "border-slate-200 dark:border-white/10 cursor-pointer"}`}
-                                            onClick={() => navigate(`/community/${thread.id}`)}
+                                            onClick={() => currentUser ? navigate(`/community/${thread.id}`) : navigate("/login")}
                                         >
                                             {!!thread.is_pinned && (
                                                 <div className="absolute top-0 right-4 md:right-10 bg-primary text-black px-2 md:px-3 py-1 rounded-b-lg md:rounded-b-xl text-[8px] md:text-[10px] font-black uppercase tracking-tighter animate-pulse">

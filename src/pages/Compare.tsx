@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { Check, X, Star, Layers, Activity, Zap, Search, Plus, Trash2, Filter, ChevronDown } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import Navbar from "@/components/Navbar";
@@ -41,6 +41,10 @@ const Compare = () => {
   const [allTools, setAllTools] = useState<any[]>([]);
   const [selectedTools, setSelectedTools] = useState<(any | null)[]>([null, null, null]);
   const location = useLocation();
+  const navigate = useNavigate();
+  const currentUser = (() => {
+    try { return JSON.parse(localStorage.getItem("user") || "null"); } catch { return null; }
+  })();
   const [isSelectorOpen, setIsSelectorOpen] = useState(false);
   const [activeSlot, setActiveSlot] = useState<number | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
@@ -112,6 +116,11 @@ const Compare = () => {
   }, [allTools, searchQuery, selectedCategory, selectedTools]);
 
   const openSelector = (slotIndex: number) => {
+    if (!currentUser) {
+      toast.error("Please log in to compare tools");
+      navigate("/login");
+      return;
+    }
     setActiveSlot(slotIndex);
     setIsSelectorOpen(true);
   };
@@ -194,9 +203,9 @@ const Compare = () => {
 
                     {/* Card Header */}
                     <div className="p-8 pb-0 text-center relative z-10 flex flex-col items-center">
-                      <div className="w-20 h-20 mx-auto rounded-3xl mb-6 flex items-center justify-center bg-secondary/80 border border-border relative group-hover:scale-110 transition-transform duration-500 overflow-hidden">
+                      <div className="w-14 h-14 mx-auto rounded-3xl mb-4 flex items-center justify-center bg-secondary/80 border border-border relative group-hover:scale-110 transition-transform duration-500 overflow-hidden">
                         {tool.icon_display.startsWith('http') || tool.icon_display.includes('.') ? (
-                          <img src={tool.icon_display} alt={tool.name} className="w-12 h-12 object-contain" />
+                          <img src={tool.icon_display} alt={tool.name} className="w-9 h-9 object-contain" />
                         ) : (
                           <span className="text-3xl font-bold">{tool.icon_display}</span>
                         )}

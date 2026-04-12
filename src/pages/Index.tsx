@@ -281,7 +281,7 @@ const Index = () => {
           </motion.div>
 
           <motion.h1
-            className="font-display text-3xl sm:text-5xl md:text-7xl lg:text-8xl font-black mb-5 md:mb-8 leading-[1.1] tracking-tighter text-foreground"
+            className="font-display text-3xl sm:text-5xl md:text-7xl lg:text-8xl font-black mb-3 md:mb-4 leading-[1.1] tracking-tighter text-foreground"
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1, duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
@@ -294,7 +294,7 @@ const Index = () => {
           </motion.h1>
 
           <motion.p
-            className="text-base sm:text-lg md:text-2xl text-muted-foreground mb-10 md:mb-12 max-w-3xl mx-auto leading-relaxed font-light px-4 md:px-0"
+            className="text-base sm:text-lg md:text-2xl text-muted-foreground mb-6 md:mb-8 max-w-3xl mx-auto leading-relaxed font-light px-4 md:px-0"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2, duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
@@ -346,7 +346,7 @@ const Index = () => {
             {...fadeUp}
             className="text-center mb-16"
           >
-            <h2 className="font-display text-2xl md:text-3xl font-bold text-foreground mb-4">
+            <h2 className="font-display text-2xl md:text-3xl font-bold text-foreground mb-2">
               Trusted by Innovators Worldwide
             </h2>
             <p className="text-muted-foreground">Empowering modern teams to build the future.</p>
@@ -386,7 +386,7 @@ const Index = () => {
       <section className="pt-16 pb-24 relative overflow-hidden bg-secondary/20">
         <div className="section-container max-w-7xl z-10 mb-20">
           <motion.div className="text-center" {...fadeUp}>
-            <h2 className="font-display text-3xl md:text-4xl font-bold text-foreground mb-4">
+            <h2 className="font-display text-3xl md:text-4xl font-bold text-foreground mb-2">
               Explore by Category
             </h2>
             <p className="text-muted-foreground text-lg">
@@ -456,7 +456,7 @@ const Index = () => {
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-secondary text-sm font-semibold mb-6">
               <Fast className="w-4 h-4 text-primary" /> Simplified Process
             </div>
-            <h2 className="font-display text-4xl md:text-6xl font-black text-foreground mb-6 tracking-tight">
+            <h2 className="font-display text-4xl md:text-6xl font-black text-foreground mb-3 tracking-tight">
               Speed Up Your Workflow.
             </h2>
             <p className="text-muted-foreground text-xl max-w-2xl mx-auto">
@@ -526,7 +526,7 @@ const Index = () => {
               <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 text-primary mb-6 animate-pulse">
                 <Sparkles size={16} /> <span className="text-xs font-black uppercase tracking-[0.2em]">Weekly Spotlight</span>
               </div>
-              <h2 className="text-4xl md:text-5xl font-bold text-foreground mb-4 tracking-tight">
+              <h2 className="text-4xl md:text-5xl font-bold text-foreground mb-2 tracking-tight">
                 Trending Now
               </h2>
               <p className="text-muted-foreground text-base max-w-xl mx-auto">
@@ -601,7 +601,7 @@ const Index = () => {
               <h2 className="font-display text-4xl font-bold text-foreground tracking-tight">
                 Discover AI Tools
               </h2>
-              <p className="text-muted-foreground mt-2">Explore our complete collection of powerful AI tools.</p>
+              <p className="text-muted-foreground mt-1">Explore our complete collection of powerful AI tools.</p>
             </div>
             <motion.button
               onClick={(e) => checkAuth(e, "/all-tools")}
@@ -617,8 +617,49 @@ const Index = () => {
                 <ToolCard key={`${tool.name}-${i}`} {...tool} delay={i * 0.05} />
               ))
             ) : (
-              <div className="col-span-full py-20 text-center">
-                <p className="text-muted-foreground text-lg">No tools found matching "{searchQuery}"</p>
+              <div className="col-span-full py-20 flex flex-col items-center justify-center text-center animate-in fade-in slide-in-from-bottom-4 duration-700">
+                <div className="w-20 h-20 rounded-full bg-slate-100 flex items-center justify-center mb-6">
+                  <Search className="w-10 h-10 text-slate-300" />
+                </div>
+                <h3 className="text-2xl font-black text-slate-900 mb-2">No AI Tools Found</h3>
+                <p className="text-slate-500 max-w-sm mb-12">
+                  We couldn't find any tools matching "<span className="text-primary font-bold">{searchQuery}</span>".
+                  Try adjusting your search or explore our top suggestions below.
+                </p>
+
+                <div className="w-full">
+                  <div className="flex items-center gap-3 mb-8 justify-center">
+                    <div className="h-px bg-slate-200 flex-grow max-w-[100px]" />
+                    <span className="text-xs font-black uppercase tracking-[0.2em] text-slate-400">Suggested For You</span>
+                    <div className="h-px bg-slate-200 flex-grow max-w-[100px]" />
+                  </div>
+
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-5xl mx-auto">
+                    {allTrendingTools.slice(0, 4).map((tool, i) => (
+                      <motion.div
+                        key={`suggested-${tool.id}`}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: i * 0.1 }}
+                        className="p-4 rounded-2xl border border-slate-100 bg-white shadow-sm hover:shadow-md hover:border-primary/20 transition-all text-left cursor-pointer group"
+                        onClick={(e) => checkAuth(e, `/tool/${tool.id}`)}
+                      >
+                        <div className="w-10 h-10 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center mb-3 group-hover:bg-primary/5 transition-colors">
+                          {tool.icon && (typeof tool.icon === 'string' && (tool.icon.startsWith('http') || tool.icon.includes('.') || tool.icon.includes('/'))) ? (
+                            <img src={tool.icon} alt={tool.name} className="w-6 h-6 object-contain" />
+                          ) : (
+                            <span className="text-slate-900 text-sm font-black">{tool.name.charAt(0)}</span>
+                          )}
+                        </div>
+                        <h4 className="text-sm font-bold text-slate-900 group-hover:text-primary transition-colors truncate">{tool.name}</h4>
+                        <div className="flex items-center gap-2 mt-1">
+                          <Star size={10} className="text-yellow-500 fill-yellow-500" />
+                          <span className="text-[10px] font-bold text-slate-500">{tool.rating}</span>
+                        </div>
+                      </motion.div>
+                    ))}
+                  </div>
+                </div>
               </div>
             )}
           </div>
@@ -634,7 +675,7 @@ const Index = () => {
 
         <div className="relative w-full z-10 px-0">
           <motion.div {...fadeUp} className="section-container max-w-7xl mx-auto text-center mb-16 px-6">
-            <h2 className="font-display text-4xl md:text-5xl font-black text-foreground mb-4">
+            <h2 className="font-display text-4xl md:text-5xl font-black text-foreground mb-2">
               Fresh Off The Press
             </h2>
             <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
@@ -661,7 +702,7 @@ const Index = () => {
             <div className="w-20 h-20 bg-background rounded-2xl flex items-center justify-center mx-auto mb-8 rotate-3">
               <Mail className="w-10 h-10 text-foreground" />
             </div>
-            <h2 className="font-display text-4xl md:text-6xl font-black mb-6 tracking-tight">
+            <h2 className="font-display text-4xl md:text-6xl font-black mb-3 tracking-tight">
               Don't Fall Behind.
             </h2>
             <p className="text-background/80 text-xl mb-12 max-w-2xl mx-auto font-light">

@@ -411,7 +411,7 @@ const ToolDetail = () => {
       <Navbar />
 
       {/* Hero Section */}
-      <section className="relative min-h-[60vh] flex items-center justify-center overflow-hidden pt-20 md:pt-32"
+      <section className="relative min-h-[35vh] flex items-center justify-center overflow-hidden pt-12 md:pt-20"
         style={{
           backgroundImage: `url(${runwayvideo})`,
           backgroundSize: 'cover',
@@ -438,7 +438,7 @@ const ToolDetail = () => {
 
             {/* Main Headline */}
             <motion.h1
-              className="font-display text-2xl md:text-4xl font-bold text-white mb-4 leading-tight tracking-tight"
+              className="font-display text-2xl md:text-3xl font-bold text-white mb-4 leading-tight tracking-tight"
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3, duration: 0.8 }}
@@ -448,7 +448,7 @@ const ToolDetail = () => {
 
             {/* Subheading */}
             <motion.p
-              className="text-lg md:text-xl text-[#AAAAAA] mb-4 max-w-3xl mx-auto leading-relaxed"
+              className="text-base md:text-lg text-[#AAAAAA] mb-4 max-w-3xl mx-auto leading-relaxed"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.5, duration: 0.8 }}
@@ -459,7 +459,7 @@ const ToolDetail = () => {
         </div>
       </section>
 
-      <div className="pt-40 pb-20">
+      <div className="pt-12 pb-20">
         <div className="section-container">
           <Link to="/all-tools" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-primary mb-6 transition-colors">
             <ChevronLeft className="w-4 h-4" /> Back to Tools
@@ -472,7 +472,7 @@ const ToolDetail = () => {
             className="glass-card glow-box p-8 md:p-10 mb-6"
           >
             <div className="flex flex-col md:flex-row items-start gap-6">
-              <div className="w-16 h-16 rounded-[20px] bg-white flex items-center justify-center p-2">
+              <div className="w-12 h-12 rounded-[20px] bg-white flex items-center justify-center p-2">
                 {tool.icon}
               </div>
               <div className="flex-1">
@@ -548,8 +548,8 @@ const ToolDetail = () => {
                 key={t.id}
                 onClick={() => setActiveTab(t.id)}
                 className={`flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold transition-all whitespace-nowrap ${activeTab === t.id
-                    ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20"
-                    : "text-muted-foreground hover:bg-white/5 hover:text-foreground"
+                  ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20"
+                  : "text-muted-foreground hover:bg-white/5 hover:text-foreground"
                   }`}
               >
                 <t.icon className="w-4 h-4" /> {t.label}
@@ -596,10 +596,10 @@ const ToolDetail = () => {
                                 const fullUrl = url.startsWith('http')
                                   ? url
                                   : (() => {
-                                      const clean = url.startsWith('/') ? url.slice(1) : url;
-                                      const final = clean.startsWith('uploads/') ? clean : `uploads/${clean}`;
-                                      return `${API_BASE_URL}/${final}`;
-                                    })();
+                                    const clean = url.startsWith('/') ? url.slice(1) : url;
+                                    const final = clean.startsWith('uploads/') ? clean : `uploads/${clean}`;
+                                    return `${API_BASE_URL}/${final}`;
+                                  })();
 
                                 return (
                                   <div key={i} className="aspect-video bg-black/50 border border-white/20 rounded-xl overflow-hidden shadow-inner group/img relative">
@@ -640,23 +640,25 @@ const ToolDetail = () => {
                       </div>
                     </div>
 
-                    {/* Quick Info Grid - Features, Pros, Cons */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                      <div className="glass-card p-6 border-l-4 border-l-primary flex flex-col">
-                        <h3 className="font-bold text-lg mb-4 flex items-center gap-2">
-                          <Check className="w-5 h-5 text-primary" /> Key Features
-                        </h3>
-                        <div className="space-y-3 flex-1">
-                          {tool.features && tool.features.length > 0 ? tool.features.map((f: string, index: number) => (
-                            <div key={index} className="flex items-center gap-2 text-sm text-foreground">
-                              <div className="w-1.5 h-1.5 rounded-full bg-primary" /> {f}
-                            </div>
-                          )) : (
-                            <p className="text-xs text-muted-foreground italic">No features specified</p>
-                          )}
-                        </div>
+                    {/* Key Features - Full Width */}
+                    <div className="glass-card p-6 border-l-4 border-l-primary mb-6">
+                      <h3 className="font-bold text-lg mb-4 flex items-center gap-2">
+                        <Check className="w-5 h-5 text-primary" /> Key Features
+                      </h3>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-y-3 gap-x-6">
+                        {tool.features && tool.features.length > 0 ? tool.features.map((f: string, index: number) => (
+                          <div key={index} className="flex items-center gap-2 text-sm text-foreground">
+                            <div className="w-1.5 h-1.5 rounded-full bg-primary shrink-0" />
+                            <span>{f}</span>
+                          </div>
+                        )) : (
+                          <p className="text-xs text-muted-foreground italic">No features specified</p>
+                        )}
                       </div>
+                    </div>
 
+                    {/* Pros & Cons - 2 Column Grid below Features */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div className="glass-card p-6 border-l-4 border-l-green-500 flex flex-col">
                         <h3 className="font-bold text-lg mb-4 flex items-center gap-2">
                           <Star className="w-5 h-5 text-green-500" /> Pros
@@ -699,7 +701,7 @@ const ToolDetail = () => {
 
                       {/* ── Submit Review Form ── */}
                       {currentUser ? (
-                        <form onSubmit={handleSubmitReview} className="p-4 bg-white/5 border border-white/10 rounded-2xl space-y-4">
+                        <form onSubmit={handleSubmitReview} className="p-4 bg-white/5 border border-black/10 rounded-2xl space-y-4">
                           <p className="text-sm font-semibold text-foreground">Write a Review</p>
 
                           {/* Star Picker */}
@@ -734,7 +736,7 @@ const ToolDetail = () => {
                             onChange={(e) => setReviewText(e.target.value)}
                             placeholder="Share your experience with this tool..."
                             rows={3}
-                            className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary transition-colors resize-none"
+                            className="w-full bg-white/5 border border-black/10 rounded-xl px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary transition-colors resize-none"
                           />
 
                           <button
@@ -748,13 +750,7 @@ const ToolDetail = () => {
                         </form>
                       ) : (
                         <div className="p-4 bg-white/5 border border-white/10 rounded-2xl flex items-center justify-between">
-                          <p className="text-sm text-muted-foreground">Log in to leave a review for this tool.</p>
-                          <Link
-                            to="/login"
-                            className="flex items-center gap-1.5 text-sm text-primary font-semibold hover:underline"
-                          >
-                            <LogIn className="w-4 h-4" /> Log In
-                          </Link>
+                          <p className="text-sm text-muted-foreground text-center w-full">Please log in to leave a review.</p>
                         </div>
                       )}
 
@@ -777,7 +773,7 @@ const ToolDetail = () => {
                                 initial={{ opacity: 0, y: 10 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ delay: i * 0.05 }}
-                                className={`p-5 rounded-2xl border transition-all ${r.is_verified ? "bg-primary/5 border-primary/20 shadow-[0_0_15px_rgba(255,179,71,0.05)]" : "bg-secondary/50 border-border"}`}
+                                className={`p-5 rounded-2xl border transition-all ${r.is_verified ? "bg-primary/5 border-primary/20 shadow-[0_0_15px_rgba(255,179,71,0.05)]" : "bg-card border-border/50"}`}
                               >
                                 <div className="flex items-start justify-between mb-3">
                                   <div className="flex items-center gap-3">
@@ -786,20 +782,20 @@ const ToolDetail = () => {
                                     </div>
                                     <div>
                                       <div className="flex items-center gap-2 mb-0.5">
-                                        <span className="font-bold text-foreground text-sm">{r.user_name}</span>
+                                        <span className="font-bold text-foreground text-xs">{r.user_name}</span>
                                         {r.is_verified == 1 && (
-                                          <span className="flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-primary text-black text-[9px] font-black uppercase tracking-tighter">
-                                            <ShieldCheck size={10} /> Expert
-                                          </span>
+                                          <div className="flex items-center gap-1 bg-primary px-1.5 py-0.5 rounded-md text-[8px] font-black text-black">
+                                            <ShieldCheck size={9} /> EXPERT
+                                          </div>
                                         )}
                                       </div>
                                       <div className="flex">
                                         {[1, 2, 3, 4, 5].map((s) => (
                                           <Star
                                             key={s}
-                                            className={`w-3 h-3 ${s <= r.rating
+                                            className={`w-2.5 h-2.5 ${s <= r.rating
                                               ? "fill-primary text-primary"
-                                              : "fill-transparent text-muted-foreground"
+                                              : "fill-transparent text-white/5"
                                               }`}
                                           />
                                         ))}
@@ -807,28 +803,28 @@ const ToolDetail = () => {
                                     </div>
                                   </div>
                                   <div className="flex flex-col items-end gap-2">
-                                    <span className="text-[10px] uppercase font-black tracking-widest text-muted-foreground">{formatDate(r.created_at)}</span>
+                                    <span className="text-[9px] uppercase font-bold tracking-widest text-muted-foreground/40">{formatDate(r.created_at)}</span>
                                     {currentUser?.role === 'admin' && (
-                                      <div className="flex gap-2">
-                                        <button 
+                                      <div className="flex gap-1.5">
+                                        <button
                                           onClick={() => handleModeration(r.id, 'verify', r.is_verified == 1)}
-                                          className={`p-1.5 rounded-lg border transition-colors ${r.is_verified == 1 ? "bg-primary text-black border-primary" : "bg-white/5 border-white/10 text-muted-foreground hover:text-primary"}`}
+                                          className={`p-1 rounded-lg border transition-all ${r.is_verified == 1 ? "bg-primary text-black border-primary" : "bg-white/5 border-white/10 text-muted-foreground hover:text-primary"}`}
                                           title={r.is_verified == 1 ? "Unverify Review" : "Verify as Expert"}
                                         >
-                                          <ShieldCheck size={14} />
+                                          <ShieldCheck size={12} />
                                         </button>
-                                        <button 
+                                        <button
                                           onClick={() => handleModeration(r.id, 'hide', r.is_hidden == 1)}
-                                          className={`p-1.5 rounded-lg border border-white/10 bg-white/5 text-muted-foreground hover:text-red-500 hover:border-red-500/30 transition-colors`}
+                                          className={`p-1 rounded-lg border border-white/10 bg-white/5 text-muted-foreground hover:text-red-500 hover:border-red-500/30 transition-all`}
                                           title="Hide Review"
                                         >
-                                          <X size={14} />
+                                          <X size={12} />
                                         </button>
                                       </div>
                                     )}
                                   </div>
                                 </div>
-                                <p className="text-sm text-muted-foreground leading-relaxed italic">"{r.review_text}"</p>
+                                <p className="text-xs text-muted-foreground/90 leading-relaxed italic">"{r.review_text}"</p>
                               </motion.div>
                             ))}
                           </div>

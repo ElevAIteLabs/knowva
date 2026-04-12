@@ -77,7 +77,7 @@ const Profile = () => {
         };
         form.reset(vals);
         setOriginalValues(vals);
-        
+
         // Refresh all data on mount to ensure sidebar stats are correct
         fetchSavedTools(user.id);
         fetchUserReviews(user.id);
@@ -96,7 +96,7 @@ const Profile = () => {
                     icon: (() => {
                         let url = t.icon_url || "";
                         if (url.startsWith('[') && url.endsWith(']')) {
-                          try { const parsed = JSON.parse(url); if (Array.isArray(parsed)) url = parsed[0]; } catch { }
+                            try { const parsed = JSON.parse(url); if (Array.isArray(parsed)) url = parsed[0]; } catch { }
                         }
                         return url;
                     })()
@@ -237,33 +237,33 @@ const Profile = () => {
 
                         <div className="flex flex-col gap-4">
                             <div className="flex bg-slate-200/50 p-1 rounded-2xl border border-slate-200 backdrop-blur-md overflow-x-auto no-scrollbar scroll-smooth">
-                                <button 
+                                <button
                                     onClick={() => setActiveTab("settings")}
                                     className={`flex items-center gap-2 px-4 md:px-6 py-2 md:py-2.5 rounded-xl text-xs md:text-sm font-bold transition-all whitespace-nowrap ${activeTab === "settings" ? "bg-card text-primary shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
                                 >
                                     <Settings size={18} className="w-3.5 h-3.5 md:w-4 md:h-4" /> Settings
                                 </button>
-                                <button 
+                                <button
                                     onClick={() => setActiveTab("saved")}
                                     className={`flex items-center gap-2 px-4 md:px-6 py-2 md:py-2.5 rounded-xl text-xs md:text-sm font-bold transition-all whitespace-nowrap ${activeTab === "saved" ? "bg-card text-primary shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
                                 >
                                     <Bookmark size={18} className="w-3.5 h-3.5 md:w-4 md:h-4" /> Saved
                                 </button>
-                                <button 
+                                <button
                                     onClick={() => setActiveTab("reviews")}
                                     className={`flex items-center gap-2 px-4 md:px-6 py-2 md:py-2.5 rounded-xl text-xs md:text-sm font-bold transition-all whitespace-nowrap ${activeTab === "reviews" ? "bg-card text-primary shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
                                 >
                                     <Star size={18} className="w-3.5 h-3.5 md:w-4 md:h-4" /> Reviews
                                 </button>
-                                <button 
+                                <button
                                     onClick={() => setActiveTab("questions")}
                                     className={`flex items-center gap-2 px-4 md:px-6 py-2 md:py-2.5 rounded-xl text-xs md:text-sm font-bold transition-all whitespace-nowrap ${activeTab === "questions" ? "bg-card text-primary shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
                                 >
                                     <MessageSquare size={18} className="w-3.5 h-3.5 md:w-4 md:h-4" /> Questions
                                 </button>
                             </div>
-                            <Button 
-                                variant="outline" 
+                            <Button
+                                variant="outline"
                                 onClick={() => {
                                     localStorage.removeItem("user");
                                     window.dispatchEvent(new Event("storage"));
@@ -451,7 +451,7 @@ const Profile = () => {
                                             </div>
                                         </div>
 
-                          {/* Pro Access Section Removed */}
+                                        {/* Pro Access Section Removed */}
                                     </div>
                                 </div>
                             </motion.div>
@@ -498,7 +498,7 @@ const Profile = () => {
                                         <p className="text-muted-foreground text-sm max-w-sm leading-relaxed mb-8">
                                             Bookmark your favorite AI tools while browsing to see them here and build your custom AI stack.
                                         </p>
-                                        <Button 
+                                        <Button
                                             onClick={() => navigate("/")}
                                             className="bg-foreground text-background font-black px-10 py-6 rounded-2xl hover:scale-105 transition-all shadow-xl"
                                         >
@@ -543,7 +543,7 @@ const Profile = () => {
                                                     <div>
                                                         <span className="text-[10px] font-black uppercase text-primary tracking-[0.2em] block mb-2">{r.tool_slug}</span>
                                                         <div className="flex gap-1">
-                                                            {[1,2,3,4,5].map(s => <Star key={s} size={14} className={s <= r.rating ? "fill-primary text-primary" : "text-muted-foreground/30"} />)}
+                                                            {[1, 2, 3, 4, 5].map(s => <Star key={s} size={14} className={s <= r.rating ? "fill-primary text-primary" : "text-muted-foreground/30"} />)}
                                                         </div>
                                                     </div>
                                                     <span className="text-[10px] font-black text-muted-foreground/30 uppercase tracking-widest">{new Date(r.created_at).toLocaleDateString()}</span>
@@ -609,16 +609,16 @@ const Profile = () => {
                                                 <div className="flex items-center gap-4">
                                                     {q.is_pinned == 1 && <Pin size={20} className="text-primary animate-pulse" />}
                                                     {q.is_locked == 1 && <Lock size={20} className="text-muted-foreground/40" />}
-                                                    
+
                                                     <div className="flex gap-2">
-                                                        <button 
+                                                        <button
                                                             onClick={(e) => { e.stopPropagation(); navigate(`/community/${q.id}`); }}
                                                             className="p-3 bg-secondary/50 text-muted-foreground/40 hover:bg-primary/10 hover:text-primary rounded-2xl transition-all"
                                                             title="Edit Discussion"
                                                         >
                                                             <Pencil size={18} />
                                                         </button>
-                                                        <button 
+                                                        <button
                                                             onClick={(e) => handleDeleteDiscussion(e, q.id)}
                                                             className="p-3 bg-secondary/50 text-muted-foreground/40 hover:bg-destructive/10 hover:text-destructive rounded-2xl transition-all"
                                                             title="Delete Discussion"
@@ -644,7 +644,7 @@ const Profile = () => {
                                     </div>
                                 )}
                             </motion.div>
-                         )}
+                        )}
                     </AnimatePresence>
                 </div>
             </main>

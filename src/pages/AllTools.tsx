@@ -405,7 +405,7 @@ const AllTools = () => {
                                         >
                                             All {selectedCategory === "All" ? <X className="w-3 h-3" /> : <Plus className="w-3 h-3" />}
                                         </button>
-                                        
+
                                         {Array.from(new Set(dbTools.map(t => t.category).filter(Boolean)))
                                             .sort()
                                             .map((cat) => (
@@ -427,13 +427,13 @@ const AllTools = () => {
                                     </div>
 
                                     <div className="grid grid-cols-2 gap-3 pt-4">
-                                        <button 
+                                        <button
                                             onClick={() => { setSelectedCategory("All"); setIsFilterDrawerOpen(false); }}
                                             className="py-4 rounded-2xl border border-border font-bold text-sm"
                                         >
                                             Reset
                                         </button>
-                                        <button 
+                                        <button
                                             onClick={() => setIsFilterDrawerOpen(false)}
                                             className="py-4 rounded-2xl bg-primary text-white font-bold text-sm shadow-lg shadow-primary/20"
                                         >
@@ -481,13 +481,13 @@ const AllTools = () => {
                                     </div>
 
                                     <div className="grid grid-cols-2 gap-3 pt-4">
-                                        <button 
+                                        <button
                                             onClick={() => { setSelectedPricing("All"); setIsFilterDrawerOpen(false); }}
                                             className="py-4 rounded-2xl border border-border font-bold text-sm"
                                         >
                                             Reset
                                         </button>
-                                        <button 
+                                        <button
                                             onClick={() => setIsFilterDrawerOpen(false)}
                                             className="py-4 rounded-2xl bg-primary text-white font-bold text-sm shadow-lg shadow-primary/20"
                                         >

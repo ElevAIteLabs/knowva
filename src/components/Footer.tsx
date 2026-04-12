@@ -15,10 +15,10 @@ const Footer = () => {
         <div className="py-12">
           {/* Main Content - 2 Columns */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-start">
-            
+
             {/* Left Column - Platform Description + Social Icons */}
             <div className="space-y-6">
-              <div className="space-y-4">
+              <div className="space-y-2">
                 <Link to="/" className="inline-block transition-transform active:scale-95">
                   <img
                     src={logo}
@@ -30,36 +30,36 @@ const Footer = () => {
                   Discover, compare, and choose the perfect AI tools for your workflow. Get expert guidance and stay ahead with the latest AI innovations.
                 </p>
               </div>
-              
+
               {/* Social Icons */}
               <div className="flex space-x-4">
-                <a 
-                  href="https://twitter.com" 
-                  target="_blank" 
+                <a
+                  href="https://twitter.com"
+                  target="_blank"
                   rel="noopener noreferrer"
                   className="text-gray-400 hover:text-blue-500 transition-colors bg-secondary/50 p-2 rounded-full"
                 >
                   <Twitter className="w-4 h-4" />
                 </a>
-                <a 
-                  href="https://linkedin.com" 
-                  target="_blank" 
+                <a
+                  href="https://linkedin.com"
+                  target="_blank"
                   rel="noopener noreferrer"
                   className="text-gray-400 hover:text-blue-600 transition-colors bg-secondary/50 p-2 rounded-full"
                 >
                   <Linkedin className="w-4 h-4" />
                 </a>
-                <a 
-                  href="https://github.com" 
-                  target="_blank" 
+                <a
+                  href="https://github.com"
+                  target="_blank"
                   rel="noopener noreferrer"
                   className="text-gray-400 hover:text-gray-900 transition-colors bg-secondary/50 p-2 rounded-full"
                 >
                   <Github className="w-4 h-4" />
                 </a>
-                <a 
-                  href="https://instagram.com" 
-                  target="_blank" 
+                <a
+                  href="https://instagram.com"
+                  target="_blank"
                   rel="noopener noreferrer"
                   className="text-gray-400 hover:text-pink-500 transition-colors bg-secondary/50 p-2 rounded-full"
                 >
@@ -70,27 +70,27 @@ const Footer = () => {
 
             {/* Middle Column - Exploration */}
             <div className="space-y-4">
-              <h4 className="text-sm font-black uppercase tracking-widest text-foreground/80 mb-6">Exploration</h4>
+              <h4 className="text-sm font-black uppercase tracking-widest text-foreground/80 mb-3">Exploration</h4>
               <ul className="space-y-3">
                 <li>
-                  <Link 
-                    to="/all-tools" 
+                  <Link
+                    to="/all-tools"
                     className="text-muted-foreground hover:text-primary transition-all text-sm font-medium flex items-center gap-2 group"
                   >
                     <ChevronRight className="w-3 h-3 group-hover:translate-x-1 transition-transform" /> All Tools
                   </Link>
                 </li>
                 <li>
-                  <Link 
-                    to="/compare" 
+                  <Link
+                    to="/compare"
                     className="text-muted-foreground hover:text-primary transition-all text-sm font-medium flex items-center gap-2 group"
                   >
                     <ChevronRight className="w-3 h-3 group-hover:translate-x-1 transition-transform" /> Compare Tools
                   </Link>
                 </li>
                 <li>
-                  <Link 
-                    to="/community" 
+                  <Link
+                    to="/community"
                     className="text-muted-foreground hover:text-primary transition-all text-sm font-medium flex items-center gap-2 group"
                   >
                     <ChevronRight className="w-3 h-3 group-hover:translate-x-1 transition-transform" /> Community Collective

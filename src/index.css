@@ -107,18 +107,40 @@
     letter-spacing: -0.01em;
   }
 
-  h1, h2, h3, h4, h5, h6 {
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
     font-family: 'Space Grotesk', sans-serif;
     line-height: 1.2;
     letter-spacing: -0.02em;
   }
 
-  h1 { font-size: clamp(2.5rem, 5vw, 4rem); }
-  h2 { font-size: clamp(2rem, 4vw, 3rem); }
-  h3 { font-size: clamp(1.5rem, 3vw, 2rem); }
-  h4 { font-size: clamp(1.25rem, 2.5vw, 1.5rem); }
-  h5 { font-size: clamp(1.125rem, 2vw, 1.25rem); }
-  h6 { font-size: clamp(1rem, 1.5vw, 1.125rem); }
+  h1 {
+    font-size: clamp(2.5rem, 5vw, 4rem);
+  }
+
+  h2 {
+    font-size: clamp(2rem, 4vw, 3rem);
+  }
+
+  h3 {
+    font-size: clamp(1.5rem, 3vw, 2rem);
+  }
+
+  h4 {
+    font-size: clamp(1.25rem, 2.5vw, 1.5rem);
+  }
+
+  h5 {
+    font-size: clamp(1.125rem, 2vw, 1.25rem);
+  }
+
+  h6 {
+    font-size: clamp(1rem, 1.5vw, 1.125rem);
+  }
 }
 
 @layer utilities {
@@ -156,17 +178,26 @@
     padding-left: 2rem;
     padding-right: 2rem;
   }
+
   @media (min-width: 640px) {
-    .section-container { padding-left: 3rem; padding-right: 3rem; }
+    .section-container {
+      padding-left: 3rem;
+      padding-right: 3rem;
+    }
   }
+
   @media (min-width: 1024px) {
-    .section-container { padding-left: 4rem; padding-right: 4rem; }
+    .section-container {
+      padding-left: 4rem;
+      padding-right: 4rem;
+    }
   }
 
   .scrollbar-hide {
     -ms-overflow-style: none;
     scrollbar-width: none;
   }
+
   .scrollbar-hide::-webkit-scrollbar {
     display: none;
   }
@@ -178,15 +209,28 @@
   .custom-scrollbar::-webkit-scrollbar {
     width: 6px;
   }
+
   .custom-scrollbar::-webkit-scrollbar-track {
     background: transparent;
   }
+
   .custom-scrollbar::-webkit-scrollbar-thumb {
     background: hsl(var(--muted-foreground) / 0.2);
     border-radius: 10px;
   }
+
   .custom-scrollbar::-webkit-scrollbar-thumb:hover {
     background: hsl(var(--primary) / 0.5);
   }
+
+  @keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-20px); }
+  }
+
+  .animate-float {
+    animation: float 6s ease-in-out infinite;
+  }
 }
+
 /* csslint ignore:end */

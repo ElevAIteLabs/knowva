@@ -18,7 +18,7 @@ const Navbar = () => {
   const [user, setUser] = useState<{ email: string } | null>(null);
 
   const [theme, setTheme] = useState<"light" | "dark">(
-    () => (localStorage.getItem("theme") as "light" | "dark") || "dark"
+    () => (localStorage.getItem("theme") as "light" | "dark") || "light"
   );
 
   useEffect(() => {
@@ -62,10 +62,13 @@ const Navbar = () => {
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 flex justify-center p-2 sm:p-4 font-sans">
       <div className="w-full max-w-7xl relative">
-        <div className="glass-morphism-pill !bg-black-700/80 border border-white/10 flex items-center justify-between h-14 sm:h-16 md:h-18 px-4 sm:px-6 md:px-6 relative backdrop-blur-3xl rounded-full transition-all duration-300">
+        <div className={`glass-morphism-pill border flex items-center justify-between h-14 sm:h-16 md:h-18 px-4 sm:px-6 md:px-6 relative backdrop-blur-3xl rounded-full transition-all duration-300 ${theme === 'dark'
+          ? '!bg-black/70 border-white/10'
+          : '!bg-slate-200/70 border-slate-500/70 shadow-sm'
+          }`}>
 
           <div className="flex items-center flex-1">
-            <Link to="/" className="inline-block transition-transform active:scale-95">
+            <Link to="/" className="inline-block">
               <img
                 src={logo}
                 alt="KNOWva"
@@ -84,14 +87,16 @@ const Navbar = () => {
                   to={link.path}
                   className={`relative px-5 py-2 text-base font-medium tracking-tight transition-all duration-300 rounded-full whitespace-nowrap group ${isActive
                     ? "text-primary bg-primary/10 border border-primary/20 backdrop-blur-md"
-                    : "text-white/70 hover:text-white bg-white/5 backdrop-blur-sm border border-transparent hover:border-white/10"
+                    : theme === 'dark'
+                      ? "text-white/70 hover:text-white bg-white/5 border-transparent hover:border-white/10"
+                      : "text-slate-600 hover:text-slate-900 bg-slate-400/5 border-transparent hover:border-slate-200"
                     }`}
                 >
                   <span className="relative z-10">{link.label}</span>
                   {isActive && (
                     <motion.div
                       layoutId="active-nav-pill"
-                      className="absolute inset-0 bg-primary/20 border border-primary/30 rounded-full z-0"
+                      className="absolute inset-0 bg-primary/10 border border-primary/20 rounded-full z-0"
                       transition={{ type: "spring", bounce: 0.25, duration: 0.5 }}
                     />
                   )}
@@ -104,7 +109,9 @@ const Navbar = () => {
                 to="/admin"
                 className={`relative flex items-center gap-2 px-5 py-2 text-base font-medium transition-all duration-300 rounded-full group ${location.pathname === "/admin"
                   ? "text-primary bg-primary/10 border border-primary/20"
-                  : "text-white/70 bg-white/5 backdrop-blur-sm border border-transparent hover:border-white/10"
+                  : theme === 'dark'
+                    ? "text-white/70 bg-white/5 border-transparent hover:border-white/10"
+                    : "text-slate-600 bg-slate-400/5 border-transparent hover:border-slate-200"
                   }`}
               >
                 <span className="relative z-10 flex items-center gap-2">
@@ -123,41 +130,57 @@ const Navbar = () => {
           </div>
 
           {/* Actions / Auth Section */}
-          <div className="hidden md:flex items-center justify-end gap-3 flex-1">
+          <div className="hidden md:flex items-center justify-end gap-5 flex-1">
+            <button
+              onClick={toggleTheme}
+              className={`p-2.5 rounded-full transition-all duration-300 border backdrop-blur-md hover:scale-110 active:scale-95 ${theme === 'dark'
+                ? 'text-white/80 hover:text-white hover:bg-white/10 border-white/10 shadow-[0_0_15px_rgba(255,255,255,0.05)]'
+                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100 border-slate-200 shadow-sm'
+                }`}
+              title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+            >
+              {theme === "dark" ? <Sun size={20} /> : <Moon size={20} />}
+            </button>
+
             {user ? (
               <div className="flex items-center gap-3">
-                <button
-                  onClick={toggleTheme}
-                  className="p-2 text-white/70 hover:text-white hover:bg-white/10 rounded-full transition-all duration-300 border border-white/10 backdrop-blur-md mr-1"
-                  title="Toggle Theme"
+                <Link
+                  to="/profile"
+                  className={`flex items-center gap-2.5 px-4 py-2 rounded-full border transition-all cursor-pointer group hover:shadow-lg ${theme === 'dark'
+                    ? 'border-white/10 bg-white/5 hover:bg-white/10 text-white/90'
+                    : 'border-slate-200 bg-white hover:bg-slate-50 text-slate-700 shadow-sm'
+                    }`}
                 >
-                  {theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}
+                  <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center">
+                    <UserCircle size={18} className="text-primary" />
+                  </div>
+                  <span className="text-sm font-bold tracking-tight truncate max-w-[120px]">
+                    {user.email.split('@')[0]}
+                  </span>
+                </Link>
+                <button
+                  onClick={handleLogout}
+                  className={`p-2.5 rounded-full transition-all hover:bg-red-500/10 hover:text-red-500 border border-transparent ${theme === 'dark' ? 'text-white/60' : 'text-slate-400'
+                    }`}
+                  title="Sign Out"
+                >
+                  <LogOut size={18} />
                 </button>
-                <div className="flex items-center gap-2">
-                  <Link
-                    to="/profile"
-                    className="flex items-center gap-2 px-3 py-1.5 rounded-full border border-white/10 bg-white/5 hover:bg-white/10 transition-all cursor-pointer group"
-                  >
-                    <UserCircle size={20} className="text-white/70 transition-colors" />
-                    <span className="text-base text-white/80 font-medium truncate max-w-[150px]">
-                      {user.email.split('@')[0]}
-                    </span>
-                  </Link>
-                </div>
               </div>
             ) : (
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-4">
                 <Link
                   to="/login"
-                  className="px-6 py-2 text-base font-bold rounded-full border border-white/10 text-white/80 hover:bg-white/5 transition-all duration-300 backdrop-blur-md"
+                  className={`text-sm font-black transition-all duration-300 hover:text-primary ${theme === 'dark' ? 'text-white/80' : 'text-slate-600'
+                    }`}
                 >
-                  Log In
+                  Sign In
                 </Link>
                 <Link
                   to="/signup"
-                  className="px-6 py-2 text-base font-bold rounded-full bg-primary text-black transition-all duration-300"
+                  className="px-7 py-2.5 text-sm font-black rounded-full bg-slate-950 text-white hover:bg-primary hover:text-black transition-all duration-300 shadow-md hover:shadow-primary/20 active:scale-95"
                 >
-                  Sign Up
+                  Get Started
                 </Link>
               </div>
             )}
@@ -166,7 +189,10 @@ const Navbar = () => {
           <div className="md:hidden flex items-center gap-2">
             <button
               onClick={() => setMobileOpen(!mobileOpen)}
-              className="p-2.5 bg-white/5 border border-white/10 dark:text-white/80 text-white/80 hover:text-white dark:hover:text-white rounded-full transition-all duration-300 backdrop-blur-md"
+              className={`p-2.5 border rounded-full transition-all duration-300 backdrop-blur-md ${theme === 'dark'
+                ? 'bg-white/5 border-white/10 text-white/80 hover:text-white'
+                : 'bg-white/50 border-slate-200 text-slate-700 hover:text-slate-900 font-bold'
+                }`}
               aria-label="Toggle Menu"
             >
               {mobileOpen ? <X size={24} /> : <Menu size={24} />}

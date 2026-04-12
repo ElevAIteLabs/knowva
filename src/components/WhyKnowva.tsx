@@ -190,7 +190,7 @@ const ParallaxCard = ({
           </div>
 
           {/* Title */}
-          <h3 className="font-display text-xl font-bold text-foreground mb-3 leading-snug">
+          <h3 className="font-display text-xl font-bold text-foreground mb-1 leading-snug">
             {card.title}
           </h3>
 
@@ -233,7 +233,7 @@ const WhyKnowva = () => {
             <Sparkles className="w-4 h-4" />
             Enterprise Infrastructure
           </div>
-          <h2 className="font-display text-4xl md:text-6xl font-black text-foreground mb-6 tracking-tight">
+          <h2 className="font-display text-4xl md:text-6xl font-black text-foreground mb-3 tracking-tight">
             The Intelligent <span className="gradient-text">Discovery Hub</span>
           </h2>
           <p className="text-muted-foreground text-xl max-w-2xl mx-auto font-light">

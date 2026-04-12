@@ -134,9 +134,9 @@ const ToolCard = ({ id, name, description, category, rating, pricing, icon, dela
 
 
 
-          <div className="flex items-start justify-between mb-4 sm:mb-6 relative">
+          <div className="flex items-start justify-between mb-3 sm:mb-4 relative">
             <div className="w-fit">
-              <div className="w-10 h-10 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl bg-secondary/80 border border-border flex items-center justify-center p-2 sm:p-3 group-hover:scale-110 group-hover:bg-primary/10 transition-all duration-500 overflow-hidden text-foreground">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-secondary/80 border border-border flex items-center justify-center p-2 sm:p-2.5 group-hover:scale-110 group-hover:bg-primary/10 transition-all duration-500 overflow-hidden text-foreground">
                 <div className="flex items-center justify-center w-full h-full">
                   {icon && (typeof icon === 'string' && (icon.replace(/^['"\[]|['"\]]$/g, '').trim().startsWith('http') || icon.includes('.') || icon.includes('/'))) ? (
                     <img
