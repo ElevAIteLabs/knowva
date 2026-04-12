@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { Eye, EyeOff, User, Mail, Phone, Lock, Chrome, Sparkles } from "lucide-react";
+import { Eye, EyeOff, User, Mail, Phone, Lock, Chrome, Sparkles, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { signInWithPopup } from "firebase/auth";
 import { auth, googleProvider } from "@/config/firebase";
@@ -17,7 +17,6 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { API_ENDPOINTS } from "@/config/apiConfig";
 
@@ -144,7 +143,6 @@ const Signup = () => {
 
     return (
         <div className="min-h-screen flex flex-col bg-white text-slate-900 font-sans selection:bg-primary/30">
-            <Navbar />
 
             <main className="flex-grow flex flex-col lg:flex-row h-full min-h-screen">
                 {/* Left Side: Visual/Branding (Hidden on mobile) */}
@@ -195,7 +193,17 @@ const Signup = () => {
                 </div>
 
                 {/* Right Side: Signup Form */}
-                <div className="flex-1 flex items-center justify-center p-6 md:p-12 lg:p-20 pt-44 sm:pt-56 bg-slate-50">
+                <div className="flex-1 flex items-center justify-center p-6 md:p-12 lg:p-20 bg-slate-50 relative">
+                    <Link 
+                        to="/" 
+                        className="absolute top-8 left-8 inline-flex items-center gap-2 text-slate-500 hover:text-primary transition-colors group z-20"
+                    >
+                        <div className="w-10 h-10 rounded-full bg-white border border-slate-200 shadow-sm flex items-center justify-center group-hover:border-primary/30 group-hover:bg-primary/5 transition-all">
+                            <ArrowLeft className="w-5 h-5" />
+                        </div>
+                        <span className="text-sm font-bold tracking-tight">Back to explore</span>
+                    </Link>
+
                     <div className="w-full max-w-md">
                         <div className="mb-14 lg:text-left text-center mt-6">
                             <h1 className="text-3xl font-black tracking-tighter text-slate-900 mb-3">Create Account</h1>
@@ -326,7 +334,7 @@ const Signup = () => {
                             <Button
                                 type="button"
                                 variant="outline"
-                                className="w-full h-12 bg-white border-slate-200 text-slate-900 hover:bg-slate-50 font-bold rounded-xl flex items-center justify-center gap-3 transition-all active:scale-[0.98]"
+                                className="w-full h-12 bg-white border-slate-200 text-slate-900 font-bold rounded-xl flex items-center justify-center gap-3 transition-all active:scale-[0.98]"
                                 onClick={handleGoogleSignIn}
                                 disabled={isLoading}
                             >

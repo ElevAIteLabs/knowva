@@ -212,12 +212,7 @@ const Index = () => {
       }
       navigate(`/tool/${topMatch.name.toLowerCase().replace(/\s+/g, '-')}`);
     } else {
-      const section = document.getElementById('all-tools');
-      if (section) {
-        section.scrollIntoView({ behavior: 'smooth' });
-      } else {
-        navigate("/all-tools");
-      }
+      navigate(`/all-tools?search=${encodeURIComponent(searchQuery)}`);
     }
   };
 
@@ -692,7 +687,7 @@ const Index = () => {
       {/* ────────────────────────────────────────────────────────────────────────
           WHY KNOWVA & NEWSLETTER
       ──────────────────────────────────────────────────────────────────────── */}
-      <WhyKnowva />
+      {/* <WhyKnowva />
 
       <section className="relative py-32 overflow-hidden bg-foreground text-background">
         <div className="absolute inset-0 opacity-10" style={{ backgroundImage: `url(${stayahead})`, backgroundSize: 'cover', backgroundPosition: 'center', filter: 'grayscale(100%)' }} />
@@ -724,7 +719,7 @@ const Index = () => {
             </div>
           </motion.div>
         </div>
-      </section>
+      </section> */}
 
       <Footer />
     </div>

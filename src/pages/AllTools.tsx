@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowLeft, Search, SlidersHorizontal, ChevronDown, Loader2, Sparkles, X, Plus } from "lucide-react";
@@ -21,6 +21,14 @@ const AllTools = () => {
     const [showSortDropdown, setShowSortDropdown] = useState(false);
     const [isFilterDrawerOpen, setIsFilterDrawerOpen] = useState(false);
     const [activeSheet, setActiveSheet] = useState<"category" | "pricing" | null>(null);
+    const [searchParams] = useSearchParams();
+
+    useEffect(() => {
+        const query = searchParams.get("search");
+        if (query) {
+            setSearchQuery(query);
+        }
+    }, [searchParams]);
 
     useEffect(() => {
         window.scrollTo(0, 0);
@@ -207,7 +215,11 @@ const AllTools = () => {
                                     </label>
                                     <div className="flex flex-col gap-1 max-h-60 overflow-y-auto pr-2 custom-scrollbar">
                                         <button
-                                            onClick={() => setSelectedCategory("All")}
+                                            onClick={() => {
+                                                setSelectedCategory("All");
+                                                setSearchQuery("");
+                                                navigate("/all-tools", { replace: true });
+                                            }}
                                             className={`px-3 py-2 text-sm rounded-xl text-left transition-all ${selectedCategory === "All"
                                                 ? "bg-primary/10 text-primary font-bold"
                                                 : "text-muted-foreground hover:bg-secondary hover:text-foreground"
@@ -218,7 +230,11 @@ const AllTools = () => {
                                         {Array.from(new Set(dbTools.map(t => t.category).filter(Boolean))).sort().map((cat) => (
                                             <button
                                                 key={cat}
-                                                onClick={() => setSelectedCategory(cat)}
+                                                onClick={() => {
+                                                    setSelectedCategory(cat);
+                                                    setSearchQuery("");
+                                                    navigate("/all-tools", { replace: true });
+                                                }}
                                                 className={`px-3 py-2 text-sm rounded-xl text-left transition-all ${selectedCategory === cat
                                                     ? "bg-primary/10 text-primary font-bold"
                                                     : "text-muted-foreground hover:bg-secondary hover:text-foreground"
@@ -329,18 +345,55 @@ const AllTools = () => {
                                     ))}
                                 </div>
                             ) : (
-                                <div className="text-center py-16">
-                                    <p className="text-3xl mb-4">🔍</p>
-                                    <p className="text-muted-foreground text-lg font-medium mb-2">No tools found</p>
-                                    <p className="text-muted-foreground/60 text-sm">
-                                        Try adjusting your search or filter criteria
+                                <div className="text-center py-16 animate-in fade-in slide-in-from-bottom-4 duration-700">
+                                    <div className="w-20 h-20 bg-secondary rounded-full flex items-center justify-center mx-auto mb-6">
+                                        <Search className="w-10 h-10 text-muted-foreground/40" />
+                                    </div>
+                                    <h3 className="text-2xl font-bold text-foreground mb-2">
+                                        {searchParams.get("not_found") ? "Tool Not Available" : "No results found"}
+                                    </h3>
+                                    <p className="text-muted-foreground mb-8 max-w-sm mx-auto">
+                                        {searchParams.get("not_found") 
+                                            ? `We couldn't find the exact tool "${searchQuery}". Here are some similar tools you might like.`
+                                            : "Try adjusting your search or filters to find what you're looking for."}
                                     </p>
-                                    <button
-                                        onClick={() => { setSearchQuery(""); setSelectedPricing("All"); }}
-                                        className="mt-4 text-primary text-sm hover:underline"
-                                    >
-                                        Clear filters
-                                    </button>
+                                    
+                                    {/* Suggested Tools Section */}
+                                    <div className="mt-12 w-full">
+                                        <div className="flex items-center gap-3 mb-8 justify-center">
+                                            <div className="h-px bg-border flex-grow max-w-[100px]" />
+                                            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">Recommended Suggestions</span>
+                                            <div className="h-px bg-border flex-grow max-w-[100px]" />
+                                        </div>
+                                        
+                                        <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 max-w-5xl mx-auto">
+                                            {dbTools
+                                                .filter(t => 
+                                                    // Try to match search query to categories first
+                                                    t.category?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                                                    // Or just show tools with high ratings
+                                                    t.rating >= 4.5
+                                                )
+                                                .sort((a, b) => b.rating - a.rating)
+                                                .slice(0, 3)
+                                                .map((tool, i) => (
+                                                    <ToolCard key={`suggested-${tool.id}`} {...tool} delay={i * 0.1} />
+                                                ))
+                                            }
+                                        </div>
+                                        
+                                        <button
+                                            onClick={() => {
+                                                setSearchQuery("");
+                                                setSelectedPricing("All");
+                                                setSelectedCategory("All");
+                                                navigate("/all-tools", { replace: true });
+                                            }}
+                                            className="mt-12 px-6 py-3 bg-secondary text-foreground rounded-xl font-bold text-sm hover:bg-primary hover:text-black transition-all"
+                                        >
+                                            View All Tools
+                                        </button>
+                                    </div>
                                 </div>
                             )}
                         </div>
@@ -397,7 +450,11 @@ const AllTools = () => {
                                     {/* Selected Category (if any) */}
                                     <div className="flex flex-wrap gap-2">
                                         <button
-                                            onClick={() => setSelectedCategory("All")}
+                                            onClick={() => {
+                                                setSelectedCategory("All");
+                                                setSearchQuery("");
+                                                navigate("/all-tools", { replace: true });
+                                            }}
                                             className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold transition-all ${selectedCategory === "All"
                                                 ? "bg-foreground text-background"
                                                 : "bg-secondary text-foreground hover:bg-secondary/80"
@@ -413,6 +470,8 @@ const AllTools = () => {
                                                     key={cat}
                                                     onClick={() => {
                                                         setSelectedCategory(cat);
+                                                        setSearchQuery("");
+                                                        navigate("/all-tools", { replace: true });
                                                         // if we want to mimic the image exactly, we might close the sheet
                                                         // setIsFilterDrawerOpen(false); 
                                                     }}
@@ -428,7 +487,12 @@ const AllTools = () => {
 
                                     <div className="grid grid-cols-2 gap-3 pt-4">
                                         <button
-                                            onClick={() => { setSelectedCategory("All"); setIsFilterDrawerOpen(false); }}
+                                            onClick={() => {
+                                                setSelectedCategory("All");
+                                                setSearchQuery("");
+                                                navigate("/all-tools", { replace: true });
+                                                setIsFilterDrawerOpen(false);
+                                            }}
                                             className="py-4 rounded-2xl border border-border font-bold text-sm"
                                         >
                                             Reset

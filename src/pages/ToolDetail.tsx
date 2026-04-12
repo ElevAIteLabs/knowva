@@ -392,17 +392,8 @@ const ToolDetail = () => {
 
   // Fallback if tool not found
   if (!tool) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-foreground mb-4">Tool Not Found</h1>
-          <p className="text-muted-foreground mb-6">The AI tool you're looking for doesn't exist.</p>
-          <Link to="/categories" className="px-6 py-3 bg-primary text-primary-foreground rounded-xl font-medium hover:bg-primary/90 transition-colors">
-            Browse All Tools
-          </Link>
-        </div>
-      </div>
-    );
+    navigate(`/all-tools?search=${encodeURIComponent(slug || "")}&not_found=true`);
+    return null;
   }
 
   const alternatives = allDbTools.filter((t) => t.name !== tool.name).slice(0, 4);

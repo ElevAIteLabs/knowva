@@ -221,7 +221,7 @@ const Profile = () => {
                     {/* ── Header ── */}
                     <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-8 md:mb-12">
                         <div className="flex items-center gap-4 md:gap-6">
-                            <div className="w-16 h-16 md:w-20 md:h-20 rounded-2xl md:rounded-3xl bg-white border border-slate-200 flex items-center justify-center text-2xl md:text-3xl font-black text-primary select-none shadow-sm capitalize flex-shrink-0">
+                            <div className="w-16 h-16 md:w-20 md:h-20 rounded-2xl md:rounded-3xl bg-card border border-border flex items-center justify-center text-2xl md:text-3xl font-black text-primary select-none shadow-sm capitalize flex-shrink-0">
                                 {initials}
                             </div>
                             <div>
@@ -236,7 +236,7 @@ const Profile = () => {
                         </div>
 
                         <div className="flex flex-col gap-4">
-                            <div className="flex bg-slate-200/50 p-1 rounded-2xl border border-slate-200 backdrop-blur-md overflow-x-auto no-scrollbar scroll-smooth">
+                            <div className="flex bg-secondary/30 p-1 rounded-2xl border border-border backdrop-blur-md overflow-x-auto no-scrollbar scroll-smooth">
                                 <button
                                     onClick={() => setActiveTab("settings")}
                                     className={`flex items-center gap-2 px-4 md:px-6 py-2 md:py-2.5 rounded-xl text-xs md:text-sm font-bold transition-all whitespace-nowrap ${activeTab === "settings" ? "bg-card text-primary shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
@@ -269,7 +269,7 @@ const Profile = () => {
                                     window.dispatchEvent(new Event("storage"));
                                     navigate("/login");
                                 }}
-                                className="border-red-200 text-red-500 hover:bg-red-50 hover:text-red-600 rounded-2xl h-12 md:h-auto py-2.5 px-6 font-bold flex items-center gap-2 w-full md:w-auto mt-2 md:mt-0"
+                                className="border-destructive/20 text-destructive hover:bg-destructive/10 hover:text-destructive rounded-2xl h-12 md:h-auto py-2.5 px-6 font-bold flex items-center gap-2 w-full md:w-auto mt-2 md:mt-0"
                             >
                                 <LogOut size={18} /> Logout
                             </Button>
@@ -293,7 +293,7 @@ const Profile = () => {
                                             initial={{ opacity: 0, y: -10 }}
                                             animate={{ opacity: 1, y: 0 }}
                                             exit={{ opacity: 0, y: -10 }}
-                                            className="mb-8 flex items-center gap-3 px-6 py-4 bg-green-50 border border-green-100 rounded-2xl text-green-700 text-sm font-medium shadow-sm"
+                                            className="mb-8 flex items-center gap-3 px-6 py-4 bg-green-500/10 border border-green-500/20 rounded-2xl text-green-500 text-sm font-medium shadow-sm"
                                         >
                                             <CheckCircle2 size={18} className="flex-shrink-0 text-green-500" />
                                             Success! Your profile settings have been synchronized.
@@ -402,7 +402,7 @@ const Profile = () => {
                                                         )}
                                                     />
 
-                                                    <div className="pt-8 border-t border-slate-100 flex items-center justify-start gap-4">
+                                                    <div className="pt-8 border-t border-border flex items-center justify-start gap-4">
                                                         <Button
                                                             type="submit"
                                                             disabled={isLoading || !isDirty}
@@ -446,7 +446,7 @@ const Profile = () => {
                                                 </div>
                                                 <div className="flex justify-between items-center">
                                                     <span className="text-muted-foreground font-bold text-sm">Account Status</span>
-                                                    <span className="text-[10px] uppercase font-black px-2 py-1 bg-green-100 text-green-700 rounded-md border border-green-200">Active</span>
+                                                    <span className="text-[10px] uppercase font-black px-2 py-1 bg-green-500/10 text-green-500 rounded-md border border-green-500/20">Active</span>
                                                 </div>
                                             </div>
                                         </div>
