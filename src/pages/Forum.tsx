@@ -55,6 +55,8 @@ const Forum = () => {
         fetchThreads(); 
     }, [selectedCategory]);
 
+
+
     useEffect(() => {
         const params = new URLSearchParams(window.location.search);
         const search = params.get('search');
@@ -245,263 +247,286 @@ const Forum = () => {
 
             <main className="flex-grow pt-40 pb-20 px-6">
                 <div className="max-w-6xl mx-auto">
-                    
-                    {/* Header Section */}
-                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-12">
-                        <div className="space-y-2 text-center md:text-left">
-                            <motion.div 
-                                initial={{ opacity: 0, x: -20 }}
-                                animate={{ opacity: 1, x: 0 }}
-                                className="flex items-center justify-center md:justify-start gap-2 text-primary font-black uppercase tracking-[0.2em] text-[10px]"
-                            >
-                                <Sparkles size={12} /> Community Hub
-                            </motion.div>
-                            <h1 className="text-3xl md:text-5xl font-black tracking-tight text-slate-900 dark:text-white leading-tight">
-                                Collective <span className="text-primary">Intelligence</span>
-                            </h1>
-                            <p className="text-slate-500 max-w-lg mx-auto md:mx-0 text-sm md:text-base">
-                                Connect with AI founders, prompt engineers, and tech enthusiasts.
-                            </p>
-                        </div>
-
-                        <Button 
-                            onClick={() => currentUser ? setShowNewThreadModal(true) : navigate("/login")}
-                            className="bg-primary text-black hover:bg-primary/90 font-black rounded-2xl h-12 md:h-14 px-6 md:px-8 transition-all hover:scale-105 w-full md:w-auto mt-4 md:mt-0"
+                    {!currentUser ? (
+                        <motion.div 
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className="bg-white dark:bg-zinc-900 border border-slate-200 dark:border-white/10 rounded-[32px] p-12 md:p-20 text-center shadow-xl"
                         >
-                            <Plus size={20} className="mr-2" /> Start Discussion
-                        </Button>
-                    </div>
+                            <div className="w-20 h-20 bg-primary/10 rounded-3xl flex items-center justify-center mx-auto mb-8">
+                                <Lock size={40} className="text-primary" />
+                            </div>
+                            <h2 className="text-2xl md:text-4xl font-black mb-4 dark:text-white">Access Restricted</h2>
+                            <p className="text-slate-500 dark:text-slate-400 text-lg mb-10 max-w-md mx-auto">
+                                To view and participate in the community forum, please log in to your account.
+                            </p>
+                            <Button 
+                                onClick={() => navigate("/login")}
+                                className="bg-primary text-black hover:bg-primary/90 font-black rounded-2xl h-14 px-12 text-lg shadow-lg shadow-primary/20 transition-all hover:scale-105"
+                            >
+                                Log In to Explore
+                            </Button>
+                        </motion.div>
+                    ) : (
+                        <>
+                            {/* Header Section */}
+                            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-12">
+                                <div className="space-y-2 text-center md:text-left">
+                                    <motion.div 
+                                        initial={{ opacity: 0, x: -20 }}
+                                        animate={{ opacity: 1, x: 0 }}
+                                        className="flex items-center justify-center md:justify-start gap-2 text-primary font-black uppercase tracking-[0.2em] text-[10px]"
+                                    >
+                                        <Sparkles size={12} /> Community Hub
+                                    </motion.div>
+                                    <h1 className="text-3xl md:text-5xl font-black tracking-tight text-slate-900 dark:text-white leading-tight">
+                                        Collective <span className="text-primary">Intelligence</span>
+                                    </h1>
+                                    <p className="text-slate-500 max-w-lg mx-auto md:mx-0 text-sm md:text-base">
+                                        Connect with AI founders, prompt engineers, and tech enthusiasts.
+                                    </p>
+                                </div>
 
-                    {/* Stats & Search Bar */}
-                    <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 mb-12">
-                        <div className="lg:col-span-3 space-y-8">
-                            
-                            {/* Filters & Search - Regular Style */}
-                            <div className="flex flex-col gap-4">
-                                <div className="relative w-full">
-                                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                                    <input 
-                                        type="text"
-                                        placeholder="Search discussions (e.g. #ai)..."
-                                        value={searchQuery}
-                                        onChange={(e) => setSearchQuery(e.target.value)}
-                                        className="w-full h-12 md:h-14 pl-12 pr-12 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-white/10 rounded-xl focus:outline-none focus:border-primary transition-all font-medium text-slate-700 dark:text-white text-sm"
-                                    />
-                                    {searchQuery && (
-                                        <button 
-                                            onClick={() => setSearchQuery("")}
-                                            className="absolute right-4 top-1/2 -translate-y-1/2 p-1.5 hover:bg-slate-100 dark:hover:bg-white/5 rounded-full text-slate-400"
-                                        >
-                                            <X size={14} />
-                                        </button>
-                                    )}
-                                </div>
-                                <div className="flex gap-2 overflow-x-auto no-scrollbar pb-2">
-                                    {categories.map(cat => (
-                                        <button
-                                            key={cat}
-                                            onClick={() => setSelectedCategory(cat)}
-                                            className={`h-10 md:h-14 px-4 md:px-6 rounded-xl font-bold text-[10px] md:text-xs uppercase tracking-wider transition-all whitespace-nowrap ${
-                                                selectedCategory === cat 
-                                                ? "bg-primary text-black border-b-2 border-black/10" 
-                                                : "bg-white dark:bg-zinc-900 text-slate-500 dark:text-white/60 border border-slate-200 dark:border-white/10 hover:border-slate-300 dark:hover:border-white/20 hover:bg-slate-50 dark:hover:bg-zinc-800"
-                                            }`}
-                                        >
-                                            {cat}
-                                        </button>
-                                    ))}
-                                </div>
+                                <Button 
+                                    onClick={() => setShowNewThreadModal(true)}
+                                    className="bg-primary text-black hover:bg-primary/90 font-black rounded-2xl h-12 md:h-14 px-6 md:px-8 transition-all hover:scale-105 w-full md:w-auto mt-4 md:mt-0"
+                                >
+                                    <Plus size={20} className="mr-2" /> Start Discussion
+                                </Button>
                             </div>
 
-                            {/* Threads List */}
-                            <div className="space-y-4">
-                                {isLoading ? (
-                                    <div className="flex flex-col items-center justify-center py-20">
-                                        <Loader2 className="w-10 h-10 text-primary animate-spin mb-4" />
-                                        <p className="text-xs font-black uppercase tracking-widest text-slate-400">Syncing Knowledge...</p>
-                                    </div>
-                                ) : filteredThreads.length === 0 ? (
-                                    <div className="bg-white dark:bg-zinc-900 border border-slate-200 dark:border-white/10 rounded-[32px] p-20 text-center">
-                                        <MessageSquare size={48} className="mx-auto text-slate-200 mb-6" />
-                                        <h3 className="text-xl font-bold text-slate-800 mb-2">No discussions found</h3>
-                                        <p className="text-slate-500 text-sm">Be the first to start a conversation in this category!</p>
-                                    </div>
-                                ) : (
-                                    filteredThreads.map((thread, idx) => (
-                                        <motion.div
-                                            key={thread.id}
-                                            initial={{ opacity: 0, y: 20 }}
-                                            animate={{ opacity: 1, y: 0 }}
-                                            transition={{ delay: idx * 0.05 }}
-                                            className={`group block bg-white dark:bg-zinc-900 border rounded-[32px] p-6 transition-all hover:border-primary/30 relative overflow-hidden ${thread.is_pinned ? "border-primary/50" : "border-slate-200 dark:border-white/10 cursor-pointer"}`}
-                                            onClick={() => currentUser ? navigate(`/community/${thread.id}`) : navigate("/login")}
-                                        >
-                                            {!!thread.is_pinned && (
-                                                <div className="absolute top-0 right-4 md:right-10 bg-primary text-black px-2 md:px-3 py-1 rounded-b-lg md:rounded-b-xl text-[8px] md:text-[10px] font-black uppercase tracking-tighter animate-pulse">
-                                                    Pinned Activity
-                                                </div>
+                            {/* Stats & Search Bar */}
+                            <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 mb-12">
+                                <div className="lg:col-span-3 space-y-8">
+                                    
+                                    {/* Filters & Search - Regular Style */}
+                                    <div className="flex flex-col gap-4">
+                                        <div className="relative w-full">
+                                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                                            <input 
+                                                type="text"
+                                                placeholder="Search discussions (e.g. #ai)..."
+                                                value={searchQuery}
+                                                onChange={(e) => setSearchQuery(e.target.value)}
+                                                className="w-full h-12 md:h-14 pl-12 pr-12 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-white/10 rounded-xl focus:outline-none focus:border-primary transition-all font-medium text-slate-700 dark:text-white text-sm"
+                                            />
+                                            {searchQuery && (
+                                                <button 
+                                                    onClick={() => setSearchQuery("")}
+                                                    className="absolute right-4 top-1/2 -translate-y-1/2 p-1.5 hover:bg-slate-100 dark:hover:bg-white/5 rounded-full text-slate-400"
+                                                >
+                                                    <X size={14} />
+                                                </button>
                                             )}
-                                            
-                                            <div className="flex flex-col md:flex-row gap-6">
-                                                <div className="flex-grow space-y-4">
-                                                    <div className="flex items-center gap-3">
-                                                        <span className="px-3 py-1 bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-white/60 rounded-lg text-[10px] font-black uppercase tracking-widest">
-                                                            {thread.category}
-                                                        </span>
-                                                        <div className="flex items-center gap-1.5 text-slate-400 text-xs font-bold">
-                                                            <Clock size={14} /> {formatDate(thread.created_at)}
-                                                        </div>
-                                                        <div className="flex items-center gap-1.5 text-slate-400 text-xs font-bold border-l dark:border-white/10 pl-3 border-slate-100">
-                                                            <ArrowUp size={14} className={thread.user_vote == 1 ? "text-orange-500" : "text-primary"} /> {thread.upvotes_count || 0}
-                                                        </div>
-                                                    </div>
+                                        </div>
+                                        <div className="flex gap-2 overflow-x-auto no-scrollbar pb-2">
+                                            {categories.map(cat => (
+                                                <button
+                                                    key={cat}
+                                                    onClick={() => setSelectedCategory(cat)}
+                                                    className={`h-10 md:h-14 px-4 md:px-6 rounded-xl font-bold text-[10px] md:text-xs uppercase tracking-wider transition-all whitespace-nowrap ${
+                                                        selectedCategory === cat 
+                                                        ? "bg-primary text-black border-b-2 border-black/10" 
+                                                        : "bg-white dark:bg-zinc-900 text-slate-500 dark:text-white/60 border border-slate-200 dark:border-white/10 hover:border-slate-300 dark:hover:border-white/20 hover:bg-slate-50 dark:hover:bg-zinc-800"
+                                                    }`}
+                                                >
+                                                    {cat}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
 
-                                                    <div>
-                                                        <h2 className="text-xl font-bold text-slate-900 dark:text-white group-hover:text-primary transition-colors flex items-center gap-2">
-                                                            {thread.title}
-                                                            {!!thread.is_locked && <Lock size={16} className="text-slate-400" />}
-                                                        </h2>
-                                                        <p className="text-slate-500 text-sm line-clamp-2 mt-2 leading-relaxed">
-                                                            {thread.content}
-                                                        </p>
-                                                        {thread.hashtags && (
-                                                            <div className="flex flex-wrap gap-2 mt-3">
-                                                                {thread.hashtags.split(/\s+/).filter((s: string) => s.trim() !== "").map((tag: string, i: number) => {
-                                                                    const displayTag = tag.startsWith('#') ? tag : `#${tag}`;
-                                                                    return (
-                                                                        <span 
-                                                                            key={i} 
-                                                                            onClick={(e) => { e.stopPropagation(); handleTagClick(displayTag); }}
-                                                                            className="text-[11px] font-bold text-primary bg-primary/5 px-2 py-0.5 rounded-md hover:bg-primary/10 transition-colors cursor-pointer"
+                                    {/* Threads List */}
+                                    <div className="space-y-4">
+                                        {isLoading ? (
+                                            <div className="flex flex-col items-center justify-center py-20">
+                                                <Loader2 className="w-10 h-10 text-primary animate-spin mb-4" />
+                                                <p className="text-xs font-black uppercase tracking-widest text-slate-400">Syncing Knowledge...</p>
+                                            </div>
+                                        ) : filteredThreads.length === 0 ? (
+                                            <div className="bg-white dark:bg-zinc-900 border border-slate-200 dark:border-white/10 rounded-[32px] p-20 text-center">
+                                                <MessageSquare size={48} className="mx-auto text-slate-200 mb-6" />
+                                                <h3 className="text-xl font-bold text-slate-800 mb-2">No discussions found</h3>
+                                                <p className="text-slate-500 text-sm">Be the first to start a conversation in this category!</p>
+                                            </div>
+                                        ) : (
+                                            filteredThreads.map((thread, idx) => (
+                                                <motion.div
+                                                    key={thread.id}
+                                                    initial={{ opacity: 0, y: 20 }}
+                                                    animate={{ opacity: 1, y: 0 }}
+                                                    transition={{ delay: idx * 0.05 }}
+                                                    className={`group block bg-white dark:bg-zinc-900 border rounded-[32px] p-6 transition-all hover:border-primary/30 relative overflow-hidden ${thread.is_pinned ? "border-primary/50" : "border-slate-200 dark:border-white/10 cursor-pointer"}`}
+                                                    onClick={() => navigate(`/community/${thread.id}`)}
+                                                >
+                                                    {!!thread.is_pinned && (
+                                                        <div className="absolute top-0 right-4 md:right-10 bg-primary text-black px-2 md:px-3 py-1 rounded-b-lg md:rounded-b-xl text-[8px] md:text-[10px] font-black uppercase tracking-tighter animate-pulse">
+                                                            Pinned Activity
+                                                        </div>
+                                                    )}
+                                                    
+                                                    <div className="flex flex-col md:flex-row gap-6">
+                                                        <div className="flex-grow space-y-4">
+                                                            <div className="flex items-center gap-3">
+                                                                <span className="px-3 py-1 bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-white/60 rounded-lg text-[10px] font-black uppercase tracking-widest">
+                                                                    {thread.category}
+                                                                </span>
+                                                                <div className="flex items-center gap-1.5 text-slate-400 text-xs font-bold">
+                                                                    <Clock size={14} /> {formatDate(thread.created_at)}
+                                                                </div>
+                                                                <div className="flex items-center gap-1.5 text-slate-400 text-xs font-bold border-l dark:border-white/10 pl-3 border-slate-100">
+                                                                    <ArrowUp size={14} className={thread.user_vote == 1 ? "text-orange-500" : "text-primary"} /> {thread.upvotes_count || 0}
+                                                                </div>
+                                                            </div>
+
+                                                            <div>
+                                                                <h2 className="text-xl font-bold text-slate-900 dark:text-white group-hover:text-primary transition-colors flex items-center gap-2">
+                                                                    {thread.title}
+                                                                    {!!thread.is_locked && <Lock size={16} className="text-slate-400" />}
+                                                                </h2>
+                                                                <p className="text-slate-500 text-sm line-clamp-2 mt-2 leading-relaxed">
+                                                                    {thread.content}
+                                                                </p>
+                                                                {thread.hashtags && (
+                                                                    <div className="flex flex-wrap gap-2 mt-3">
+                                                                        {thread.hashtags.split(/\s+/).filter((s: string) => s.trim() !== "").map((tag: string, i: number) => {
+                                                                            const displayTag = tag.startsWith('#') ? tag : `#${tag}`;
+                                                                            return (
+                                                                                <span 
+                                                                                    key={i} 
+                                                                                    onClick={(e) => { e.stopPropagation(); handleTagClick(displayTag); }}
+                                                                                    className="text-[11px] font-bold text-primary bg-primary/5 px-2 py-0.5 rounded-md hover:bg-primary/10 transition-colors cursor-pointer"
+                                                                                >
+                                                                                    {displayTag}
+                                                                                </span>
+                                                                            );
+                                                                        })}
+                                                                    </div>
+                                                                )}
+                                                            </div>
+
+                                                            <div className="flex items-center justify-between pt-4 border-t border-slate-50 dark:border-white/5">
+                                                                <div className="flex items-center gap-2 md:gap-3">
+                                                                    <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center text-[10px] md:text-xs font-black text-primary border border-primary/20 flex-shrink-0">
+                                                                        {thread.user_name.charAt(0).toUpperCase()}
+                                                                    </div>
+                                                                    <div className="text-[12px] md:text-sm font-bold text-slate-700 dark:text-white/80 line-clamp-1">
+                                                                        {thread.user_name}
+                                                                        <span className="hidden md:block text-[10px] font-medium text-slate-400 dark:text-white/40 uppercase tracking-widest">Thought Leader</span>
+                                                                    </div>
+                                                                </div>
+
+                                                                <div className="flex items-center gap-2">
+                                                                    {/* Admin Controls */}
+                                                                    {currentUser?.role === 'admin' && (
+                                                                        <div className="flex gap-1 border-r pr-2 border-slate-100 dark:border-white/10">
+                                                                            <button 
+                                                                                onClick={(e) => handleModeration(e, thread.id, 'pin', thread.is_pinned == 1)}
+                                                                                className={`p-2 rounded-xl transition-all ${thread.is_pinned == 1 ? "bg-primary text-black" : "bg-slate-100 dark:bg-white/5 text-slate-400 dark:text-white/40 hover:bg-primary/20 hover:text-primary"}`}
+                                                                                title="Pin Discussion"
+                                                                            >
+                                                                                <Pin size={16} />
+                                                                            </button>
+                                                                            <button 
+                                                                                onClick={(e) => handleModeration(e, thread.id, 'lock', thread.is_locked == 1)}
+                                                                                className={`p-2 rounded-xl transition-all ${thread.is_locked == 1 ? "bg-slate-900 dark:bg-zinc-800 text-white" : "bg-slate-100 dark:bg-white/5 text-slate-400 dark:text-white/40 hover:bg-slate-900 dark:hover:bg-zinc-700 hover:text-white"}`}
+                                                                                title="Lock Discussion"
+                                                                            >
+                                                                                <Lock size={16} />
+                                                                            </button>
+                                                                            <button 
+                                                                                onClick={(e) => handleDeleteThread(e, thread.id)}
+                                                                                className="p-2 rounded-xl bg-slate-100 dark:bg-white/5 text-slate-400 dark:text-white/40 hover:bg-red-500 hover:text-white transition-all"
+                                                                                title="Delete Discussion"
+                                                                            >
+                                                                                <Trash2 size={16} />
+                                                                            </button>
+                                                                        </div>
+                                                                    )}
+
+                                                                    {/* Author Only Edit/Delete */}
+                                                                    {currentUser?.id == thread.user_id && currentUser?.role !== 'admin' && (
+                                                                        <div className="flex gap-1 border-r pr-2 border-slate-100 dark:border-white/10">
+                                                                             <button 
+                                                                                onClick={(e) => { e.stopPropagation(); navigate(`/community/${thread.id}?edit=true`); }}
+                                                                                className="p-2 rounded-xl bg-slate-100 dark:bg-white/5 text-slate-400 dark:text-white/40 hover:bg-primary/20 hover:text-primary transition-all"
+                                                                                title="Edit My Discussion"
+                                                                            >
+                                                                                <Pencil size={16} />
+                                                                            </button>
+                                                                            <button 
+                                                                                onClick={(e) => handleDeleteThread(e, thread.id)}
+                                                                                className="p-2 rounded-xl bg-slate-100 dark:bg-white/5 text-slate-400 dark:text-white/40 hover:bg-red-500 hover:text-white transition-all"
+                                                                                title="Delete My Discussion"
+                                                                            >
+                                                                                <Trash2 size={16} />
+                                                                            </button>
+                                                                        </div>
+                                                                    )}
+
+                                                                    <div className="flex gap-2 md:gap-3 items-center">
+                                                                      <div className="flex bg-slate-100/50 dark:bg-white/5 rounded-xl overflow-hidden border border-slate-200/50 dark:border-white/10 scale-90 md:scale-100 items-center">
+                                                                        <button 
+                                                                            onClick={(e) => handleVote(e, thread.id, 'upvote')}
+                                                                            className={`p-1.5 md:p-2 flex items-center gap-1.5 transition-all ${thread.user_vote == 1 ? "text-orange-500 bg-orange-50 dark:bg-orange-500/10" : "text-slate-400 dark:text-white/30 hover:text-orange-500 hover:bg-slate-100 dark:hover:bg-white/5"}`}
+                                                                            title="Upvote"
                                                                         >
-                                                                            {displayTag}
-                                                                        </span>
-                                                                    );
-                                                                })}
-                                                            </div>
-                                                        )}
-                                                    </div>
-
-                                                    <div className="flex items-center justify-between pt-4 border-t border-slate-50 dark:border-white/5">
-                                                        <div className="flex items-center gap-2 md:gap-3">
-                                                            <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center text-[10px] md:text-xs font-black text-primary border border-primary/20 flex-shrink-0">
-                                                                {thread.user_name.charAt(0).toUpperCase()}
-                                                            </div>
-                                                            <div className="text-[12px] md:text-sm font-bold text-slate-700 dark:text-white/80 line-clamp-1">
-                                                                {thread.user_name}
-                                                                <span className="hidden md:block text-[10px] font-medium text-slate-400 dark:text-white/40 uppercase tracking-widest">Thought Leader</span>
-                                                            </div>
-                                                        </div>
-
-                                                        <div className="flex items-center gap-2">
-                                                            {/* Admin Controls */}
-                                                            {currentUser?.role === 'admin' && (
-                                                                <div className="flex gap-1 border-r pr-2 border-slate-100 dark:border-white/10">
-                                                                    <button 
-                                                                        onClick={(e) => handleModeration(e, thread.id, 'pin', thread.is_pinned == 1)}
-                                                                        className={`p-2 rounded-xl transition-all ${thread.is_pinned == 1 ? "bg-primary text-black" : "bg-slate-100 dark:bg-white/5 text-slate-400 dark:text-white/40 hover:bg-primary/20 hover:text-primary"}`}
-                                                                        title="Pin Discussion"
-                                                                    >
-                                                                        <Pin size={16} />
-                                                                    </button>
-                                                                    <button 
-                                                                        onClick={(e) => handleModeration(e, thread.id, 'lock', thread.is_locked == 1)}
-                                                                        className={`p-2 rounded-xl transition-all ${thread.is_locked == 1 ? "bg-slate-900 dark:bg-zinc-800 text-white" : "bg-slate-100 dark:bg-white/5 text-slate-400 dark:text-white/40 hover:bg-slate-900 dark:hover:bg-zinc-700 hover:text-white"}`}
-                                                                        title="Lock Discussion"
-                                                                    >
-                                                                        <Lock size={16} />
-                                                                    </button>
-                                                                    <button 
-                                                                        onClick={(e) => handleDeleteThread(e, thread.id)}
-                                                                        className="p-2 rounded-xl bg-slate-100 dark:bg-white/5 text-slate-400 dark:text-white/40 hover:bg-red-500 hover:text-white transition-all"
-                                                                        title="Delete Discussion"
-                                                                    >
-                                                                        <Trash2 size={16} />
-                                                                    </button>
+                                                                            <ArrowUp size={18} strokeWidth={3} className="w-3.5 h-3.5 md:w-4 md:h-4" />
+                                                                            <span className="text-[10px] md:text-xs font-black">{thread.upvotes_count || 0}</span>
+                                                                        </button>
+                                                                        <div className="w-[1px] h-4 bg-slate-200 dark:bg-white/10 mx-0.5" />
+                                                                        <button 
+                                                                            onClick={(e) => handleVote(e, thread.id, 'downvote')}
+                                                                            className={`p-1.5 md:p-2 flex items-center gap-1.5 transition-all ${thread.user_vote == -1 ? "text-blue-500 bg-blue-50 dark:bg-blue-500/10" : "text-slate-400 dark:text-white/30 hover:text-blue-500 hover:bg-slate-100 dark:hover:bg-white/5"}`}
+                                                                            title="Downvote"
+                                                                        >
+                                                                            <span className="text-[10px] md:text-xs font-black">{thread.downvotes_count || 0}</span>
+                                                                            <ArrowDown size={18} strokeWidth={3} className="w-3.5 h-3.5 md:w-4 md:h-4" />
+                                                                        </button>
+                                                                      </div>
+                                                                      <Button variant="ghost" className="text-primary font-black text-[10px] md:text-xs hover:bg-primary/5 uppercase tracking-widest px-0 flex-shrink-0">
+                                                                          <span className="hidden md:inline">Read Thread</span> <ChevronRight size={14} className="ml-1" />
+                                                                      </Button>
+                                                                    </div>
                                                                 </div>
-                                                            )}
-
-                                                            {/* Author Only Edit/Delete */}
-                                                            {currentUser?.id == thread.user_id && currentUser?.role !== 'admin' && (
-                                                                <div className="flex gap-1 border-r pr-2 border-slate-100 dark:border-white/10">
-                                                                     <button 
-                                                                        onClick={(e) => { e.stopPropagation(); navigate(`/community/${thread.id}?edit=true`); }}
-                                                                        className="p-2 rounded-xl bg-slate-100 dark:bg-white/5 text-slate-400 dark:text-white/40 hover:bg-primary/20 hover:text-primary transition-all"
-                                                                        title="Edit My Discussion"
-                                                                    >
-                                                                        <Pencil size={16} />
-                                                                    </button>
-                                                                    <button 
-                                                                        onClick={(e) => handleDeleteThread(e, thread.id)}
-                                                                        className="p-2 rounded-xl bg-slate-100 dark:bg-white/5 text-slate-400 dark:text-white/40 hover:bg-red-500 hover:text-white transition-all"
-                                                                        title="Delete My Discussion"
-                                                                    >
-                                                                        <Trash2 size={16} />
-                                                                    </button>
-                                                                </div>
-                                                            )}
-
-                                                            <div className="flex gap-2 md:gap-3 items-center">
-                                                              <div className="flex bg-slate-100/50 dark:bg-white/5 rounded-xl overflow-hidden border border-slate-200/50 dark:border-white/10 scale-90 md:scale-100 items-center">
-                                                                <button 
-                                                                    onClick={(e) => handleVote(e, thread.id, 'upvote')}
-                                                                    className={`p-1.5 md:p-2 flex items-center gap-1.5 transition-all ${thread.user_vote == 1 ? "text-orange-500 bg-orange-50 dark:bg-orange-500/10" : "text-slate-400 dark:text-white/30 hover:text-orange-500 hover:bg-slate-100 dark:hover:bg-white/5"}`}
-                                                                    title="Upvote"
-                                                                >
-                                                                    <ArrowUp size={18} strokeWidth={3} className="w-3.5 h-3.5 md:w-4 md:h-4" />
-                                                                    <span className="text-[10px] md:text-xs font-black">{thread.upvotes_count || 0}</span>
-                                                                </button>
-                                                                <div className="w-[1px] h-4 bg-slate-200 dark:bg-white/10 mx-0.5" />
-                                                                <button 
-                                                                    onClick={(e) => handleVote(e, thread.id, 'downvote')}
-                                                                    className={`p-1.5 md:p-2 flex items-center gap-1.5 transition-all ${thread.user_vote == -1 ? "text-blue-500 bg-blue-50 dark:bg-blue-500/10" : "text-slate-400 dark:text-white/30 hover:text-blue-500 hover:bg-slate-100 dark:hover:bg-white/5"}`}
-                                                                    title="Downvote"
-                                                                >
-                                                                    <span className="text-[10px] md:text-xs font-black">{thread.downvotes_count || 0}</span>
-                                                                    <ArrowDown size={18} strokeWidth={3} className="w-3.5 h-3.5 md:w-4 md:h-4" />
-                                                                </button>
-                                                              </div>
-                                                              <Button variant="ghost" className="text-primary font-black text-[10px] md:text-xs hover:bg-primary/5 uppercase tracking-widest px-0 flex-shrink-0">
-                                                                  <span className="hidden md:inline">Read Thread</span> <ChevronRight size={14} className="ml-1" />
-                                                              </Button>
                                                             </div>
                                                         </div>
                                                     </div>
-                                                </div>
-                                            </div>
-                                        </motion.div>
-                                    ))
-                                )}
-                            </div>
-                        </div>
+                                                </motion.div>
+                                            ))
+                                        )}
+                                    </div>
+                                </div>
 
-                        {/* Sidebar - Hidden on mobile, shown on large screens */}
-                        <div className="hidden lg:block space-y-8">
-                            <div className="bg-white dark:bg-zinc-900 border border-slate-200 dark:border-white/10 rounded-[32px] p-8 shadow-sm">
-                                <h3 className="text-xs font-black uppercase tracking-widest text-primary mb-6 flex items-center gap-2">
-                                    <Hash size={14} /> Popular Topics
-                                </h3>
-                                <div className="space-y-4">
-                                    {popularTags.length > 0 ? (
-                                        popularTags.map(tag => (
-                                            <div 
-                                                key={tag} 
-                                                onClick={() => handleTagClick(tag)}
-                                                className="flex items-center justify-between group cursor-pointer hover:translate-x-1 transition-transform"
-                                            >
-                                                <span className="text-slate-600 dark:text-white/60 font-bold text-sm group-hover:text-primary transition-colors">{tag}</span>
-                                                <span className="text-[10px] font-black px-2 py-1 bg-slate-50 dark:bg-white/5 rounded-lg text-slate-400 group-hover:bg-primary/10 group-hover:text-primary transition-colors">Popular</span>
-                                            </div>
-                                        ))
-                                    ) : (
-                                        <p className="text-[10px] font-bold text-slate-400 italic">No hashtags yet...</p>
-                                    )}
+                                {/* Sidebar - Hidden on mobile, shown on large screens */}
+                                <div className="hidden lg:block space-y-8">
+                                    <div className="bg-white dark:bg-zinc-900 border border-slate-200 dark:border-white/10 rounded-[32px] p-8 shadow-sm">
+                                        <h3 className="text-xs font-black uppercase tracking-widest text-primary mb-6 flex items-center gap-2">
+                                            <Hash size={14} /> Popular Topics
+                                        </h3>
+                                        <div className="space-y-4">
+                                            {popularTags.length > 0 ? (
+                                                popularTags.map(tag => (
+                                                    <div 
+                                                        key={tag} 
+                                                        onClick={() => handleTagClick(tag)}
+                                                        className="flex items-center justify-between group cursor-pointer hover:translate-x-1 transition-transform"
+                                                    >
+                                                        <span className="text-slate-600 dark:text-white/60 font-bold text-sm group-hover:text-primary transition-colors">{tag}</span>
+                                                        <span className="text-[10px] font-black px-2 py-1 bg-slate-50 dark:bg-white/5 rounded-lg text-slate-400 group-hover:bg-primary/10 group-hover:text-primary transition-colors">Popular</span>
+                                                    </div>
+                                                ))
+                                            ) : (
+                                                <p className="text-[10px] font-bold text-slate-400 italic">No hashtags yet...</p>
+                                            )}
+                                        </div>
+                                    </div>
+
+
                                 </div>
                             </div>
-
-
-                        </div>
-                    </div>
+                        </>
+                    )}
                 </div>
             </main>
 

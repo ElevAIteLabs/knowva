@@ -18,6 +18,7 @@ import AllTools from "./pages/AllTools";
 import Forum from "./pages/Forum";
 import ThreadDetail from "./pages/ThreadDetail";
 import NotFound from "./pages/NotFound";
+import FeedbackPopup from "./components/FeedbackPopup";
 
 import ScrollToTop from "./components/ScrollToTop";
 
@@ -49,6 +50,7 @@ const App = () => (
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
+        <FeedbackPopup />
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>

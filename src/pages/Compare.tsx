@@ -116,11 +116,6 @@ const Compare = () => {
   }, [allTools, searchQuery, selectedCategory, selectedTools]);
 
   const openSelector = (slotIndex: number) => {
-    if (!currentUser) {
-      toast.error("Please log in to compare tools");
-      navigate("/login");
-      return;
-    }
     setActiveSlot(slotIndex);
     setIsSelectorOpen(true);
   };

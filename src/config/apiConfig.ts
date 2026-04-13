@@ -10,5 +10,7 @@ export const API_ENDPOINTS = {
     COMMUNITY: `${API_BASE_URL}/knowva_api/forum.php`,
     UPVOTES: `${API_BASE_URL}/knowva_api/upvotes.php`,
     TRENDING: `${API_BASE_URL}/knowva_api/trending.php`,
+    FEEDBACK: `${API_BASE_URL}/knowva_api/feedback.php`,
+    ANALYTICS: `${API_BASE_URL}/knowva_api/analytics.php`,
     // Add other endpoints as you expand your API
 };

@@ -101,14 +101,6 @@ const AllTools = () => {
     const handleSearchEnter = (e: React.KeyboardEvent) => {
         if (e.key === 'Enter' && searchQuery.trim() && filteredTools.length > 0) {
             const topMatch = filteredTools[0];
-            const user = localStorage.getItem("user");
-            if (!user) {
-                toast("Authentication required", {
-                    description: "Please log in to view tool details.",
-                });
-                navigate("/login");
-                return;
-            }
             navigate(`/tool/${topMatch.name.toLowerCase().replace(/\s+/g, '-')}`);
         }
     };

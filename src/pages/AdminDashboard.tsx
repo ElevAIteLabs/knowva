@@ -30,11 +30,13 @@ const AdminDashboard = () => {
     const [isLoading, setIsLoading] = useState(false);
     const [editingId, setEditingId] = useState<number | null>(null);
     const [searchQuery, setSearchQuery] = useState("");
-    const [activeTab, setActiveTab] = useState<"inventory" | "community">("inventory");
+    const [activeTab, setActiveTab] = useState<"inventory" | "community" | "feedback" | "analytics">("inventory");
     const [communityThreads, setCommunityThreads] = useState<any[]>([]);
     const [communityReplies, setCommunityReplies] = useState<any[]>([]);
     const [isCommunityLoading, setIsCommunityLoading] = useState(false);
     const [communitySubTab, setCommunitySubTab] = useState<"threads" | "replies">("threads");
+    const [feedbacks, setFeedbacks] = useState<any[]>([]);
+    const [analyticsData, setAnalyticsData] = useState<any>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const dropZoneRef = useRef<HTMLDivElement>(null);
 
@@ -83,7 +85,33 @@ const AdminDashboard = () => {
         fetchTools();
         fetchCommunityThreads();
         fetchCommunityReplies();
+        fetchFeedbacks();
+        fetchAnalytics();
     }, [navigate]);
+
+    const fetchAnalytics = async () => {
+        try {
+            const response = await fetch(`${API_ENDPOINTS.ANALYTICS}?action=get_users`);
+            const result = await response.json();
+            if (result.status === "success") {
+                setAnalyticsData(result.data);
+            }
+        } catch {
+            toast.error("Failed to fetch analytics.");
+        }
+    };
+
+    const fetchFeedbacks = async () => {
+        try {
+            const response = await fetch(API_ENDPOINTS.FEEDBACK);
+            const result = await response.json();
+            if (result.status === "success") {
+                setFeedbacks(result.data);
+            }
+        } catch {
+            toast.error("Failed to fetch feedbacks.");
+        }
+    };
 
     const fetchCommunityReplies = async () => {
         const user = JSON.parse(localStorage.getItem("user") || "{}");
@@ -681,6 +709,20 @@ const AdminDashboard = () => {
                                 <MessageSquare size={18} />
                                 Community Center
                             </button>
+                            <button
+                                onClick={() => setActiveTab("feedback")}
+                                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm transition-all ${activeTab === "feedback" ? "bg-yellow-500 text-black" : "text-foreground/40 hover:bg-white/5 hover:text-foreground"}`}
+                            >
+                                <MessageCircle size={18} />
+                                User Feedback
+                            </button>
+                            <button
+                                onClick={() => setActiveTab("analytics")}
+                                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm transition-all ${activeTab === "analytics" ? "bg-yellow-500 text-black" : "text-foreground/40 hover:bg-white/5 hover:text-foreground"}`}
+                            >
+                                <BarChart2 size={18} />
+                                User Analytics
+                            </button>
                         </div>
 
                         <div className="p-6 glass-card border border-primary/10 bg-primary/5 rounded-2xl hidden lg:block">
@@ -793,7 +835,7 @@ const AdminDashboard = () => {
                                     </div>
                                 </div>
                             </motion.div>
-                        ) : (
+                        ) : activeTab === "community" ? (
                             <motion.div
                                 initial={{ opacity: 0, x: 20 }}
                                 animate={{ opacity: 1, x: 0 }}
@@ -913,7 +955,147 @@ const AdminDashboard = () => {
                                     </div>
                                 )}
                             </motion.div>
-                        )}
+                        ) : activeTab === "feedback" ? (
+                            <motion.div
+                                initial={{ opacity: 0, x: 20 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                className="space-y-8"
+                            >
+                                <div className="flex flex-col justify-between w-full mb-10 gap-6 glass-card p-8">
+                                    <div className="flex items-center gap-5">
+                                        <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary/20 to-yellow-500/20 border border-primary/30 flex items-center justify-center flex-shrink-0">
+                                            <MessageCircle size={32} className="text-primary" />
+                                        </div>
+                                        <div>
+                                            <h1 className="text-3xl font-display font-bold tracking-tight mb-2">User Feedback</h1>
+                                            <p className="text-foreground/40 text-sm max-w-xs">Review suggestions, bug reports, and thoughts from the community.</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="glass-card overflow-hidden">
+                                    <div className="p-6 border-b border-border bg-secondary/30">
+                                        <h2 className="text-lg font-bold font-display flex items-center gap-2">
+                                            <MessageCircle className="text-primary w-5 h-5" /> Recent Feedback
+                                        </h2>
+                                    </div>
+                                    <div className="overflow-x-auto">
+                                        <table className="w-full text-left text-sm">
+                                            <thead className="bg-card text-muted-foreground uppercase text-[10px] tracking-widest border-b border-border font-black">
+                                                <tr>
+                                                    <th className="px-6 py-4">User Info</th>
+                                                    <th className="px-6 py-4">Message</th>
+                                                    <th className="px-6 py-4">Date</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody className="divide-y divide-white/5 text-sm font-medium">
+                                                {feedbacks.map((fbd) => (
+                                                    <tr key={fbd.id} className="hover:bg-white/[0.02] transition-colors group">
+                                                        <td className="px-6 py-4">
+                                                            <div className="font-bold text-foreground">{fbd.user_name}</div>
+                                                            <div className="text-xs text-foreground/50">{fbd.user_email}</div>
+                                                        </td>
+                                                        <td className="px-6 py-4">
+                                                            <div className="max-w-xl text-foreground/80 whitespace-pre-wrap">{fbd.message}</div>
+                                                        </td>
+                                                        <td className="px-6 py-4 text-xs tabular-nums text-foreground/50">
+                                                            {new Date(fbd.created_at).toLocaleString()}
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                                {feedbacks.length === 0 && (
+                                                    <tr>
+                                                        <td colSpan={3} className="px-6 py-8 text-center text-foreground/50">
+                                                            No feedback available yet.
+                                                        </td>
+                                                    </tr>
+                                                )}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </motion.div>
+                        ) : activeTab === "analytics" ? (
+                            <motion.div
+                                initial={{ opacity: 0, x: 20 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                className="space-y-8"
+                            >
+                                <div className="flex flex-col justify-between w-full mb-10 gap-6 glass-card p-8">
+                                    <div className="flex items-center gap-5">
+                                        <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary/20 to-yellow-500/20 border border-primary/30 flex items-center justify-center flex-shrink-0">
+                                            <TrendingUp size={32} className="text-primary" />
+                                        </div>
+                                        <div>
+                                            <h1 className="text-3xl font-display font-bold tracking-tight mb-2">User Analytics</h1>
+                                            <p className="text-foreground/40 text-sm max-w-xs">Overview of registered users and platform login engagement.</p>
+                                        </div>
+                                    </div>
+                                    {analyticsData && (
+                                        <div className="flex items-center gap-4 mt-4">
+                                            <div className="bg-secondary/30 px-6 py-4 rounded-2xl border border-border">
+                                                <div className="text-[10px] font-black uppercase text-foreground/40 mb-1">Total Users</div>
+                                                <div className="text-2xl font-black text-foreground">{analyticsData.totalUsers}</div>
+                                            </div>
+                                            <div className="bg-secondary/30 px-6 py-4 rounded-2xl border border-border">
+                                                <div className="text-[10px] font-black uppercase text-foreground/40 mb-1">Weekly Active</div>
+                                                <div className="text-2xl font-black text-yellow-500">{analyticsData.weeklyActiveUsers}</div>
+                                            </div>
+                                            <div className="bg-secondary/30 px-6 py-4 rounded-2xl border border-border">
+                                                <div className="text-[10px] font-black uppercase text-foreground/40 mb-1">Total Logins</div>
+                                                <div className="text-2xl font-black text-foreground">{analyticsData.totalLogins}</div>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+
+                                <div className="glass-card overflow-hidden">
+                                    <div className="p-6 border-b border-border bg-secondary/30">
+                                        <h2 className="text-lg font-bold font-display flex items-center gap-2">
+                                            <Users className="text-primary w-5 h-5" /> Registered Directory
+                                        </h2>
+                                    </div>
+                                    <div className="overflow-x-auto">
+                                        <table className="w-full text-left text-sm">
+                                            <thead className="bg-card text-muted-foreground uppercase text-[10px] tracking-widest border-b border-border font-black">
+                                                <tr>
+                                                    <th className="px-6 py-4">User</th>
+                                                    <th className="px-6 py-4">Contact Detail</th>
+                                                    <th className="px-6 py-4 text-center">Logins</th>
+                                                    <th className="px-6 py-4 text-right">Last Login</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody className="divide-y divide-white/5 text-sm font-medium">
+                                                {analyticsData?.users?.map((user: any) => (
+                                                    <tr key={user.id} className="hover:bg-white/[0.02] transition-colors group">
+                                                        <td className="px-6 py-4">
+                                                            <div className="font-bold text-foreground">{user.name}</div>
+                                                        </td>
+                                                        <td className="px-6 py-4">
+                                                            <div className="text-sm text-foreground/80">{user.email}</div>
+                                                            <div className="text-xs text-foreground/40">{user.mobile || 'N/A'}</div>
+                                                        </td>
+                                                        <td className="px-6 py-4 text-center">
+                                                            <div className="font-black text-yellow-500">{user.login_count}</div>
+                                                        </td>
+                                                        <td className="px-6 py-4 text-right tabular-nums text-foreground/50 text-xs">
+                                                            {user.last_login ? new Date(user.last_login).toLocaleString() : 'N/A'}
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                                {(!analyticsData || analyticsData.users.length === 0) && (
+                                                    <tr>
+                                                        <td colSpan={4} className="px-6 py-8 text-center text-foreground/50">
+                                                            No user data available.
+                                                        </td>
+                                                    </tr>
+                                                )}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </motion.div>
+                        ) : null}
                     </div>
                 </div>
             </main>

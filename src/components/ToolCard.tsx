@@ -95,14 +95,7 @@ const ToolCard = ({ id, name, description, category, rating, pricing, icon, dela
 
   const handleClick = (e: React.MouseEvent) => {
     e.preventDefault();
-    if (!currentUser) {
-      toast("Authentication required", {
-        description: "Please log in to view tool details.",
-      });
-      navigate("/login");
-    } else {
-      navigate(`/tool/${name.toLowerCase().replace(/\s+/g, '-')}`);
-    }
+    navigate(`/tool/${name.toLowerCase().replace(/\s+/g, '-')}`);
   };
 
   const safeGetIcon = (iconInput: any) => {

@@ -102,19 +102,7 @@ const Index = () => {
   const displayTrending = allTrendingTools.length > 0 ? allTrendingTools : dbTools.slice(0, 8);
   const allRecentTools = dbTools.slice(0, 5);
 
-  const checkAuth = (e: React.MouseEvent, targetPath: string) => {
-    e.preventDefault();
-    const user = localStorage.getItem("user");
-    if (!user) {
-      toast("Authentication required", {
-        description: "Please log in to access this feature.",
-      });
-      navigate("/login");
-      return false;
-    }
-    navigate(targetPath);
-    return true;
-  };
+
   const discoverTools = useMemo(() => {
     let tools = [...dbTools];
 
@@ -202,14 +190,6 @@ const Index = () => {
 
     if (discoverTools.length > 0) {
       const topMatch = discoverTools[0];
-      const user = localStorage.getItem("user");
-      if (!user) {
-        toast("Authentication required", {
-          description: "Please log in to view tool details.",
-        });
-        navigate("/login");
-        return;
-      }
       navigate(`/tool/${topMatch.name.toLowerCase().replace(/\s+/g, '-')}`);
     } else {
       navigate(`/all-tools?search=${encodeURIComponent(searchQuery)}`);
@@ -420,7 +400,7 @@ const Index = () => {
               return marqueeItems.map((cat, i) => {
                 const count = dbTools.filter(t => t.category?.toLowerCase() === cat.name.toLowerCase()).length;
                 return (
-                  <button key={`cat-${cat.name}-${i}`} onClick={(e) => checkAuth(e, `/category/${cat.name.toLowerCase().replace(/\s+/g, '-')}`)} className="group outline-none">
+                  <button key={`cat-${cat.name}-${i}`} onClick={() => navigate(`/category/${cat.name.toLowerCase().replace(/\s+/g, '-')}`)} className="group outline-none">
                     <div className="flex items-center gap-6 px-8 py-7 rounded-[2rem] bg-card border border-border hover:border-primary/50 hover:shadow-[0_0_30px_rgba(255,179,71,0.15)] transition-all duration-300 min-w-[280px]">
                       <div className="text-3xl w-16 h-16 rounded-2xl bg-secondary flex items-center justify-center group-hover:scale-110 group-hover:bg-primary/20 transition-all duration-300">
                         {cat.icon}
@@ -539,7 +519,7 @@ const Index = () => {
                   viewport={{ once: true }}
                   transition={{ duration: 0.6, delay: i * 0.1 }}
                   className="relative group cursor-pointer"
-                  onClick={(e) => checkAuth(e, `/tool/${tool.id}`)}
+                  onClick={() => navigate(`/tool/${tool.id}`)}
                 >
                   <div className="absolute -inset-1 bg-gradient-to-r from-primary via-orange-500 to-primary rounded-[24px] blur opacity-10 transition duration-1000 group-hover:opacity-30" />
                   <div className="relative bg-card border border-border rounded-2xl p-4 h-full flex items-center gap-4 overflow-hidden transition-shadow">
@@ -599,7 +579,7 @@ const Index = () => {
               <p className="text-muted-foreground mt-1">Explore our complete collection of powerful AI tools.</p>
             </div>
             <motion.button
-              onClick={(e) => checkAuth(e, "/all-tools")}
+              onClick={() => navigate("/all-tools")}
               className="flex items-center justify-center gap-2 px-6 py-3 bg-secondary text-foreground font-semibold rounded-xl hover:bg-primary hover:text-black transition-all duration-300 w-full md:w-auto"
             >
               View Full Collection <ChevronRight className="w-4 h-4" />
@@ -637,7 +617,7 @@ const Index = () => {
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: i * 0.1 }}
                         className="p-4 rounded-2xl border border-slate-100 bg-white shadow-sm hover:shadow-md hover:border-primary/20 transition-all text-left cursor-pointer group"
-                        onClick={(e) => checkAuth(e, `/tool/${tool.id}`)}
+                        onClick={() => navigate(`/tool/${tool.id}`)}
                       >
                         <div className="w-10 h-10 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center mb-3 group-hover:bg-primary/5 transition-colors">
                           {tool.icon && (typeof tool.icon === 'string' && (tool.icon.startsWith('http') || tool.icon.includes('.') || tool.icon.includes('/'))) ? (

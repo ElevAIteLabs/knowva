@@ -43,6 +43,18 @@ try {
     if (!$stmt->fetch()) {
         $conn->exec("ALTER TABLE users ADD COLUMN linkedin_url VARCHAR(255) DEFAULT ''");
     }
+
+    // Check if last_login column exists
+    $stmt = $conn->query("SHOW COLUMNS FROM users LIKE 'last_login'");
+    if (!$stmt->fetch()) {
+        $conn->exec("ALTER TABLE users ADD COLUMN last_login DATETIME DEFAULT NULL");
+    }
+
+    // Check if login_count column exists
+    $stmt = $conn->query("SHOW COLUMNS FROM users LIKE 'login_count'");
+    if (!$stmt->fetch()) {
+        $conn->exec("ALTER TABLE users ADD COLUMN login_count INT DEFAULT 0");
+    }
 } catch (Exception $e) {
     // Ignore error
 }
@@ -75,6 +87,10 @@ if ($action === 'login') {
         $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
         if ($user && password_verify($password, $user['password'])) {
+            // Update login analytics
+            $updateStmt = $conn->prepare("UPDATE users SET last_login = CURRENT_TIMESTAMP, login_count = login_count + 1 WHERE id = ?");
+            $updateStmt->execute([$user['id']]);
+
             // Success - Don't return the hashed password
             unset($user['password']);
             echo json_encode([
@@ -143,7 +159,10 @@ else if ($action === 'google_sync') {
         $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
         if ($user) {
-            // User exists, return them
+            // User exists, update analytics
+            $updateStmt = $conn->prepare("UPDATE users SET last_login = CURRENT_TIMESTAMP, login_count = login_count + 1 WHERE id = ?");
+            $updateStmt->execute([$user['id']]);
+
             echo json_encode([
                 "status" => "success",
                 "message" => "Google sync successful",
@@ -156,6 +175,11 @@ else if ($action === 'google_sync') {
             $stmt->execute([$fullName, $email, $dummyPass, $role]);
             
             $newId = $conn->lastInsertId();
+
+            // Setup initial login stat
+            $updateStmt = $conn->prepare("UPDATE users SET last_login = CURRENT_TIMESTAMP, login_count = 1 WHERE id = ?");
+            $updateStmt->execute([$newId]);
+
             $stmt = $conn->prepare("SELECT id, fullName, email, mobile, role, linkedin_url FROM users WHERE id = ?");
             $stmt->execute([$newId]);
             $newUser = $stmt->fetch(PDO::FETCH_ASSOC);
