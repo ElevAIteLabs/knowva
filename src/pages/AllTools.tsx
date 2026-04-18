@@ -12,7 +12,7 @@ const pricingFilters = ["All", "Free", "Freemium", "Paid"];
 
 const AllTools = () => {
     const [selectedPricing, setSelectedPricing] = useState("All");
-    const [selectedCategory, setSelectedCategory] = useState("All");
+    const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
     const [searchQuery, setSearchQuery] = useState("");
     const navigate = useNavigate();
     const [sortBy, setSortBy] = useState("Popular");
@@ -73,7 +73,7 @@ const AllTools = () => {
     const getSortedAndFilteredTools = () => {
         let tools = dbTools.filter((tool) => {
             const matchesCategory =
-                selectedCategory === "All" || tool.category === selectedCategory;
+                selectedCategories.length === 0 || selectedCategories.includes(tool.category);
             const matchesPricing =
                 selectedPricing === "All" || tool.pricing === selectedPricing;
             const matchesSearch =
@@ -145,8 +145,10 @@ const AllTools = () => {
                                 className="flex-1 flex items-center justify-between bg-card border border-border px-5 py-4 rounded-2xl shadow-sm text-sm font-semibold"
                             >
                                 <span className="flex items-center gap-2">
-                                    <span className="text-muted-foreground">Category:</span>
-                                    <span className="text-primary">{selectedCategory}</span>
+                                    <span className="text-muted-foreground">Categories:</span>
+                                    <span className="text-primary">
+                                        {selectedCategories.length === 0 ? "All" : `${selectedCategories.length} Selected`}
+                                    </span>
                                 </span>
                                 <ChevronDown className="w-4 h-4 text-muted-foreground" />
                             </button>
@@ -200,41 +202,59 @@ const AllTools = () => {
                                     </div>
                                 </div>
 
-                                {/* Categories */}
                                 <div className="mb-6">
-                                    <label className="text-sm font-medium text-muted-foreground mb-3 block">
-                                        Categories
-                                    </label>
-                                    <div className="flex flex-col gap-1 max-h-60 overflow-y-auto pr-2 custom-scrollbar">
+                                    <div className="flex items-center justify-between mb-3">
+                                        <label className="text-sm font-medium text-muted-foreground block">
+                                            Categories
+                                        </label>
+                                        {selectedCategories.length > 0 && (
+                                            <button 
+                                                onClick={() => setSelectedCategories([])}
+                                                className="text-[10px] text-primary hover:underline font-bold"
+                                            >
+                                                Reset
+                                            </button>
+                                        )}
+                                    </div>
+                                    <div className="flex flex-col gap-1 max-h-64 overflow-y-auto pr-2 custom-scrollbar">
                                         <button
                                             onClick={() => {
-                                                setSelectedCategory("All");
+                                                setSelectedCategories([]);
                                                 setSearchQuery("");
                                                 navigate("/all-tools", { replace: true });
                                             }}
-                                            className={`px-3 py-2 text-sm rounded-xl text-left transition-all ${selectedCategory === "All"
+                                            className={`px-3 py-2.5 text-sm rounded-xl text-left transition-all flex items-center justify-between ${selectedCategories.length === 0
                                                 ? "bg-primary/10 text-primary font-bold"
                                                 : "text-muted-foreground hover:bg-secondary hover:text-foreground"
                                                 }`}
                                         >
                                             All Categories
+                                            {selectedCategories.length === 0 && <div className="w-1.5 h-1.5 rounded-full bg-primary" />}
                                         </button>
-                                        {Array.from(new Set(dbTools.map(t => t.category).filter(Boolean))).sort().map((cat) => (
-                                            <button
-                                                key={cat}
-                                                onClick={() => {
-                                                    setSelectedCategory(cat);
-                                                    setSearchQuery("");
-                                                    navigate("/all-tools", { replace: true });
-                                                }}
-                                                className={`px-3 py-2 text-sm rounded-xl text-left transition-all ${selectedCategory === cat
-                                                    ? "bg-primary/10 text-primary font-bold"
-                                                    : "text-muted-foreground hover:bg-secondary hover:text-foreground"
-                                                    }`}
-                                            >
-                                                {cat}
-                                            </button>
-                                        ))}
+                                        {Array.from(new Set(dbTools.map(t => t.category).filter(Boolean))).sort().map((cat) => {
+                                            const isSelected = selectedCategories.includes(cat);
+                                            return (
+                                                <button
+                                                    key={cat}
+                                                    onClick={() => {
+                                                        if (isSelected) {
+                                                            setSelectedCategories(selectedCategories.filter(c => c !== cat));
+                                                        } else {
+                                                            setSelectedCategories([...selectedCategories, cat]);
+                                                        }
+                                                        setSearchQuery("");
+                                                        navigate("/all-tools", { replace: true });
+                                                    }}
+                                                    className={`px-3 py-2.5 text-sm rounded-xl text-left transition-all flex items-center justify-between ${isSelected
+                                                        ? "bg-primary/10 text-primary font-bold"
+                                                        : "text-muted-foreground hover:bg-secondary hover:text-foreground"
+                                                        }`}
+                                                >
+                                                    {cat}
+                                                    {isSelected && <div className="w-1.5 h-1.5 rounded-full bg-primary" />}
+                                                </button>
+                                            );
+                                        })}
                                     </div>
                                 </div>
 
@@ -260,12 +280,12 @@ const AllTools = () => {
                                 </div>
 
                                 {/* Active filters summary */}
-                                {(searchQuery || selectedPricing !== "All" || selectedCategory !== "All") && (
+                                {(searchQuery || selectedPricing !== "All" || selectedCategories.length > 0) && (
                                     <button
                                         onClick={() => {
                                             setSearchQuery("");
                                             setSelectedPricing("All");
-                                            setSelectedCategory("All");
+                                            setSelectedCategories([]);
                                         }}
                                         className="w-full text-xs text-primary hover:underline text-left"
                                     >
@@ -345,11 +365,11 @@ const AllTools = () => {
                                         {searchParams.get("not_found") ? "Tool Not Available" : "No results found"}
                                     </h3>
                                     <p className="text-muted-foreground mb-8 max-w-sm mx-auto">
-                                        {searchParams.get("not_found") 
+                                        {searchParams.get("not_found")
                                             ? `We couldn't find the exact tool "${searchQuery}". Here are some similar tools you might like.`
                                             : "Try adjusting your search or filters to find what you're looking for."}
                                     </p>
-                                    
+
                                     {/* Suggested Tools Section */}
                                     <div className="mt-12 w-full">
                                         <div className="flex items-center gap-3 mb-8 justify-center">
@@ -357,10 +377,10 @@ const AllTools = () => {
                                             <span className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">Recommended Suggestions</span>
                                             <div className="h-px bg-border flex-grow max-w-[100px]" />
                                         </div>
-                                        
+
                                         <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 max-w-5xl mx-auto">
                                             {dbTools
-                                                .filter(t => 
+                                                .filter(t =>
                                                     // Try to match search query to categories first
                                                     t.category?.toLowerCase().includes(searchQuery.toLowerCase()) ||
                                                     // Or just show tools with high ratings
@@ -373,12 +393,12 @@ const AllTools = () => {
                                                 ))
                                             }
                                         </div>
-                                        
+
                                         <button
                                             onClick={() => {
                                                 setSearchQuery("");
                                                 setSelectedPricing("All");
-                                                setSelectedCategory("All");
+                                                setSelectedCategories([]);
                                                 navigate("/all-tools", { replace: true });
                                             }}
                                             className="mt-12 px-6 py-3 bg-secondary text-foreground rounded-xl font-bold text-sm hover:bg-primary hover:text-black transition-all"
@@ -439,48 +459,53 @@ const AllTools = () => {
                                         />
                                     </div>
 
-                                    {/* Selected Category (if any) */}
+                                    {/* Selected Categories Summary */}
                                     <div className="flex flex-wrap gap-2">
                                         <button
                                             onClick={() => {
-                                                setSelectedCategory("All");
+                                                setSelectedCategories([]);
                                                 setSearchQuery("");
                                                 navigate("/all-tools", { replace: true });
                                             }}
-                                            className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold transition-all ${selectedCategory === "All"
+                                            className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold transition-all ${selectedCategories.length === 0
                                                 ? "bg-foreground text-background"
                                                 : "bg-secondary text-foreground hover:bg-secondary/80"
                                                 }`}
                                         >
-                                            All {selectedCategory === "All" ? <X className="w-3 h-3" /> : <Plus className="w-3 h-3" />}
+                                            All {selectedCategories.length === 0 ? <X className="w-3 h-3" /> : <Plus className="w-3 h-3" />}
                                         </button>
 
                                         {Array.from(new Set(dbTools.map(t => t.category).filter(Boolean)))
                                             .sort()
-                                            .map((cat) => (
-                                                <button
-                                                    key={cat}
-                                                    onClick={() => {
-                                                        setSelectedCategory(cat);
-                                                        setSearchQuery("");
-                                                        navigate("/all-tools", { replace: true });
-                                                        // if we want to mimic the image exactly, we might close the sheet
-                                                        // setIsFilterDrawerOpen(false); 
-                                                    }}
-                                                    className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold transition-all ${selectedCategory === cat
-                                                        ? "bg-foreground text-background"
-                                                        : "bg-secondary text-foreground hover:bg-secondary/80"
-                                                        }`}
-                                                >
-                                                    {cat} {selectedCategory === cat ? <X className="w-3 h-3" /> : <Plus className="w-3 h-3" />}
-                                                </button>
-                                            ))}
+                                            .map((cat) => {
+                                                const isSelected = selectedCategories.includes(cat);
+                                                return (
+                                                    <button
+                                                        key={cat}
+                                                        onClick={() => {
+                                                            if (isSelected) {
+                                                                setSelectedCategories(selectedCategories.filter(c => c !== cat));
+                                                            } else {
+                                                                setSelectedCategories([...selectedCategories, cat]);
+                                                            }
+                                                            setSearchQuery("");
+                                                            navigate("/all-tools", { replace: true });
+                                                        }}
+                                                        className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold transition-all ${isSelected
+                                                            ? "bg-foreground text-background"
+                                                            : "bg-secondary text-foreground hover:bg-secondary/80"
+                                                            }`}
+                                                    >
+                                                        {cat} {isSelected ? <X className="w-3 h-3" /> : <Plus className="w-3 h-3" />}
+                                                    </button>
+                                                );
+                                            })}
                                     </div>
 
                                     <div className="grid grid-cols-2 gap-3 pt-4">
                                         <button
                                             onClick={() => {
-                                                setSelectedCategory("All");
+                                                setSelectedCategories([]);
                                                 setSearchQuery("");
                                                 navigate("/all-tools", { replace: true });
                                                 setIsFilterDrawerOpen(false);

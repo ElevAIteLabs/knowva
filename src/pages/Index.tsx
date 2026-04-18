@@ -523,22 +523,22 @@ const Index = () => {
                 >
                   <div className="absolute -inset-1 bg-gradient-to-r from-primary via-orange-500 to-primary rounded-[24px] blur opacity-10 transition duration-1000 group-hover:opacity-30" />
                   <div className="relative bg-card border border-border rounded-2xl p-4 h-full flex items-center gap-4 overflow-hidden transition-shadow">
-                    <div className="w-12 h-12 rounded-xl bg-secondary border border-border flex items-center justify-center overflow-hidden flex-shrink-0">
+                    <div className="w-12 h-12 rounded-xl bg-white border border-border flex items-center justify-center overflow-hidden flex-shrink-0 text-black">
                       {tool.icon && (typeof tool.icon === 'string' && (tool.icon.startsWith('http') || tool.icon.includes('.') || tool.icon.includes('/'))) ? (
                         <img
                           src={tool.icon}
                           alt={tool.name}
-                          className="w-8 h-8 object-contain"
+                          className="w-full h-full object-contain"
                           onError={(e) => {
                             const target = e.target as HTMLImageElement;
                             target.style.display = 'none';
                             if (target.parentElement) {
-                              target.parentElement.innerHTML = `<span class="text-foreground text-lg font-black font-display">${tool.name.charAt(0)}</span>`;
+                              target.parentElement.innerHTML = `<span class="text-black text-lg font-bold font-display">${tool.name.charAt(0)}</span>`;
                             }
                           }}
                         />
                       ) : (
-                        <span className="text-foreground text-lg font-black font-display">
+                        <span className="text-black text-lg font-bold font-display">
                           {tool.icon?.length < 5 ? tool.icon : (tool.name ? tool.name.charAt(0) : '?')}
                         </span>
                       )}

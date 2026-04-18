@@ -5,29 +5,7 @@
  */
 
 // --- CORS HEADERS ---
-header("Access-Control-Allow-Origin: *");
-header("Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS");
-header("Access-Control-Allow-Headers: Content-Type, Authorization");
-header("Content-Type: application/json; charset=UTF-8");
-
-if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
-    http_response_code(200);
-    exit();
-}
-
-// --- DATABASE CONFIGURATION ---
-$host = 'localhost';
-$db_name = 'u674592973_knowva'; 
-$username = 'u674592973_knowva_admin';
-$password = 'Knowva@2026';
-
-try {
-    $conn = new PDO("mysql:host=" . $host . ";dbname=" . $db_name, $username, $password);
-    $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-} catch (PDOException $e) {
-    echo json_encode(["status" => "error", "message" => "Connection failure: " . $e->getMessage()]);
-    exit();
-}
+require_once 'config.php';
 
 $method = $_SERVER['REQUEST_METHOD'];
 

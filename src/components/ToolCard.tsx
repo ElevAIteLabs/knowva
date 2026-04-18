@@ -129,7 +129,7 @@ const ToolCard = ({ id, name, description, category, rating, pricing, icon, dela
 
           <div className="flex items-start justify-between mb-3 sm:mb-4 relative">
             <div className="w-fit">
-              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-secondary/80 border border-border flex items-center justify-center p-2 sm:p-2.5 group-hover:scale-110 group-hover:bg-primary/10 transition-all duration-500 overflow-hidden text-foreground">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-white border border-border flex items-center justify-center group-hover:scale-110 transition-all duration-500 overflow-hidden text-black">
                 <div className="flex items-center justify-center w-full h-full">
                   {icon && (typeof icon === 'string' && (icon.replace(/^['"\[]|['"\]]$/g, '').trim().startsWith('http') || icon.includes('.') || icon.includes('/'))) ? (
                     <img
@@ -140,12 +140,12 @@ const ToolCard = ({ id, name, description, category, rating, pricing, icon, dela
                         const target = e.target as HTMLImageElement;
                         target.style.display = 'none';
                         if (target.parentElement) {
-                          target.parentElement.innerHTML = `<span class="text-foreground text-xl font-black font-display">${name.charAt(0)}</span>`;
+                          target.parentElement.innerHTML = `<span class="text-black text-xl font-bold font-display">${name.charAt(0)}</span>`;
                         }
                       }}
                     />
                   ) : (
-                    <span className="text-foreground text-xl font-black font-display">
+                    <span className="text-black text-xl font-bold font-display">
                       {((typeof icon === 'string' && icon.length < 5) ? icon : (name ? name.charAt(0) : '?'))}
                     </span>
                   )}

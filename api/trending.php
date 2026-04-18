@@ -4,17 +4,9 @@
  * Fetches the most upvoted tools
  */
 
-header("Access-Control-Allow-Origin: *");
-header("Content-Type: application/json; charset=UTF-8");
-
-$host     = 'localhost';
-$db_name  = 'u674592973_knowva';
-$username = 'u674592973_knowva_admin';
-$password = 'Knowva@2026';
+require_once 'config.php';
 
 try {
-    $conn = new PDO("mysql:host=$host;dbname=$db_name", $username, $password);
-    $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
     // SQL query to fetch most upvoted tools
     // We join with the tools table if it exists, otherwise we just return the slugs and counts

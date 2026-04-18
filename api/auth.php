@@ -4,31 +4,7 @@
  * Handles login and registration
  */
 
-// --- CORS HEADERS (Crucial for React/Vite to work) ---
-header("Access-Control-Allow-Origin: *");
-header("Access-Control-Allow-Methods: POST, OPTIONS");
-header("Access-Control-Allow-Headers: Content-Type, Authorization");
-header("Content-Type: application/json; charset=UTF-8");
-
-// Handle preflight OPTIONS request
-if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
-    http_response_code(200);
-    exit();
-}
-
-// --- DATABASE CONFIGURATION ---
-$host = 'localhost'; // Usually localhost on Hostinger
-$db_name = 'u674592973_knowva'; // Updated with your DB name
-$username = 'u674592973_knowva_admin'; // Updated with your DB username
-$password = 'Knowva@2026'; // Updated with your DB password
-
-try {
-    $conn = new PDO("mysql:host=" . $host . ";dbname=" . $db_name, $username, $password);
-    $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-} catch (PDOException $exception) {
-    echo json_encode(["status" => "error", "message" => "Connection failure: " . $exception->getMessage()]);
-    exit();
-}
+require_once 'config.php';
 
 // --- AUTO-CREATE/UPDATE TABLES ---
 try {

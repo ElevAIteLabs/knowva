@@ -7,28 +7,7 @@
 error_reporting(0);
 ini_set('display_errors', 0);
 
-header("Access-Control-Allow-Origin: *");
-header("Access-Control-Allow-Methods: GET, POST, OPTIONS");
-header("Access-Control-Allow-Headers: Content-Type, Authorization");
-header("Content-Type: application/json; charset=UTF-8");
-
-if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
-    http_response_code(200);
-    exit();
-}
-
-$host     = 'localhost';
-$db_name  = 'u674592973_knowva';
-$username = 'u674592973_knowva_admin';
-$password = 'Knowva@2026';
-
-try {
-    $conn = new PDO("mysql:host=$host;dbname=$db_name", $username, $password);
-    $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-} catch (PDOException $e) {
-    echo json_encode(["status" => "error", "message" => "Connection failure"]);
-    exit();
-}
+require_once 'config.php';
 
 try {
     $conn->exec("ALTER TABLE forum_threads ADD COLUMN image_url VARCHAR(255) NULL");

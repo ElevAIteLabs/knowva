@@ -31,12 +31,23 @@ const AdminDashboard = () => {
     const [editingId, setEditingId] = useState<number | null>(null);
     const [searchQuery, setSearchQuery] = useState("");
     const [activeTab, setActiveTab] = useState<"inventory" | "community" | "feedback" | "analytics">("inventory");
+    const [analyticsData, setAnalyticsData] = useState<{
+        users: any[],
+        totalUsers: number,
+        totalLogins: number,
+        weeklyActiveUsers: number
+    }>({
+        users: [],
+        totalUsers: 0,
+        totalLogins: 0,
+        weeklyActiveUsers: 0
+    });
+    const [isAnalyticsLoading, setIsAnalyticsLoading] = useState(false);
     const [communityThreads, setCommunityThreads] = useState<any[]>([]);
     const [communityReplies, setCommunityReplies] = useState<any[]>([]);
     const [isCommunityLoading, setIsCommunityLoading] = useState(false);
     const [communitySubTab, setCommunitySubTab] = useState<"threads" | "replies">("threads");
     const [feedbacks, setFeedbacks] = useState<any[]>([]);
-    const [analyticsData, setAnalyticsData] = useState<any>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const dropZoneRef = useRef<HTMLDivElement>(null);
 
@@ -72,6 +83,17 @@ const AdminDashboard = () => {
     const [iconFile, setIconFile] = useState<File | null>(null);
     const [mediaFiles, setMediaFiles] = useState<File[]>([]);
     const [stats, setStats] = useState({ totalTools: 0 });
+    const [selectedAdminCategories, setSelectedAdminCategories] = useState<string[]>([]);
+// 
+    const getSafeLogo = (path: any) => {
+        if (!path || typeof path !== 'string') return null;
+        const clean = path.replace(/^['"\[]|['"\]]$/g, '').trim();
+        if (!clean || (!clean.includes('.') && !clean.includes('/') && !clean.startsWith('http'))) return null;
+        if (clean.startsWith('http')) return clean;
+        const cp = clean.startsWith('/') ? clean.slice(1) : clean;
+        const fp = cp.startsWith('uploads/') ? cp : `uploads/${cp}`;
+        return `${API_BASE_URL}/${fp}`;
+    };
 
     useEffect(() => {
         const userStr = localStorage.getItem("user");
@@ -90,6 +112,7 @@ const AdminDashboard = () => {
     }, [navigate]);
 
     const fetchAnalytics = async () => {
+        setIsAnalyticsLoading(true);
         try {
             const response = await fetch(`${API_ENDPOINTS.ANALYTICS}?action=get_users`);
             const result = await response.json();
@@ -97,7 +120,9 @@ const AdminDashboard = () => {
                 setAnalyticsData(result.data);
             }
         } catch {
-            toast.error("Failed to fetch analytics.");
+            toast.error("Failed to fetch user analytics.");
+        } finally {
+            setIsAnalyticsLoading(false);
         }
     };
 
@@ -198,7 +223,7 @@ const AdminDashboard = () => {
         setPricingTiers(updated);
     };
     const removeTier = (index: number) => setPricingTiers(pricingTiers.filter((_, i) => i !== index));
-    
+
     // ── FAQ helpers ──────────────────────────────────────────────────────────────
     const handleAddFaq = () => setFaqs([...faqs, { question: "", answer: "" }]);
     const updateFaq = (index: number, field: string, value: string) => {
@@ -280,9 +305,9 @@ const AdminDashboard = () => {
 
     const resetForm = () => {
         setEditingId(null);
-        setFormData({ 
-            name: "", description: "", category: "Text Generation", pricing: "Free", 
-            website_url: "", rating: "4.5", reviews_count: "0", pros: "", cons: "", 
+        setFormData({
+            name: "", description: "", category: "Text Generation", pricing: "Free",
+            website_url: "", rating: "4.5", reviews_count: "0", pros: "", cons: "",
             features: "", icon_url: "", media_urls: "", is_trending: 0,
             prompts: "", upvotes: "0"
         });
@@ -330,11 +355,11 @@ const AdminDashboard = () => {
             return "";
         };
 
-        setPricingTiers(parsedTiers.map((t: any) => ({ 
-            name: t.name || "", 
-            price: t.price || "", 
+        setPricingTiers(parsedTiers.map((t: any) => ({
+            name: t.name || "",
+            price: t.price || "",
             interval: t.interval || "",
-            features: safeFeatures(t.features) 
+            features: safeFeatures(t.features)
         })));
 
         let parsedFaqs: any[] = [];
@@ -432,7 +457,7 @@ const AdminDashboard = () => {
         const ws = xlsx.utils.json_to_sheet(templateData);
         const wb = xlsx.utils.book_new();
         xlsx.utils.book_append_sheet(wb, ws, "AI Tools Template");
-        
+
         // Add a second sheet with instructions
         const instructions = [
             { "Field": "Name", "Required": "Yes", "Description": "The name of the AI tool", "Example": "ChatGPT" },
@@ -453,7 +478,7 @@ const AdminDashboard = () => {
         ];
         const wsInstructions = xlsx.utils.json_to_sheet(instructions);
         xlsx.utils.book_append_sheet(wb, wsInstructions, "Instructions");
-        
+
         xlsx.writeFile(wb, "knowva_ai_tools_template.xlsx");
         toast.success("Comprehensive AI Tools template downloaded!");
     };
@@ -520,7 +545,7 @@ const AdminDashboard = () => {
 
                 const rawCategory = getVal(["Category"], "Other");
                 const rawPricing = getVal(["Pricing", "Price", "Cost", "Type"], "Free");
-                
+
                 let finalCategory = rawCategory;
                 let finalPricing = rawPricing;
 
@@ -551,8 +576,8 @@ const AdminDashboard = () => {
                     const matchedIcon = importAssets.find(f => {
                         const assetName = f.name.toLowerCase();
                         if (!assetName.match(/\.(jpg|jpeg|png|gif|webp|svg|bmp)$/)) return false;
-                        return assetName === iconFilename || 
-                               assetName.split('.')[0] === iconFilename?.split('.')[0];
+                        return assetName === iconFilename ||
+                            assetName.split('.')[0] === iconFilename?.split('.')[0];
                     });
 
                     if (matchedIcon) {
@@ -581,8 +606,8 @@ const AdminDashboard = () => {
                         const filename = trimmedUrl.split(/[/\\]/).pop()?.trim().toLowerCase();
                         const matchedFile = importAssets.find(f => {
                             const assetName = f.name.toLowerCase();
-                            return assetName === filename || 
-                                   assetName.split('.')[0] === filename?.split('.')[0];
+                            return assetName === filename ||
+                                assetName.split('.')[0] === filename?.split('.')[0];
                         });
 
                         if (matchedFile) {
@@ -599,14 +624,14 @@ const AdminDashboard = () => {
                 toolData.append("cons", JSON.stringify(splitArr(["Cons", "Con", "Disadvantages", "Drawbacks"])));
                 toolData.append("features", JSON.stringify(splitArr(["Features", "Feature", "Capabilities"])));
                 toolData.append("media_urls", JSON.stringify(finalMediaUrls));
-                
+
                 // Handle Pricing Tiers - Look for complex JSON OR simple Plan columns
                 let pricingTiersStr = getVal(["Pricing Tiers", "Tiers", "Plans"], "");
                 if (!pricingTiersStr || pricingTiersStr === "[]") {
                     const singlePlanName = getVal(["Plan Name", "Plan", "Price Name"]);
                     const singlePlanPrice = getVal(["Plan Price", "Price", "Cost", "Value"]);
                     const singlePlanFeatures = splitArr(["Plan Features", "Features", "What's included"]);
-                    
+
                     if (singlePlanName) {
                         pricingTiersStr = JSON.stringify([{
                             name: singlePlanName,
@@ -616,7 +641,7 @@ const AdminDashboard = () => {
                     }
                 }
                 toolData.append("pricing_tiers", pricingTiersStr || "[]");
-                
+
                 toolData.append("prompts", JSON.stringify(splitArr(["Prompts", "Examples", "Use Cases"])));
                 const rawFaqs = getVal(["FAQs", "Q&A", "FAQ", "Questions"], "[]");
                 let finalFaqs = "[]";
@@ -679,10 +704,13 @@ const AdminDashboard = () => {
         setShowColumnGuide(false);
     };
 
-    const filteredTools = tools.filter(tool =>
-        tool.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        tool.category?.toLowerCase().includes(searchQuery.toLowerCase())
-    );
+    const filteredTools = tools.filter(tool => {
+        const matchesSearch = !searchQuery || 
+            tool.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            tool.category?.toLowerCase().includes(searchQuery.toLowerCase());
+        const matchesCategory = selectedAdminCategories.length === 0 || selectedAdminCategories.includes(tool.category);
+        return matchesSearch && matchesCategory;
+    });
 
     // ─── JSX ───────────────────────────────────────────────────────────────────
     return (
@@ -720,8 +748,8 @@ const AdminDashboard = () => {
                                 onClick={() => setActiveTab("analytics")}
                                 className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm transition-all ${activeTab === "analytics" ? "bg-yellow-500 text-black" : "text-foreground/40 hover:bg-white/5 hover:text-foreground"}`}
                             >
-                                <BarChart2 size={18} />
-                                User Analytics
+                                <Users size={18} />
+                                User Insights
                             </button>
                         </div>
 
@@ -784,9 +812,48 @@ const AdminDashboard = () => {
                                             <Layers className="text-yellow-500 w-5 h-5" /> All Inventory
                                             <span className="ml-2 text-xs font-normal text-foreground/40 bg-secondary/30 border border-border px-2 py-0.5 rounded-full">{tools.length} entries</span>
                                         </h2>
-                                        <div className="relative w-full sm:w-64">
-                                            <input type="text" placeholder="Search..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full bg-card border border-border rounded-xl px-4 py-2.5 pl-10 text-sm focus:border-primary transition-colors placeholder:text-muted-foreground/50" />
-                                            <Search className="w-4 h-4 text-muted-foreground absolute left-3.5 top-1/2 -translate-y-1/2" />
+                                        <div className="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto">
+                                            {/* Category multi-filter */}
+                                            <div className="flex flex-wrap gap-2 max-w-md justify-end">
+                                                {selectedAdminCategories.length > 0 && (
+                                                    <button 
+                                                        onClick={() => setSelectedAdminCategories([])}
+                                                        className="px-3 py-1.5 text-[10px] font-bold text-primary hover:underline"
+                                                    >
+                                                        Clear
+                                                    </button>
+                                                )}
+                                                <select 
+                                                    className="bg-card border border-border rounded-xl px-3 py-2 text-xs focus:border-primary focus:outline-none"
+                                                    onChange={(e) => {
+                                                        const val = e.target.value;
+                                                        if (val && !selectedAdminCategories.includes(val)) {
+                                                            setSelectedAdminCategories([...selectedAdminCategories, val]);
+                                                        }
+                                                        e.target.value = "";
+                                                    }}
+                                                >
+                                                    <option value="">+ Filter Category</option>
+                                                    {Array.from(new Set(tools.map(t => t.category).filter(Boolean))).sort().map(cat => (
+                                                        <option key={cat} value={cat}>{cat}</option>
+                                                    ))}
+                                                </select>
+                                                
+                                                {selectedAdminCategories.map(cat => (
+                                                    <button 
+                                                        key={cat}
+                                                        onClick={() => setSelectedAdminCategories(selectedAdminCategories.filter(c => c !== cat))}
+                                                        className="flex items-center gap-1.5 px-3 py-1.5 bg-primary/10 border border-primary/20 rounded-full text-[10px] font-bold text-primary hover:bg-primary/20 transition-colors"
+                                                    >
+                                                        {cat} <X size={10} />
+                                                    </button>
+                                                ))}
+                                            </div>
+
+                                            <div className="relative w-full sm:w-64">
+                                                <input type="text" placeholder="Search..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full bg-card border border-border rounded-xl px-4 py-2.5 pl-10 text-sm focus:border-primary transition-colors placeholder:text-muted-foreground/50" />
+                                                <Search className="w-4 h-4 text-muted-foreground absolute left-3.5 top-1/2 -translate-y-1/2" />
+                                            </div>
                                         </div>
                                     </div>
                                     <div className="overflow-x-auto">
@@ -795,7 +862,6 @@ const AdminDashboard = () => {
                                                 <tr>
                                                     <th className="px-6 py-4">Tool / Identity</th>
                                                     <th className="px-6 py-4">Status / Tags</th>
-                                                    <th className="px-6 py-4 text-center">Engagement</th>
                                                     <th className="px-6 py-4 text-right">Ops</th>
                                                 </tr>
                                             </thead>
@@ -805,10 +871,22 @@ const AdminDashboard = () => {
                                                     <tr key={tool.id} className="hover:bg-white/[0.02] transition-colors group">
                                                         <td className="px-6 py-4">
                                                             <div className="flex items-center gap-4">
-                                                                <div className="w-10 h-10 rounded-xl bg-secondary/30 border border-border flex items-center justify-center overflow-hidden">
-                                                                     {tool.icon_url ? (
-                                                                         <img src={tool.icon_url.startsWith('http') ? tool.icon_url : `${API_BASE_URL}/${tool.icon_url}`} className="w-full h-full object-cover" />
-                                                                     ) : <Zap size={16} className="text-foreground/20" />}
+                                                                <div className="w-10 h-10 rounded-xl bg-white border border-border flex items-center justify-center overflow-hidden text-black">
+                                                                    {getSafeLogo(tool.icon_url) ? (
+                                                                        <img 
+                                                                            src={getSafeLogo(tool.icon_url)!} 
+                                                                            className="w-full h-full object-contain"
+                                                                            onError={(e) => {
+                                                                                const target = e.target as HTMLImageElement;
+                                                                                target.style.display = 'none';
+                                                                                if (target.parentElement) {
+                                                                                    target.parentElement.innerHTML = `<span class="text-xs font-bold">${tool.name?.charAt(0) || '?'}</span>`;
+                                                                                }
+                                                                            }}
+                                                                        />
+                                                                    ) : (
+                                                                        <span className="text-xs font-bold text-black/40">{tool.name?.charAt(0) || '?'}</span>
+                                                                    )}
                                                                 </div>
                                                                 <div>
                                                                     <div className="text-foreground group-hover:text-primary transition-colors">{tool.name}</div>
@@ -819,9 +897,9 @@ const AdminDashboard = () => {
                                                         <td className="px-6 py-4">
                                                             <span className="px-2 py-1 bg-secondary/50 rounded-lg text-[10px] border border-border">{tool.category}</span>
                                                         </td>
-                                                        <td className="px-6 py-4 text-center">
+                                                        {/* <td className="px-6 py-4 text-center">
                                                             <div className="text-primary font-black">{tool.upvotes || 0}</div>
-                                                        </td>
+                                                        </td> */}
                                                         <td className="px-6 py-4 text-right">
                                                             <div className="flex items-center justify-end gap-1">
                                                                 <button onClick={() => handleEditClick(tool)} className="p-2 text-foreground/20 hover:text-yellow-500 hover:bg-yellow-500/10 rounded-lg transition-all"><Edit2 size={16} /></button>
@@ -864,13 +942,13 @@ const AdminDashboard = () => {
                                 </div>
 
                                 <div className="flex gap-4 mb-6">
-                                    <button 
+                                    <button
                                         onClick={() => setCommunitySubTab("threads")}
                                         className={`px-6 py-2 rounded-full font-bold text-sm transition-all ${communitySubTab === "threads" ? "bg-primary text-black" : "bg-secondary/30 text-foreground/40 hover:text-foreground"}`}
                                     >
                                         Discussions ({communityThreads.length})
                                     </button>
-                                    <button 
+                                    <button
                                         onClick={() => setCommunitySubTab("replies")}
                                         className={`px-6 py-2 rounded-full font-bold text-sm transition-all ${communitySubTab === "replies" ? "bg-primary text-black" : "bg-secondary/30 text-foreground/40 hover:text-foreground"}`}
                                     >
@@ -1021,38 +1099,52 @@ const AdminDashboard = () => {
                                 animate={{ opacity: 1, x: 0 }}
                                 className="space-y-8"
                             >
-                                <div className="flex flex-col justify-between w-full mb-10 gap-6 glass-card p-8">
+                                <div className="flex flex-col md:flex-row justify-between w-full md:items-end mb-10 gap-6 glass-card p-8">
                                     <div className="flex items-center gap-5">
                                         <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary/20 to-yellow-500/20 border border-primary/30 flex items-center justify-center flex-shrink-0">
-                                            <TrendingUp size={32} className="text-primary" />
+                                            <Users size={32} className="text-primary" />
                                         </div>
                                         <div>
-                                            <h1 className="text-3xl font-display font-bold tracking-tight mb-2">User Analytics</h1>
-                                            <p className="text-foreground/40 text-sm max-w-xs">Overview of registered users and platform login engagement.</p>
+                                            <h1 className="text-3xl font-display font-bold tracking-tight mb-2">User Insights</h1>
+                                            <p className="text-foreground/40 text-sm max-w-xs">Detailed statistics and activity logs for all registered users.</p>
                                         </div>
                                     </div>
-                                    {analyticsData && (
-                                        <div className="flex items-center gap-4 mt-4">
-                                            <div className="bg-secondary/30 px-6 py-4 rounded-2xl border border-border">
-                                                <div className="text-[10px] font-black uppercase text-foreground/40 mb-1">Total Users</div>
-                                                <div className="text-2xl font-black text-foreground">{analyticsData.totalUsers}</div>
-                                            </div>
-                                            <div className="bg-secondary/30 px-6 py-4 rounded-2xl border border-border">
-                                                <div className="text-[10px] font-black uppercase text-foreground/40 mb-1">Weekly Active</div>
-                                                <div className="text-2xl font-black text-yellow-500">{analyticsData.weeklyActiveUsers}</div>
-                                            </div>
-                                            <div className="bg-secondary/30 px-6 py-4 rounded-2xl border border-border">
-                                                <div className="text-[10px] font-black uppercase text-foreground/40 mb-1">Total Logins</div>
-                                                <div className="text-2xl font-black text-foreground">{analyticsData.totalLogins}</div>
-                                            </div>
-                                        </div>
-                                    )}
+                                    <div className="flex items-center gap-3">
+                                        <button 
+                                            onClick={fetchAnalytics} 
+                                            disabled={isAnalyticsLoading}
+                                            className="flex items-center gap-2 bg-secondary/30 text-foreground border border-border px-5 py-3 rounded-xl font-bold hover:bg-secondary/50 transition-all text-sm"
+                                        >
+                                            <Zap size={18} className={isAnalyticsLoading ? "animate-spin" : ""} /> 
+                                            {isAnalyticsLoading ? "Refreshing..." : "Refresh Data"}
+                                        </button>
+                                    </div>
                                 </div>
 
+                                {/* Summary Cards */}
+                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+                                    {[
+                                        { label: "Total Registrations", value: analyticsData.totalUsers, color: "text-blue-500", icon: <Users size={20} /> },
+                                        { label: "Global Login Volume", value: analyticsData.totalLogins, color: "text-green-500", icon: <Zap size={20} /> },
+                                        { label: "Weekly Active Users", value: analyticsData.weeklyActiveUsers, color: "text-yellow-500", icon: <TrendingUp size={20} /> },
+                                    ].map((stat, i) => (
+                                        <div key={i} className="glass-card p-6 flex items-center gap-5">
+                                            <div className={`w-12 h-12 rounded-2xl bg-secondary/50 border border-border flex items-center justify-center ${stat.color}`}>
+                                                {stat.icon}
+                                            </div>
+                                            <div>
+                                                <div className="text-3xl font-black">{stat.value}</div>
+                                                <div className="text-[10px] uppercase font-black tracking-widest text-foreground/40">{stat.label}</div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+
+                                {/* User Table */}
                                 <div className="glass-card overflow-hidden">
-                                    <div className="p-6 border-b border-border bg-secondary/30">
+                                    <div className="p-6 border-b border-border bg-secondary/30 flex justify-between items-center">
                                         <h2 className="text-lg font-bold font-display flex items-center gap-2">
-                                            <Users className="text-primary w-5 h-5" /> Registered Directory
+                                            <ShieldAlert className="text-primary w-5 h-5" /> Registered User Base
                                         </h2>
                                     </div>
                                     <div className="overflow-x-auto">
@@ -1060,33 +1152,46 @@ const AdminDashboard = () => {
                                             <thead className="bg-card text-muted-foreground uppercase text-[10px] tracking-widest border-b border-border font-black">
                                                 <tr>
                                                     <th className="px-6 py-4">User</th>
-                                                    <th className="px-6 py-4">Contact Detail</th>
-                                                    <th className="px-6 py-4 text-center">Logins</th>
-                                                    <th className="px-6 py-4 text-right">Last Login</th>
+                                                    <th className="px-6 py-4">Contact info</th>
+                                                    <th className="px-6 py-4">Session activity</th>
+                                                    <th className="px-6 py-4 text-right">Login Count</th>
                                                 </tr>
                                             </thead>
-                                            <tbody className="divide-y divide-white/5 text-sm font-medium">
-                                                {analyticsData?.users?.map((user: any) => (
+                                            <tbody className="divide-y divide-white/5 text-sm font-bold">
+                                                {analyticsData.users.map((user) => (
                                                     <tr key={user.id} className="hover:bg-white/[0.02] transition-colors group">
                                                         <td className="px-6 py-4">
-                                                            <div className="font-bold text-foreground">{user.name}</div>
+                                                            <div className="flex items-center gap-3">
+                                                                <div className="w-8 h-8 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center text-[10px] text-primary">
+                                                                    {user.name?.charAt(0) || user.email?.charAt(0)}
+                                                                </div>
+                                                                <div>
+                                                                    <div className="text-foreground">{user.name || "Anonymous"}</div>
+                                                                    <div className="text-[10px] text-foreground/40">ID: #{user.id}</div>
+                                                                </div>
+                                                            </div>
                                                         </td>
                                                         <td className="px-6 py-4">
-                                                            <div className="text-sm text-foreground/80">{user.email}</div>
-                                                            <div className="text-xs text-foreground/40">{user.mobile || 'N/A'}</div>
+                                                            <div className="text-foreground/80">{user.email}</div>
+                                                            <div className="text-[10px] text-foreground/40">{user.mobile || "No Mobile"}</div>
                                                         </td>
-                                                        <td className="px-6 py-4 text-center">
-                                                            <div className="font-black text-yellow-500">{user.login_count}</div>
+                                                        <td className="px-6 py-4">
+                                                            <div className="text-xs">
+                                                                {user.last_login ? new Date(user.last_login).toLocaleString() : "Never"}
+                                                            </div>
+                                                            <div className="text-[10px] text-foreground/40 uppercase tracking-widest">Last Login</div>
                                                         </td>
-                                                        <td className="px-6 py-4 text-right tabular-nums text-foreground/50 text-xs">
-                                                            {user.last_login ? new Date(user.last_login).toLocaleString() : 'N/A'}
+                                                        <td className="px-6 py-4 text-right">
+                                                            <span className="px-3 py-1 bg-secondary/50 rounded-full text-xs font-black text-primary border border-primary/20">
+                                                                {user.login_count || 0}
+                                                            </span>
                                                         </td>
                                                     </tr>
                                                 ))}
-                                                {(!analyticsData || analyticsData.users.length === 0) && (
+                                                {analyticsData.users.length === 0 && (
                                                     <tr>
-                                                        <td colSpan={4} className="px-6 py-8 text-center text-foreground/50">
-                                                            No user data available.
+                                                        <td colSpan={4} className="px-6 py-12 text-center text-foreground/30 font-medium">
+                                                            No user records found in the database.
                                                         </td>
                                                     </tr>
                                                 )}
@@ -1355,10 +1460,10 @@ const AdminDashboard = () => {
                                     <div><label className="block text-xs uppercase tracking-wider text-muted-foreground mb-2 font-bold">Tool Name *</label><input required value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} className="w-full bg-secondary/30 border border-border rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-primary transition-colors" placeholder="e.g. ChatGPT" /></div>
                                     <div>
                                         <label className="block text-xs uppercase tracking-wider text-muted-foreground mb-2 font-bold">Category *</label>
-                                        <select 
-                                            required 
-                                            value={formData.category} 
-                                            onChange={(e) => setFormData({ ...formData, category: e.target.value })} 
+                                        <select
+                                            required
+                                            value={formData.category}
+                                            onChange={(e) => setFormData({ ...formData, category: e.target.value })}
                                             className="w-full bg-secondary/30 border border-border rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-primary transition-colors appearance-none cursor-pointer"
                                         >
                                             <option value="" disabled className="bg-background">Select Category</option>
@@ -1372,10 +1477,10 @@ const AdminDashboard = () => {
                                     </div>
                                     <div>
                                         <label className="block text-xs uppercase tracking-wider text-muted-foreground mb-2 font-bold">Pricing Label * (e.g. Free, Paid, Lifetime)</label>
-                                        <input 
-                                            required 
-                                            value={formData.pricing} 
-                                            onChange={(e) => setFormData({ ...formData, pricing: e.target.value })} 
+                                        <input
+                                            required
+                                            value={formData.pricing}
+                                            onChange={(e) => setFormData({ ...formData, pricing: e.target.value })}
                                             className="w-full bg-secondary/30 border border-border rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-primary transition-colors"
                                             placeholder="Free / Paid / Freemium..."
                                         />
@@ -1386,6 +1491,15 @@ const AdminDashboard = () => {
                                     <div className="md:col-span-2">
                                         <label className="block text-xs uppercase tracking-wider text-muted-foreground mb-2 font-bold">Tool Logo / Icon</label>
                                         <div className="flex flex-col md:flex-row gap-4">
+                                            <div className="w-16 h-16 rounded-2xl bg-white border border-border flex items-center justify-center overflow-hidden shrink-0 text-black">
+                                                {iconFile ? (
+                                                    <img src={URL.createObjectURL(iconFile)} className="w-full h-full object-contain" />
+                                                ) : getSafeLogo(formData.icon_url) ? (
+                                                    <img src={getSafeLogo(formData.icon_url)!} className="w-full h-full object-contain" />
+                                                ) : (
+                                                    <span className="text-xl font-bold">{formData.name?.charAt(0) || '?'}</span>
+                                                )}
+                                            </div>
                                             <div className="flex-1">
                                                 <label className="block text-[10px] text-muted-foreground/60 mb-1">Option A: Upload File</label>
                                                 <input type="file" accept="image/*" onChange={(e) => setIconFile(e.target.files?.[0] || null)} className="w-full bg-secondary/30 border border-border rounded-xl px-4 py-2.5 text-xs file:mr-4 file:py-1.5 file:px-3 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-primary file:text-background hover:file:bg-primary/90 transition-colors" />
@@ -1398,9 +1512,9 @@ const AdminDashboard = () => {
                                     </div>
                                     <div className="md:col-span-2"><label className="block text-xs uppercase tracking-wider text-white/50 mb-2 font-bold ml-1">Full Description *</label><textarea required value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} className="w-full bg-white/[0.03] border border-white/10 rounded-2xl px-5 py-4 text-sm focus:outline-none focus:border-primary/50 focus:bg-white/[0.05] transition-all min-h-[120px]" placeholder="Detailed description of the tool..." /></div>
                                     <div className="md:col-span-2 flex items-center gap-3 bg-primary/5 p-4 rounded-2xl border border-primary/20">
-                                        <input 
-                                            type="checkbox" 
-                                            id="is_trending" 
+                                        <input
+                                            type="checkbox"
+                                            id="is_trending"
                                             checked={formData.is_trending === 1}
                                             onChange={(e) => setFormData({ ...formData, is_trending: e.target.checked ? 1 : 0 })}
                                             className="w-5 h-5 accent-primary rounded cursor-pointer"
